@@ -1,0 +1,50 @@
+<template>
+    <AppLayout>
+        <template #header>تصنيفات المصاريف</template>
+        <div class="space-y-6">
+            <div v-if="$page.props.flash?.success" class="p-4 rounded-xl border text-sm bg-green-50 border-green-200 text-green-700">✅ {{ $page.props.flash.success }}</div>
+            <div v-if="$page.props.flash?.error" class="p-4 rounded-xl border text-sm bg-red-50 border-red-200 text-red-700">❌ {{ $page.props.flash.error }}</div>
+            <div class="flex justify-end"><button @click="openModal(null)" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md">+ تصنيف جديد</button></div>
+            <div class="rounded-xl border overflow-hidden shadow-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"><table class="w-full text-sm">
+                <thead><tr class="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400"><th class="px-5 py-3 text-right font-bold">الاسم</th><th class="px-5 py-3 text-right font-bold">الكود</th><th class="px-5 py-3 text-right font-bold">الحالة</th><th class="px-5 py-3 text-center font-bold">إجراءات</th></tr></thead>
+                <tbody>
+                    <tr v-for="c in categories" :key="c.id" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
+                        <td class="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">{{ c.name }}</td>
+                        <td class="px-5 py-3 font-mono text-xs text-gold-700">{{ c.code }}</td>
+                        <td class="px-5 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="c.is_active?'bg-green-100 text-green-700':'bg-red-100 text-red-700'">{{ c.is_active?'نشط':'معطل' }}</span></td>
+                        <td class="px-5 py-3 text-center"><button @click="openModal(c)" class="px-2 py-1 text-xs text-gold-700 hover:bg-gold-50 rounded-lg">✏️</button><button @click="del(c)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button></td>
+                    </tr>
+                    <tr v-if="!categories.length"><td colspan="4" class="px-5 py-12 text-center text-gray-400">لا يوجد تصنيفات</td></tr>
+                </tbody>
+            </table></div>
+        </div>
+        <div v-if="showForm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showForm=false">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+                <div class="flex items-center justify-between mb-5"><h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ editItem?'تعديل':'إضافة' }} تصنيف</h3><button @click="showForm=false" class="text-gray-400 dark:text-gray-500 hover:text-red-500 text-xl">&times;</button></div>
+                <form @submit.prevent="submit" class="space-y-4">
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">الاسم *</label><input v-model="form.name" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">الوصف</label><textarea v-model="form.description" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none resize-none"></textarea></div>
+                    <div v-if="editItem"><label class="flex items-center gap-2"><input v-model="form.is_active" type="checkbox" class="w-4 h-4 rounded text-gold-500"/><span class="text-sm">نشط</span></label></div>
+                    <div class="flex gap-3"><button type="submit" :disabled="form.processing" class="px-6 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 disabled:opacity-50">{{ editItem?'💾 تحديث':'✅ إضافة' }}</button><button type="button" @click="showForm=false" class="px-6 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-100">إلغاء</button></div>
+                </form>
+            </div>
+        </div>
+        <div v-if="deleteTarget" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="deleteTarget=null">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">
+                <div class="text-5xl mb-4">⚠️</div><p class="text-sm text-gray-500 mb-6">حذف <strong>{{ deleteTarget.name }}</strong>؟</p>
+                <div class="flex gap-3 justify-center"><button @click="router.delete('/expense-categories/'+deleteTarget.id,{preserveScroll:true,onSuccess:()=>{deleteTarget=null}})" class="px-6 py-2.5 rounded-xl font-bold text-sm text-white bg-red-500">🗑️ حذف</button><button @click="deleteTarget=null" class="px-6 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-100">إلغاء</button></div>
+            </div>
+        </div>
+    </AppLayout>
+</template>
+<script setup>
+import { ref } from 'vue';
+import { router, useForm } from '@inertiajs/vue3';
+import AppLayout from '@/Components/Layout/AppLayout.vue';
+const props = defineProps({ categories: Array });
+const showForm = ref(false); const editItem = ref(null); const deleteTarget = ref(null);
+const form = useForm({ name:'',description:'',is_active:true });
+const openModal = (c) => { editItem.value=c; form.name=c?.name||''; form.description=c?.description||''; form.is_active=c?.is_active??true; form.clearErrors(); showForm.value=true; };
+const submit = () => { const o={onSuccess:()=>{showForm.value=false},preserveScroll:true}; editItem.value?form.put('/expense-categories/'+editItem.value.id,o):form.post('/expense-categories',o); };
+const del = (c) => { deleteTarget.value=c; };
+</script>

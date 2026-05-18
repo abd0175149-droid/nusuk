@@ -1,0 +1,261 @@
+<template>
+    <div class="min-h-screen flex relative">
+
+        <!-- Mobile Overlay -->
+        <Transition name="fade">
+            <div v-if="sidebarOpen && isMobile"
+                 class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+                 @click="sidebarOpen = false"/>
+        </Transition>
+
+        <!-- Sidebar -->
+        <aside
+            class="w-64 flex flex-col flex-shrink-0 transition-transform duration-300 ease-in-out z-50"
+            :class="[
+                isDark ? 'bg-gray-950 border-l border-gold-900/30' : 'bg-white border-l border-gray-200',
+                isMobile ? 'fixed inset-y-0 right-0' : '',
+                sidebarVisible ? 'translate-x-0' : (isMobile ? 'translate-x-full' : '-translate-x-full hidden')
+            ]"
+        >
+            <!-- Logo -->
+            <div class="flex items-center justify-between border-b py-4 px-4"
+                 :class="isDark ? 'border-gold-900/30' : 'border-gray-200'">
+                <div class="w-40 overflow-hidden mx-auto">
+                    <img v-if="isDark" src="/images/logo-dark.png" alt="NUSUK" class="w-full" style="clip-path: inset(0 0 23% 0);"/>
+                    <img v-else src="/images/logo-light.png" alt="NUSUK" class="w-full object-contain"/>
+                </div>
+                <button v-if="isMobile" @click="sidebarOpen = false"
+                        class="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-gray-100 transition-colors">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Navigation -->
+            <nav ref="sidebarNav" class="flex-1 py-3 overflow-y-auto">
+                <!-- Dashboard (standalone) -->
+                <Link href="/"
+                   @click="isMobile && (sidebarOpen = false)"
+                   class="flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg text-sm transition-all duration-200"
+                   :class="isActive('/')
+                       ? (isDark ? 'bg-gold-600/20 text-gold-400 font-bold' : 'bg-gold-50 text-gold-800 font-bold border-r-4 border-gold-500')
+                       : (isDark ? 'text-gray-400 hover:bg-gray-800 hover:text-gold-300' : 'text-gray-600 hover:bg-gray-50 hover:text-gold-700')">
+                    <span class="text-lg">📊</span><span>لوحة القيادة</span>
+                </Link>
+
+                <!-- Menu Groups -->
+                <template v-for="group in menuGroups" :key="group.label">
+                    <button @click="toggleGroup(group.label)"
+                        class="flex items-center justify-between w-full px-4 py-2 mt-3 mx-0 text-xs font-bold uppercase tracking-wide transition-colors"
+                        :class="isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'">
+                        <span>{{ group.label }}</span>
+                        <span class="text-[10px] transition-transform duration-200" :class="openGroups[group.label]?'rotate-180':''">▼</span>
+                    </button>
+                    <div v-show="openGroups[group.label]" class="space-y-0.5">
+                        <template v-for="item in group.items" :key="item.route">
+                            <Link v-if="!item.permission || can(item.permission)"
+                               :href="item.route"
+                               @click="isMobile && (sidebarOpen = false)"
+                               class="flex items-center gap-3 px-4 py-2 mx-2 rounded-lg text-sm transition-all duration-200"
+                               :class="isActive(item.route)
+                                   ? (isDark ? 'bg-gold-600/20 text-gold-400 font-bold' : 'bg-gold-50 text-gold-800 font-bold border-r-4 border-gold-500')
+                                   : (isDark ? 'text-gray-400 hover:bg-gray-800 hover:text-gold-300' : 'text-gray-600 hover:bg-gray-50 hover:text-gold-700')">
+                                <span class="text-base">{{ item.icon }}</span>
+                                <span>{{ item.label }}</span>
+                            </Link>
+                        </template>
+                    </div>
+                </template>
+            </nav>
+
+            <!-- User Info -->
+            <div class="p-4 border-t" :class="isDark ? 'border-gold-900/30' : 'border-gray-200'">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                         :class="isDark ? 'bg-gold-600 text-black' : 'bg-gold-100 text-gold-800'">
+                        {{ user?.name?.charAt(0) }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium truncate" :class="isDark ? 'text-gray-200' : 'text-gray-800'">
+                            {{ user?.name }}
+                        </p>
+                        <p class="text-xs truncate" :class="isDark ? 'text-gold-500' : 'text-gold-600'">
+                            {{ user?.role?.name || 'مدير' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col min-h-screen min-w-0">
+            <!-- Top Navbar -->
+            <header class="h-14 sm:h-16 flex items-center justify-between px-4 sm:px-6 shadow-sm border-b sticky top-0 z-30"
+                    :class="isDark ? 'bg-gray-900 border-gold-900/20' : 'bg-white border-gray-200'">
+                <div class="flex items-center gap-3">
+                    <button @click="sidebarOpen = !sidebarOpen"
+                            class="p-2 rounded-lg transition-colors"
+                            :class="isDark ? 'text-gold-400 hover:bg-gray-800' : 'text-gold-600 hover:bg-gray-100'">
+                        <span class="text-xl">☰</span>
+                    </button>
+                    <h2 class="text-base sm:text-lg font-bold truncate"
+                        :class="isDark ? 'text-gold-400' : 'text-gray-800'">
+                        <slot name="header">{{ $page.props.title || 'NUSUK' }}</slot>
+                    </h2>
+                </div>
+
+                <div class="flex items-center gap-1 sm:gap-3">
+                    <!-- Notification Bell -->
+                    <button class="relative p-2 rounded-lg transition-colors"
+                            :class="isDark ? 'text-gray-400 hover:text-gold-400 hover:bg-gray-800' : 'text-gray-500 hover:text-gold-600 hover:bg-gray-100'">
+                        <span class="text-lg sm:text-xl">🔔</span>
+                        <span v-if="unreadCount > 0"
+                              class="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                            {{ unreadCount }}
+                        </span>
+                    </button>
+
+                    <!-- Theme Toggle -->
+                    <button @click="toggleTheme"
+                            class="p-2 rounded-lg transition-colors"
+                            :class="isDark ? 'text-gold-400 hover:bg-gray-800' : 'text-gray-500 hover:bg-gray-100'">
+                        {{ isDark ? '☀️' : '🌙' }}
+                    </button>
+
+                    <!-- Logout -->
+                    <Link href="/logout" method="post" as="button"
+                       class="text-xs sm:text-sm px-2 sm:px-3 py-1.5 rounded-lg transition-colors"
+                       :class="isDark ? 'text-red-400 hover:bg-red-900/20' : 'text-red-500 hover:bg-red-50'">
+                        خروج
+                    </Link>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <main class="flex-1 p-3 sm:p-6 overflow-x-hidden" :class="isDark ? 'bg-gray-900' : 'bg-gray-50'">
+                <slot />
+            </main>
+        </div>
+    </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { usePage, Link, router } from '@inertiajs/vue3';
+
+const page = usePage();
+const user = computed(() => page.props.auth?.user);
+const isDark = ref(document.documentElement.classList.contains('dark'));
+const isMobile = ref(window.innerWidth < 1024);
+const sidebarOpen = ref(!isMobile.value);
+const unreadCount = computed(() => page.props.unreadNotifications || 0);
+
+// حالة السايدبار المرئية
+const sidebarVisible = computed(() => {
+    if (isMobile.value) return sidebarOpen.value;
+    return sidebarOpen.value;
+});
+
+// استجابة تغيير حجم الشاشة
+const handleResize = () => {
+    const wasMobile = isMobile.value;
+    isMobile.value = window.innerWidth < 1024;
+    // عند الانتقال من موبايل لديسكتوب: افتح السايدبار
+    if (wasMobile && !isMobile.value) sidebarOpen.value = true;
+    // عند الانتقال من ديسكتوب لموبايل: أغلق السايدبار
+    if (!wasMobile && isMobile.value) sidebarOpen.value = false;
+};
+const sidebarNav = ref(null);
+
+// Save sidebar scroll before Inertia navigates away
+const removeBeforeListener = router.on('before', () => {
+    if (sidebarNav.value) {
+        sessionStorage.setItem('nusuk-sidebar-scroll', String(sidebarNav.value.scrollTop));
+    }
+});
+
+onMounted(() => {
+    window.addEventListener('resize', handleResize);
+    
+    // Restore sidebar groups state
+    const savedGroups = localStorage.getItem('nusuk-sidebar-groups');
+    if (savedGroups) {
+        try { openGroups.value = JSON.parse(savedGroups); } catch(e) {}
+    }
+    
+    // Restore scroll position after DOM is ready
+    nextTick(() => {
+        const saved = sessionStorage.getItem('nusuk-sidebar-scroll');
+        if (sidebarNav.value && saved) {
+            sidebarNav.value.scrollTop = parseInt(saved, 10);
+        }
+    });
+});
+
+onUnmounted(() => {
+    window.removeEventListener('resize', handleResize);
+    removeBeforeListener();
+});
+
+const can = (permission) => {
+    const perms = page.props.auth?.permissions || [];
+    return page.props.auth?.isAdmin || perms.includes(permission);
+};
+
+const currentPath = computed(() => page.url?.split('?')[0] || '/');
+
+const isActive = (route) => {
+    if (route === '/') return currentPath.value === '/';
+    return currentPath.value.startsWith(route);
+};
+
+const toggleTheme = () => {
+    isDark.value = !isDark.value;
+    document.documentElement.classList.toggle('dark');
+    localStorage.setItem('nusuk-theme', isDark.value ? 'dark' : 'light');
+};
+
+const menuGroups = [
+    { label: '💼 العمليات', items: [
+        { icon: '🏢', label: 'الوكلاء', route: '/agents', permission: 'agents.view' },
+        { icon: '👥', label: 'العملاء', route: '/clients', permission: 'clients.view' },
+        { icon: '💱', label: 'الحوالات', route: '/transfers', permission: 'transfers.view' },
+        { icon: '📄', label: 'سندات القبض', route: '/receipts', permission: 'receipts.view' },
+        { icon: '⚠️', label: 'المخالفات', route: '/violations', permission: 'violations.view' },
+        { icon: '🧾', label: 'الفواتير', route: '/invoices', permission: 'invoices.view' },
+        { icon: '💰', label: 'المصاريف', route: '/expenses', permission: 'expenses.view' },
+    ]},
+    { label: '📈 التقارير', items: [
+        { icon: '📊', label: 'أرصدة الوكلاء', route: '/reports/agents-balances', permission: 'reports.view' },
+        { icon: '📋', label: 'ذمم العملاء', route: '/reports/clients-balances', permission: 'reports.view' },
+        { icon: '💹', label: 'الأرباح والخسائر', route: '/reports/profit-loss', permission: 'reports.view' },
+        { icon: '📅', label: 'الملخص اليومي', route: '/reports/daily-summary', permission: 'reports.view' },
+    ]},
+    { label: '🏛️ المحاسبة', items: [
+        { icon: '🌳', label: 'شجرة الحسابات', route: '/accounting/chart-of-accounts', permission: 'reports.view' },
+        { icon: '⚖️', label: 'ميزان المراجعة', route: '/accounting/trial-balance', permission: 'reports.view' },
+        { icon: '📝', label: 'سجل القيود', route: '/accounting/journal-entries', permission: 'reports.view' },
+        { icon: '📊', label: 'قائمة الدخل', route: '/accounting/profit-loss', permission: 'reports.view' },
+        { icon: '🏦', label: 'الميزانية العمومية', route: '/accounting/balance-sheet', permission: 'reports.view' },
+        { icon: '📅', label: 'الفترات والإقفال', route: '/accounting/periods', permission: 'reports.view' },
+    ]},
+    { label: '⚙️ الإعدادات', items: [
+        { icon: '👥', label: 'الموظفين', route: '/users', permission: 'settings.view' },
+        { icon: '🛡️', label: 'الصلاحيات', route: '/roles', permission: 'settings.view' },
+        { icon: '🔧', label: 'الخدمات', route: '/services', permission: 'settings.view' },
+        { icon: '📋', label: 'أنواع المخالفات', route: '/violation-types', permission: 'settings.view' },
+        { icon: '🏷️', label: 'تصنيفات المصاريف', route: '/expense-categories', permission: 'settings.view' },
+        { icon: '⚙️', label: 'إعدادات النظام', route: '/settings', permission: 'settings.view' },
+    ]},
+];
+
+const openGroups = ref({ '💼 العمليات': true, '📈 التقارير': true, '🏛️ المحاسبة': true, '⚙️ الإعدادات': true });
+const toggleGroup = (label) => { 
+    openGroups.value[label] = !openGroups.value[label]; 
+    localStorage.setItem('nusuk-sidebar-groups', JSON.stringify(openGroups.value));
+};
+</script>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+</style>

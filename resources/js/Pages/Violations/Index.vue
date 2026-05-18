@@ -1,0 +1,122 @@
+<template>
+    <AppLayout>
+        <template #header>المخالفات</template>
+        <div class="space-y-6">
+            <div v-if="$page.props.flash?.success" class="p-4 rounded-xl border text-sm bg-green-50 border-green-200 text-green-700">✅ {{ $page.props.flash.success }}</div>
+            <div v-if="$page.props.flash?.error" class="p-4 rounded-xl border text-sm bg-red-50 border-red-200 text-red-700">❌ {{ $page.props.flash.error }}</div>
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3 flex-wrap">
+                    <input v-model="search" type="text" placeholder="بحث بالرقم أو الجواز..." class="w-64 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500" @input="debounceSearch"/>
+                    <select v-model="statusFilter" class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm" @change="applyFilter"><option value="">كل الحالات</option><option value="pending">معلقة</option><option value="approved">معتمدة</option><option value="rejected">مرفوضة</option></select>
+                    <select v-model="billingFilter" class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm" @change="applyFilter"><option value="">كل الفوترة</option><option value="unbilled">غير مفوترة</option><option value="billed">مفوترة</option></select>
+                </div>
+                <button @click="openModal()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md">+ تسجيل مخالفة</button>
+            </div>
+            <div class="rounded-xl border overflow-hidden shadow-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
+                <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                <thead><tr class="bg-gray-50 text-gray-600">
+                    <th class="px-4 py-3 text-right font-bold">الرقم</th>
+                    <th class="px-4 py-3 text-right font-bold">الوكيل</th>
+                    <th class="px-4 py-3 text-right font-bold">العميل</th>
+                    <th class="px-4 py-3 text-right font-bold">النوع</th>
+                    <th class="px-4 py-3 text-right font-bold">الجواز</th>
+                    <th class="px-4 py-3 text-right font-bold">التكلفة</th>
+                    <th class="px-4 py-3 text-right font-bold">الحالة</th>
+                    <th class="px-4 py-3 text-right font-bold">الفوترة</th>
+                    <th class="px-4 py-3 text-right font-bold">بواسطة</th>
+                    <th class="px-4 py-3 text-center font-bold">إجراءات</th>
+                </tr></thead>
+                <tbody>
+                    <tr v-for="v in violations.data" :key="v.id" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
+                        <td class="px-4 py-3 text-right font-mono text-xs text-gold-700">{{ v.violation_number }}</td>
+                        <td class="px-4 py-3 text-right text-gray-800 dark:text-gray-200 text-xs">{{ v.agent?.name||'—' }}</td>
+                        <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400 text-xs">{{ v.client?.name||'—' }}</td>
+                        <td class="px-4 py-3 text-right text-xs">{{ v.violation_type?.name||'—' }}</td>
+                        <td class="px-4 py-3 text-right font-mono text-xs" dir="ltr">{{ v.passport_number||'—' }}</td>
+                        <td class="px-4 py-3 text-right font-bold font-mono text-xs text-red-600" dir="ltr">{{ Number(v.cost_sar).toLocaleString('en',{minimumFractionDigits:2}) }} SAR</td>
+                        <td class="px-4 py-3 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="{'bg-yellow-100 text-yellow-700':v.status==='pending','bg-green-100 text-green-700':v.status==='approved','bg-red-100 text-red-700':v.status==='rejected'}">{{ {pending:'معلقة',approved:'معتمدة',rejected:'مرفوضة'}[v.status] }}</span></td>
+                        <td class="px-4 py-3 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="v.billing_status==='billed'?'bg-blue-100 text-blue-700':'bg-gray-100 text-gray-600'">{{ v.billing_status==='billed'?'مفوترة':'غير مفوترة' }}</span></td>
+                        <td class="px-4 py-3 text-right text-xs text-gray-500"><div>📝 {{ v.creator?.name || '—' }}</div><div v-if="v.status !== 'pending'" class="mt-0.5">{{ v.status === 'approved' ? '✅' : '❌' }} {{ v.approver?.name || '—' }}</div></td>
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                            <button v-if="v.status==='pending'" @click="approveVio(v)" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg">✅</button>
+                            <button v-if="v.status==='pending'" @click="rejectVio(v)" class="px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 rounded-lg">❌</button>
+                            <button v-if="v.status==='pending'" @click="del(v)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button>
+                        </td>
+                    </tr>
+                    <tr v-if="!violations.data?.length"><td colspan="10" class="px-5 py-12 text-center text-gray-400">لا يوجد مخالفات</td></tr>
+                </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Modal -->
+        <div v-if="showForm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showForm=false">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 p-6 max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between mb-5"><h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">تسجيل مخالفة جديدة</h3><button @click="showForm=false" class="text-gray-400 dark:text-gray-500 hover:text-red-500 text-xl">&times;</button></div>
+                <form @submit.prevent="submit" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">الوكيل *</label><select v-model="form.agent_id" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500"><option value="">اختر الوكيل</option><option v-for="a in agents" :key="a.id" :value="a.id">{{ a.name }} ({{ a.code }})</option></select></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">العميل *</label><select v-model="form.client_id" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500"><option value="">اختر العميل</option><option v-for="c in clients" :key="c.id" :value="c.id">{{ c.name }} ({{ c.code }})</option></select></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">نوع المخالفة *</label><select v-model="form.violation_type_id" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500" @change="onTypeChange"><option value="">اختر النوع</option><option v-for="vt in violationTypes" :key="vt.id" :value="vt.id">{{ vt.name }}</option></select></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">التكلفة (SAR) *</label><input v-model="form.cost_sar" type="number" step="0.01" required dir="ltr" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">تاريخ المخالفة *</label><input v-model="form.violation_date" type="date" required dir="ltr" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">رقم الجواز</label><input v-model="form.passport_number" dir="ltr" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
+                        <div class="md:col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">اسم صاحب الجواز</label><input v-model="form.passport_name" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
+                    </div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">الوصف</label><textarea v-model="form.description" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none resize-none"></textarea></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">ملاحظات</label><textarea v-model="form.notes" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none resize-none"></textarea></div>
+                    <div class="flex gap-3"><button type="submit" :disabled="form.processing" class="px-6 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 disabled:opacity-50">✅ تسجيل المخالفة</button><button type="button" @click="showForm=false" class="px-6 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-100">إلغاء</button></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Delete Modal -->
+        <div v-if="deleteTarget" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="deleteTarget=null">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">
+                <div class="text-5xl mb-4">⚠️</div>
+                <h3 class="text-lg font-bold text-gray-800 mb-2">تأكيد الحذف</h3>
+                <p class="text-sm text-gray-500 mb-6">حذف المخالفة <strong class="text-gray-800 dark:text-gray-100">{{ deleteTarget.violation_number }}</strong>؟</p>
+                <div class="flex gap-3 justify-center">
+                    <button @click="confirmDel" class="px-6 py-2.5 rounded-xl font-bold text-sm text-white bg-red-500 hover:bg-red-600">🗑️ حذف</button>
+                    <button @click="deleteTarget=null" class="px-6 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-100">إلغاء</button>
+                </div>
+            </div>
+        </div>
+    </AppLayout>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+import { router, useForm } from '@inertiajs/vue3';
+import AppLayout from '@/Components/Layout/AppLayout.vue';
+
+const props = defineProps({ violations: Object, filters: Object, agents: Array, clients: Array, violationTypes: Array });
+const search = ref(props.filters?.search||'');
+const statusFilter = ref(props.filters?.status||'');
+const billingFilter = ref(props.filters?.billing||'');
+const showForm = ref(false);
+const deleteTarget = ref(null);
+let t = null;
+
+const today = new Date().toISOString().split('T')[0];
+const form = useForm({ agent_id:'', client_id:'', violation_type_id:'', cost_sar:'', violation_date:today, passport_number:'', passport_name:'', description:'', notes:'' });
+
+const openModal = () => { form.reset(); form.violation_date = today; form.clearErrors(); showForm.value = true; };
+
+const onTypeChange = () => {
+    const vt = props.violationTypes?.find(v => v.id == form.violation_type_id);
+    if (vt) form.cost_sar = vt.default_cost_sar;
+};
+
+const submit = () => { form.post('/violations', { onSuccess: () => { showForm.value = false; }, preserveScroll: true }); };
+
+const approveVio = (v) => { if (confirm('اعتماد المخالفة وخصم ' + v.cost_sar + ' SAR من الوكيل؟')) router.post('/violations/' + v.id + '/approve', {}, { preserveScroll: true }); };
+const rejectVio = (v) => { const r = prompt('سبب الرفض:'); if (r !== null) router.post('/violations/' + v.id + '/reject', { reason: r }, { preserveScroll: true }); };
+const del = (v) => { deleteTarget.value = v; };
+const confirmDel = () => { router.delete('/violations/' + deleteTarget.value.id, { preserveScroll: true, onSuccess: () => { deleteTarget.value = null; } }); };
+
+const debounceSearch = () => { clearTimeout(t); t = setTimeout(() => applyFilter(), 400); };
+const applyFilter = () => { router.get('/violations', { search: search.value, status: statusFilter.value, billing: billingFilter.value }, { preserveState: true, replace: true }); };
+</script>

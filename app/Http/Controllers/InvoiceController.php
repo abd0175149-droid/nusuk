@@ -1,0 +1,216 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
+use App\Models\Agent;
+use App\Models\Client;
+use App\Models\Service;
+use App\Models\Violation;
+use App\Models\ExchangeRate;
+use App\Models\AuditLog;
+use App\Services\BalanceService;
+use App\Services\NumberingService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+
+class InvoiceController extends Controller
+{
+    public function index(Request $request)
+    {
+        $invoices = Invoice::query()
+            ->with(['agent:id,name,code', 'client:id,name,code', 'creator:id,name', 'approver:id,name'])
+            ->when($request->search, fn ($q, $s) => $q->where('invoice_number', 'like', "%{$s}%")
+                ->orWhereHas('agent', fn ($q2) => $q2->where('name', 'like', "%{$s}%"))
+                ->orWhereHas('client', fn ($q2) => $q2->where('name', 'like', "%{$s}%")))
+            ->when($request->status, fn ($q, $s) => $q->where('status', $s))
+            ->orderByDesc('created_at')
+            ->paginate(15)
+            ->withQueryString();
+
+        $todayRate = ExchangeRate::where('rate_date', today()->toDateString())->first();
+        $lastRate = ExchangeRate::orderByDesc('rate_date')->first();
+
+        return Inertia::render('Invoices/Index', [
+            'title' => 'الفواتير',
+            'invoices' => $invoices,
+            'filters' => $request->only(['search', 'status']),
+            'agents' => Agent::where('is_active', true)->select('id', 'name', 'code', 'currency')->get(),
+            'clients' => Client::where('is_active', true)->select('id', 'name', 'code')->get(),
+            'services' => Service::where('is_active', true)->get(),
+            'exchangeRate' => $todayRate->sar_to_jod ?? $lastRate->sar_to_jod ?? 0.078,
+        ]);
+    }
+
+    public function print(Invoice $invoice)
+    {
+        $invoice->load(['agent:id,name,code', 'client:id,name,code', 'items']);
+        return Inertia::render('Invoices/Print', ['invoice' => $invoice]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'agent_id' => 'required|exists:agents,id',
+            'client_id' => 'required|exists:clients,id',
+            'exchange_rate_snapshot' => 'required|numeric|min:0.001',
+            'discount_sar' => 'nullable|numeric|min:0',
+            'notes' => 'nullable|string|max:1000',
+            'items' => 'required|array|min:1',
+            'items.*.item_type' => 'required|in:service,violation',
+            'items.*.description' => 'required|string',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.unit_price_sar' => 'required|numeric|min:0',
+            'items.*.sell_price_jod' => 'required|numeric|min:0',
+            'items.*.service_id' => 'nullable|integer',
+            'items.*.violation_id' => 'nullable|integer',
+        ]);
+
+        DB::transaction(function () use ($validated) {
+            $rate = $validated['exchange_rate_snapshot'];
+            $discount = $validated['discount_sar'] ?? 0;
+
+            // حساب الإجماليات
+            $servicesCost = 0;
+            $violationsCost = 0;
+            $subtotal = 0;
+
+            foreach ($validated['items'] as $item) {
+                $lineTotal = $item['quantity'] * $item['unit_price_sar'];
+                $subtotal += $lineTotal;
+                if ($item['item_type'] === 'service') {
+                    $servicesCost += $lineTotal;
+                } else {
+                    $violationsCost += $lineTotal;
+                }
+            }
+
+            $totalSar = $subtotal - $discount;
+            $totalJod = round($totalSar * $rate, 3);
+
+            $invoice = Invoice::create([
+                'invoice_number' => NumberingService::generate('INV'),
+                'agent_id' => $validated['agent_id'],
+                'client_id' => $validated['client_id'],
+                'exchange_rate_snapshot' => $rate,
+                'subtotal_sar' => $subtotal,
+                'discount_sar' => $discount,
+                'total_sar' => $totalSar,
+                'total_jod' => $totalJod,
+                'services_cost_sar' => $servicesCost,
+                'violations_cost_sar' => $violationsCost,
+                'profit_sar' => 0,
+                'profit_jod' => 0,
+                'invoice_date' => now()->toDateString(),
+                'status' => 'pending',
+                'notes' => $validated['notes'] ?? null,
+                'created_by' => auth()->id(),
+            ]);
+
+            // حفظ البنود
+            foreach ($validated['items'] as $i => $item) {
+                InvoiceItem::create([
+                    'invoice_id' => $invoice->id,
+                    'item_type' => $item['item_type'],
+                    'service_id' => $item['service_id'] ?? null,
+                    'violation_id' => $item['violation_id'] ?? null,
+                    'description' => $item['description'],
+                    'quantity' => $item['quantity'],
+                    'unit_price_sar' => $item['unit_price_sar'],
+                    'sell_price_jod' => $item['sell_price_jod'],
+                    'total_cost_sar' => $item['quantity'] * $item['unit_price_sar'],
+                    'total_sell_jod' => $item['quantity'] * $item['sell_price_jod'],
+                    'sort_order' => $i + 1,
+                ]);
+            }
+        });
+
+        return redirect()->back()->with('success', 'تم إنشاء الفاتورة بنجاح');
+    }
+
+    public function approve(Invoice $invoice)
+    {
+        if (!$invoice->isPending()) {
+            return back()->with('error', 'هذه الفاتورة ليست معلقة');
+        }
+
+        DB::transaction(function () use ($invoice) {
+            $invoice->update([
+                'status' => 'approved',
+                'approved_by' => auth()->id(),
+                'approved_at' => now(),
+            ]);
+
+            // خصم تكلفة الخدمات من الوكيل (المخالفات خُصمت سابقاً)
+            if ($invoice->services_cost_sar > 0) {
+                BalanceService::debitAgent(
+                    $invoice->agent,
+                    $invoice->services_cost_sar,
+                    'invoice',
+                    $invoice->id
+                );
+            }
+
+            // إضافة الإجمالي على العميل بالدينار
+            if ($invoice->total_jod > 0) {
+                BalanceService::debitClient(
+                    $invoice->client,
+                    $invoice->total_jod,
+                    'invoice',
+                    $invoice->id
+                );
+            }
+
+            // إغلاق المخالفات المضمنة
+            $violationIds = $invoice->violationItems()->pluck('violation_id')->filter();
+            if ($violationIds->count()) {
+                Violation::whereIn('id', $violationIds)->update([
+                    'billing_status' => 'billed',
+                    'invoice_id' => $invoice->id,
+                ]);
+            }
+
+            // قيد محاسبي
+            try { \App\Services\AccountingService::recordInvoice($invoice); } catch (\Exception $e) { \Log::error('Accounting Invoice: ' . $e->getMessage()); }
+        });
+
+        AuditLog::log('approve', 'invoice', $invoice->id, $invoice->invoice_number);
+        return back()->with('success', "تم اعتماد الفاتورة {$invoice->invoice_number}");
+    }
+
+    public function reject(Request $request, Invoice $invoice)
+    {
+        if (!$invoice->isPending()) {
+            return back()->with('error', 'هذه الفاتورة ليست معلقة');
+        }
+        $invoice->update([
+            'status' => 'rejected',
+            'rejection_reason' => $request->input('reason', ''),
+            'approved_by' => auth()->id(),
+            'approved_at' => now(),
+        ]);
+        return back()->with('success', 'تم رفض الفاتورة');
+    }
+
+    public function destroy(Invoice $invoice)
+    {
+        if ($invoice->isApproved()) {
+            return back()->with('error', 'لا يمكن حذف فاتورة معتمدة');
+        }
+        $invoice->items()->delete();
+        $invoice->delete();
+        return back()->with('success', 'تم حذف الفاتورة');
+    }
+
+    // API: مخالفات العميل غير المفوترة
+    public function unbilledViolations(Client $client)
+    {
+        return Violation::where('client_id', $client->id)
+            ->where('status', 'approved')
+            ->where('billing_status', 'unbilled')
+            ->select('id', 'violation_number', 'passport_name', 'cost_sar', 'violation_date')
+            ->get();
+    }
+}
