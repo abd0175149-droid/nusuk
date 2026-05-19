@@ -3,7 +3,7 @@
         <div class="max-w-4xl mx-auto">
             <!-- Welcome -->
             <div class="mb-8 text-center">
-                <h1 class="text-2xl sm:text-3xl font-bold mb-2" :class="isDark ? 'text-white' : 'text-gray-800'">
+                <h1 class="text-2xl sm:text-3xl font-bold mb-2" :class="isDark ? 'text-gold-400' : 'text-gray-800'">
                     مرحباً، {{ user?.name }} 👋
                 </h1>
                 <p class="text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">

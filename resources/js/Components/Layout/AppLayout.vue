@@ -153,12 +153,36 @@
                         {{ isDark ? '☀️' : '🌙' }}
                     </button>
 
-                    <!-- Logout -->
-                    <Link href="/logout" method="post" as="button"
-                       class="text-xs sm:text-sm px-2 sm:px-3 py-1.5 rounded-lg transition-colors"
-                       :class="isDark ? 'text-red-400 hover:bg-red-900/20' : 'text-red-500 hover:bg-red-50'">
-                        خروج
-                    </Link>
+                    <!-- Settings Dropdown -->
+                    <div class="relative">
+                        <button @click="showSettings = !showSettings"
+                                class="p-2 rounded-lg transition-colors"
+                                :class="isDark ? 'text-gray-400 hover:text-gold-400 hover:bg-gray-800' : 'text-gray-500 hover:text-gold-600 hover:bg-gray-100'">
+                            <span class="text-lg">⚙️</span>
+                        </button>
+                        <div v-if="showSettings"
+                             class="absolute top-full end-0 mt-2 w-52 rounded-xl shadow-2xl border z-50 overflow-hidden"
+                             :class="isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'">
+                            <div class="px-4 py-3 border-b" :class="isDark ? 'border-gray-700' : 'border-gray-100'">
+                                <p class="text-sm font-bold" :class="isDark ? 'text-gold-400' : 'text-gold-700'">{{ user?.name }}</p>
+                                <p class="text-[11px] mt-0.5" :class="isDark ? 'text-gray-500' : 'text-gray-400'">{{ user?.email || 'مدير' }}</p>
+                            </div>
+                            <div class="py-1">
+                                <button @click="showSettings = false; router.visit('/profile')"
+                                        class="w-full text-right flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
+                                        :class="isDark ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'">
+                                    <span>👤</span><span>إعدادات الحساب</span>
+                                </button>
+                            </div>
+                            <div class="border-t py-1" :class="isDark ? 'border-gray-700' : 'border-gray-100'">
+                                <Link href="/logout" method="post" as="button"
+                                   class="w-full text-right flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
+                                   :class="isDark ? 'text-red-400 hover:bg-red-900/20' : 'text-red-500 hover:bg-red-50'">
+                                    <span>🚪</span><span>تسجيل الخروج</span>
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </header>
 
@@ -187,9 +211,11 @@ const unreadCount = computed(() => page.props.unreadNotifications || 0);
 const showNotifications = ref(false);
 const notifications = ref([]);
 const notificationsLoading = ref(false);
+const showSettings = ref(false);
 let pollInterval = null;
 
 const toggleNotifications = async () => {
+    showSettings.value = false;
     showNotifications.value = !showNotifications.value;
     if (showNotifications.value) {
         notificationsLoading.value = true;
@@ -230,6 +256,9 @@ const markAllRead = async () => {
 const handleClickOutside = (e) => {
     if (showNotifications.value && !e.target.closest('.relative')) {
         showNotifications.value = false;
+    }
+    if (showSettings.value && !e.target.closest('.relative')) {
+        showSettings.value = false;
     }
 };
 

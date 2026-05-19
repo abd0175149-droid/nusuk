@@ -22,9 +22,9 @@
 
             <!-- Center: Logo -->
             <div class="w-1/3 flex justify-center">
-                <div class="w-32 sm:w-40 overflow-hidden cursor-pointer" @click="goHome">
-                    <img v-if="isDark" src="/images/logo-dark.png" alt="NUSUK" class="w-full" style="clip-path: inset(0 0 23% 0);"/>
-                    <img v-else src="/images/logo-light.png" alt="NUSUK" class="w-full object-contain"/>
+                <div class="w-32 sm:w-40 cursor-pointer" @click="goHome">
+                    <img src="/images/logo-dark.png" v-if="isDark" alt="NUSUK" class="w-full h-12 object-contain"/>
+                    <img src="/images/logo-light.png" v-else alt="NUSUK" class="w-full h-12 object-contain"/>
                 </div>
             </div>
 
