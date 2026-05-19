@@ -40,7 +40,7 @@
 <script setup>
 import { ref } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
-import AppLayout from '@/Components/Layout/AppLayout.vue';
+import AppLayout from '@/Components/Layout/SmartLayout.vue';
 const props = defineProps({ categories: Array });
 const showForm = ref(false); const editItem = ref(null); const deleteTarget = ref(null);
 const form = useForm({ name:'',description:'',is_active:true });

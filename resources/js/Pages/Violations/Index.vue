@@ -90,7 +90,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
-import AppLayout from '@/Components/Layout/AppLayout.vue';
+import AppLayout from '@/Components/Layout/SmartLayout.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 
 const props = defineProps({ violations: Object, filters: Object, agents: Array, clients: Array, violationTypes: Array });

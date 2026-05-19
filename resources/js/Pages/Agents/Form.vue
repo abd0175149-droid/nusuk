@@ -110,7 +110,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import AppLayout from '@/Components/Layout/AppLayout.vue';
+import AppLayout from '@/Components/Layout/SmartLayout.vue';
 
 const props = defineProps({ agent: Object });
 const isDark = ref(document.documentElement.classList.contains('dark'));

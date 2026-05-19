@@ -38,7 +38,7 @@
 </template>
 <script setup>
 import { ref, computed } from 'vue';
-import AppLayout from '@/Components/Layout/AppLayout.vue';
+import AppLayout from '@/Components/Layout/SmartLayout.vue';
 const props = defineProps({ clients: Array, total: Number, filters: Object });
 const search = ref('');
 const filteredClients = computed(() => {

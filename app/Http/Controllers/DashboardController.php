@@ -18,6 +18,16 @@ class DashboardController extends Controller
 {
     public function index(): Response
     {
+        $user = auth()->user();
+
+        // الموظف (غير admin) → واجهة الاختصارات المبسطة
+        if (!$user->isAdmin()) {
+            return Inertia::render('EmployeeDashboard', [
+                'title' => 'الرئيسية',
+            ]);
+        }
+
+        // Admin → لوحة القيادة الكاملة
         $todayRate = ExchangeRate::where('rate_date', today()->toDateString())->first();
         $lastRate = ExchangeRate::orderByDesc('rate_date')->first();
         $rate = $todayRate->sar_to_jod ?? $lastRate->sar_to_jod ?? 0.078;

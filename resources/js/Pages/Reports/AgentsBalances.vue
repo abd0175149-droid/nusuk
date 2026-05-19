@@ -37,7 +37,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { router } from '@inertiajs/vue3';
-import AppLayout from '@/Components/Layout/AppLayout.vue';
+import AppLayout from '@/Components/Layout/SmartLayout.vue';
 const props = defineProps({ agents: Array, total: Number, filters: Object });
 const search = ref(props.filters?.search||'');
 let t=null;

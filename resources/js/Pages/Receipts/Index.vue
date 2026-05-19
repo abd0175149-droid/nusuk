@@ -43,7 +43,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
-import AppLayout from '@/Components/Layout/AppLayout.vue';
+import AppLayout from '@/Components/Layout/SmartLayout.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 const props = defineProps({ receipts: Object, filters: Object, clients: Array });
 const clientOptions = computed(() => props.clients.map(c => ({ value: c.id, label: c.name })));

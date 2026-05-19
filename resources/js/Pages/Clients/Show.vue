@@ -61,7 +61,7 @@
 <script setup>
 import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
-import AppLayout from '@/Components/Layout/AppLayout.vue';
+import AppLayout from '@/Components/Layout/SmartLayout.vue';
 const props = defineProps({ client: Object, entries: Array, summary: Object, filters: Object });
 const from = ref(props.filters?.from||'');
 const to = ref(props.filters?.to||'');

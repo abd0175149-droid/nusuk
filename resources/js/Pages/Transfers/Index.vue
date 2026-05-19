@@ -105,7 +105,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
-import AppLayout from '@/Components/Layout/AppLayout.vue';
+import AppLayout from '@/Components/Layout/SmartLayout.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 const props = defineProps({ transfers: Object, filters: Object, agents: Array });
 const agentOptions = computed(() => props.agents.map(a => ({ value: a.id, label: `${a.name} (${a.code})` })));

@@ -60,7 +60,7 @@
 <script setup>
 import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
-import AppLayout from '@/Components/Layout/AppLayout.vue';
+import AppLayout from '@/Components/Layout/SmartLayout.vue';
 const props = defineProps({ date: String, transfers: Array, receipts: Array, invoices: Array, violations: Array, expenses: Array, totals: Object });
 const selectedDate = ref(props.date);
 const fmt = (v, d) => Number(v||0).toLocaleString('en',{minimumFractionDigits:d,maximumFractionDigits:d});
