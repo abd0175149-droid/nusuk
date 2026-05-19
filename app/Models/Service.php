@@ -8,7 +8,7 @@ class Service extends Model
 {
     protected $fillable = [
         'name', 'code', 'default_price_sar',
-        'default_price_jod', 'description', 'is_active',
+        'default_price_jod', 'description', 'is_active', 'account_id',
     ];
 
     protected $casts = [
