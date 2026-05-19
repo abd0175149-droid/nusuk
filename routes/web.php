@@ -94,6 +94,8 @@ Route::middleware('auth')->group(function () {
     Route::post('accounting/periods/close', [\App\Http\Controllers\AccountingController::class, 'closePeriod'])->name('accounting.periods.close');
     Route::post('accounting/periods/open', [\App\Http\Controllers\AccountingController::class, 'openPeriod'])->name('accounting.periods.open');
     Route::post('accounting/close-year', [\App\Http\Controllers\AccountingController::class, 'closeYear'])->name('accounting.close-year');
+    Route::post('accounting/fiscal-years', [\App\Http\Controllers\AccountingController::class, 'storeFiscalYear'])->name('accounting.fiscal-years.store');
+    Route::delete('accounting/fiscal-years/{fiscalYear}', [\App\Http\Controllers\AccountingController::class, 'destroyFiscalYear'])->name('accounting.fiscal-years.destroy');
     Route::get('accounting/profit-loss', [\App\Http\Controllers\AccountingController::class, 'profitAndLoss'])->name('accounting.profit-loss');
     Route::get('accounting/balance-sheet', [\App\Http\Controllers\AccountingController::class, 'balanceSheet'])->name('accounting.balance-sheet');
 

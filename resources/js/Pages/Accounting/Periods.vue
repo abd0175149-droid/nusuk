@@ -5,6 +5,79 @@
             <div v-if="$page.props.flash?.success" class="p-4 rounded-xl border text-sm bg-green-50 border-green-200 text-green-700">✅ {{ $page.props.flash.success }}</div>
             <div v-if="$page.props.flash?.error" class="p-4 rounded-xl border text-sm bg-red-50 border-red-200 text-red-700">❌ {{ $page.props.flash.error }}</div>
 
+            <!-- السنوات المالية -->
+            <div class="rounded-xl border overflow-hidden shadow-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold">📆 السنوات المالية</h3>
+                    <button @click="showFiscalForm = true" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md">+ سنة مالية جديدة</button>
+                </div>
+
+                <table class="w-full" v-if="fiscalYears?.length">
+                    <thead class="bg-gray-50 dark:bg-gray-800">
+                        <tr>
+                            <th class="px-4 py-3 text-right text-xs font-bold">السنة</th>
+                            <th class="px-4 py-3 text-right text-xs font-bold">من</th>
+                            <th class="px-4 py-3 text-right text-xs font-bold">إلى</th>
+                            <th class="px-4 py-3 text-right text-xs font-bold">الحالة</th>
+                            <th class="px-4 py-3 text-right text-xs font-bold">ملاحظات</th>
+                            <th class="px-4 py-3 text-center text-xs font-bold">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="fy in fiscalYears" :key="fy.id" class="border-b hover:bg-gray-50 dark:hover:bg-gray-800/30">
+                            <td class="px-4 py-3 text-sm font-bold text-gold-700">{{ fy.year }}</td>
+                            <td class="px-4 py-3 text-sm font-mono">{{ fy.start_date?.split('T')[0] }}</td>
+                            <td class="px-4 py-3 text-sm font-mono">{{ fy.end_date?.split('T')[0] }}</td>
+                            <td class="px-4 py-3 text-sm">
+                                <span :class="fy.status === 'closed' ? 'text-red-600 bg-red-50 px-2 py-1 rounded' : 'text-green-600 bg-green-50 px-2 py-1 rounded'" class="text-xs font-bold">
+                                    {{ fy.status === 'closed' ? '🔒 مقفلة' : '🔓 مفتوحة' }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-500">{{ fy.notes || '—' }}</td>
+                            <td class="px-4 py-3 text-center">
+                                <button v-if="fy.status === 'open'" @click="deleteFiscalYear(fy)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️ حذف</button>
+                                <span v-else class="text-xs text-gray-400">—</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p v-else class="text-center text-gray-400 py-6">لا توجد سنوات مالية مسجلة — أنشئ واحدة للبدء</p>
+            </div>
+
+            <!-- فورم إنشاء سنة مالية -->
+            <div v-if="showFiscalForm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showFiscalForm = false">
+                <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+                    <div class="flex items-center justify-between mb-5">
+                        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">إنشاء سنة مالية</h3>
+                        <button @click="showFiscalForm = false" class="text-gray-400 hover:text-red-500 text-xl">&times;</button>
+                    </div>
+                    <form @submit.prevent="submitFiscalYear" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">السنة *</label>
+                            <input v-model="fyForm.year" type="number" min="2020" max="2099" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none" dir="ltr"/>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">تاريخ البداية *</label>
+                                <input v-model="fyForm.start_date" type="date" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none" dir="ltr"/>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">تاريخ النهاية *</label>
+                                <input v-model="fyForm.end_date" type="date" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none" dir="ltr"/>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">ملاحظات</label>
+                            <textarea v-model="fyForm.notes" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none resize-none"></textarea>
+                        </div>
+                        <div class="flex gap-3">
+                            <button type="submit" :disabled="fyForm.processing" class="px-6 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 disabled:opacity-50">✅ إنشاء</button>
+                            <button type="button" @click="showFiscalForm = false" class="px-6 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-100">إلغاء</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- إقفال السنة المالية -->
             <div class="rounded-xl border overflow-hidden shadow-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 p-6">
                 <h3 class="text-lg font-bold mb-4">📅 إقفال السنة المالية</h3>
@@ -76,11 +149,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
+import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/AppLayout.vue';
 
-const props = defineProps({ periods: Array, availableYears: Array });
+const props = defineProps({ periods: Array, availableYears: Array, fiscalYears: Array });
 const currentYear = new Date().getFullYear();
 const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
@@ -88,6 +161,34 @@ const closeYearValue = ref(null);
 const closingYear = ref(false);
 const periodYear = ref(currentYear);
 const periodMonth = ref(0);
+const showFiscalForm = ref(false);
+
+const fyForm = useForm({
+    year: currentYear,
+    start_date: `${currentYear}-01-01`,
+    end_date: `${currentYear}-12-31`,
+    notes: '',
+});
+
+// تحديث التواريخ تلقائياً عند تغيير السنة
+watch(() => fyForm.year, (y) => {
+    if (y >= 2020 && y <= 2099) {
+        fyForm.start_date = `${y}-01-01`;
+        fyForm.end_date = `${y}-12-31`;
+    }
+});
+
+const submitFiscalYear = () => {
+    fyForm.post('/accounting/fiscal-years', {
+        onSuccess: () => { showFiscalForm.value = false; fyForm.reset(); },
+        preserveScroll: true,
+    });
+};
+
+const deleteFiscalYear = (fy) => {
+    if (!confirm(`حذف السنة المالية ${fy.year}؟`)) return;
+    router.delete(`/accounting/fiscal-years/${fy.id}`, { preserveScroll: true });
+};
 
 const doCloseYear = () => {
     if (!confirm(`هل أنت متأكد من إقفال السنة المالية ${closeYearValue.value}؟\nسيتم إنشاء قيد إقفال وترحيل الأرصدة.`)) return;

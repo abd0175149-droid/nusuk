@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\AccountingPeriod;
+use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use App\Services\AccountingService;
@@ -384,12 +385,39 @@ class AccountingController extends Controller
         $periods = AccountingPeriod::orderByDesc('year')->orderByDesc('month')->get();
         $years = JournalEntry::selectRaw("strftime('%Y', entry_date) as year")
             ->groupBy('year')->orderByDesc('year')->pluck('year');
+        $fiscalYears = FiscalYear::orderByDesc('year')->get();
 
         return Inertia::render('Accounting/Periods', [
             'title' => 'الفترات المحاسبية',
             'periods' => $periods,
             'availableYears' => $years,
+            'fiscalYears' => $fiscalYears,
         ]);
+    }
+
+    public function storeFiscalYear(Request $request)
+    {
+        $validated = $request->validate([
+            'year' => 'required|integer|min:2020|max:2099|unique:fiscal_years,year',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $validated['created_by'] = auth()->id();
+        FiscalYear::create($validated);
+
+        return back()->with('success', "تم إنشاء السنة المالية {$validated['year']} بنجاح");
+    }
+
+    public function destroyFiscalYear(FiscalYear $fiscalYear)
+    {
+        if ($fiscalYear->isClosed()) {
+            return back()->with('error', 'لا يمكن حذف سنة مالية مقفلة');
+        }
+
+        $fiscalYear->delete();
+        return back()->with('success', 'تم حذف السنة المالية');
     }
 
     public function closePeriod(Request $request)
