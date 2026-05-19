@@ -17,10 +17,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">الوكيل</label>
-                            <select v-model="form.agent_id" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500">
-                                <option value="">بدون وكيل</option>
-                                <option v-for="a in agents" :key="a.id" :value="a.id">{{ a.name }} ({{ a.code }})</option>
-                            </select>
+                            <SearchableSelect v-model="form.agent_id" :options="agentOptions" placeholder="بدون وكيل" search-placeholder="ابحث عن وكيل..." />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">الهاتف</label>
@@ -65,9 +62,12 @@
     </AppLayout>
 </template>
 <script setup>
+import { computed } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/AppLayout.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 const props = defineProps({ client: Object, agents: Array });
+const agentOptions = computed(() => props.agents.map(a => ({ value: a.id, label: `${a.name} (${a.code})` })));
 const form = useForm({
     name: props.client?.name||'', code: props.client?.code||'',
     phone: props.client?.phone||'', email: props.client?.email||'',

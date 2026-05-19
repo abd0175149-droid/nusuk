@@ -95,10 +95,7 @@
                         <div v-for="(line, i) in jForm.lines" :key="i"
                              class="grid grid-cols-12 gap-2 items-center p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30">
                             <div class="col-span-5">
-                                <select v-model="line.account_id" required class="w-full px-3 py-2 rounded-lg border text-xs">
-                                    <option value="">اختر الحساب</option>
-                                    <option v-for="a in leafAccounts" :key="a.id" :value="a.id">{{ a.code }} — {{ a.name }}</option>
-                                </select>
+                                <SearchableSelect v-model="line.account_id" :options="accountOptions" placeholder="اختر الحساب" search-placeholder="ابحث بالكود أو الاسم..." />
                             </div>
                             <div class="col-span-2">
                                 <input v-model.number="line.debit" type="number" step="0.001" min="0" placeholder="مدين" dir="ltr"
@@ -144,8 +141,10 @@
 import { ref, computed } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/AppLayout.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 
 const props = defineProps({ entries: Object, filters: Object, leafAccounts: Array });
+const accountOptions = computed(() => props.leafAccounts.map(a => ({ value: a.id, label: `${a.code} — ${a.name}` })));
 const search = ref(props.filters?.search || '');
 const showModal = ref(false);
 let t = null;

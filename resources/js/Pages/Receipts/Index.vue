@@ -29,7 +29,7 @@
                 <div class="flex items-center justify-between mb-5"><h3 class="text-lg font-bold">سند قبض جديد</h3><button @click="showForm=false" class="text-gray-400 dark:text-gray-500 hover:text-red-500 text-xl">&times;</button></div>
                 <form @submit.prevent="form.post('/receipts',{onSuccess:()=>{showForm=false}})" class="space-y-4">
                     <div class="grid grid-cols-2 gap-4">
-                        <div><label class="block text-sm font-medium mb-1">العميل *</label><select v-model="form.client_id" required class="w-full px-4 py-2.5 rounded-xl border text-sm"><option value="">اختر</option><option v-for="c in clients" :key="c.id" :value="c.id">{{ c.name }}</option></select></div>
+                        <div><label class="block text-sm font-medium mb-1">العميل *</label><SearchableSelect v-model="form.client_id" :options="clientOptions" placeholder="اختر العميل" search-placeholder="ابحث عن عميل..." /></div>
                         <div><label class="block text-sm font-medium mb-1">المبلغ (JOD) *</label><input v-model="form.amount_jod" type="number" step="0.001" required dir="ltr" class="w-full px-4 py-2.5 rounded-xl border text-sm"/></div>
                         <div><label class="block text-sm font-medium mb-1">طريقة الدفع *</label><select v-model="form.payment_method" class="w-full px-4 py-2.5 rounded-xl border text-sm"><option value="cash">نقدي</option><option value="bank">بنكي</option><option value="check">شيك</option></select></div>
                     </div>
@@ -41,10 +41,12 @@
     </AppLayout>
 </template>
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/AppLayout.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 const props = defineProps({ receipts: Object, filters: Object, clients: Array });
+const clientOptions = computed(() => props.clients.map(c => ({ value: c.id, label: c.name })));
 const search = ref(''); const showForm = ref(false); let t=null;
 const form = useForm({ client_id:'', amount_jod:'', payment_method:'cash', notes:'' });
 const openForm=()=>{form.reset();showForm.value=true;};

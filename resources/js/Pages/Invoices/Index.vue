@@ -68,17 +68,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">الوكيل *</label>
-                            <select v-model="pos.agent_id" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500">
-                                <option value="">اختر الوكيل</option>
-                                <option v-for="a in agents" :key="a.id" :value="a.id">{{ a.name }} ({{ a.code }})</option>
-                            </select>
+                            <SearchableSelect v-model="pos.agent_id" :options="agentOptions" placeholder="اختر الوكيل" search-placeholder="ابحث عن وكيل..." />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">العميل *</label>
-                            <select v-model="pos.client_id" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500" @change="loadUnbilled">
-                                <option value="">اختر العميل</option>
-                                <option v-for="c in clients" :key="c.id" :value="c.id">{{ c.name }} ({{ c.code }})</option>
-                            </select>
+                            <SearchableSelect v-model="pos.client_id" :options="clientOptions" placeholder="اختر العميل" search-placeholder="ابحث عن عميل..." @change="loadUnbilled" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">سعر الصرف (SAR→JOD)</label>
@@ -113,14 +107,8 @@
                                     <tr v-for="(item, idx) in pos.items" :key="idx" class="border-t border-gray-100">
                                         <td class="px-3 py-2"><span class="px-2 py-0.5 rounded text-xs" :class="item.item_type==='service'?'bg-blue-100 text-blue-700':'bg-red-100 text-red-700'">{{ item.item_type==='service'?'خدمة':'مخالفة' }}</span></td>
                                         <td class="px-3 py-2">
-                                            <select v-if="item.item_type==='service'" v-model="item.service_id" class="w-full px-2 py-1 rounded border border-gray-200 text-xs" @change="onServiceSelect(idx)">
-                                                <option value="">اختر خدمة</option>
-                                                <option v-for="s in services" :key="s.id" :value="s.id">{{ s.name }}</option>
-                                            </select>
-                                            <select v-else v-model="item.violation_id" class="w-full px-2 py-1 rounded border border-gray-200 text-xs" @change="onViolationSelect(idx)">
-                                                <option value="">اختر مخالفة</option>
-                                                <option v-for="v in unbilledViolations" :key="v.id" :value="v.id">{{ v.violation_number }} - {{ v.passport_name||'بدون اسم' }} ({{ v.cost_sar }} SAR)</option>
-                                            </select>
+                                            <SearchableSelect v-if="item.item_type==='service'" v-model="item.service_id" :options="serviceOptions" placeholder="اختر خدمة" search-placeholder="ابحث..." @change="onServiceSelect(idx)" />
+                                            <SearchableSelect v-else v-model="item.violation_id" :options="violationOptions" placeholder="اختر مخالفة" search-placeholder="ابحث..." @change="onViolationSelect(idx)" />
                                         </td>
                                         <td class="px-3 py-2"><input v-model.number="item.quantity" type="number" min="1" class="w-full px-2 py-1 rounded border border-gray-200 text-xs text-center" dir="ltr"/></td>
                                         <td class="px-3 py-2"><input v-model.number="item.unit_price_sar" type="number" step="0.01" class="w-full px-2 py-1 rounded border border-gray-200 text-xs font-mono" dir="ltr"/></td>
@@ -192,6 +180,7 @@
 import { ref, computed, reactive } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/AppLayout.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 
 const props = defineProps({ invoices: Object, filters: Object, agents: Array, clients: Array, services: Array, exchangeRate: Number });
 const search = ref(props.filters?.search||'');
@@ -211,6 +200,12 @@ const pos = reactive({
     notes: '',
     items: [],
 });
+
+// خيارات البحث في القوائم المنسدلة
+const agentOptions = computed(() => props.agents.map(a => ({ value: a.id, label: `${a.name} (${a.code})` })));
+const clientOptions = computed(() => props.clients.map(c => ({ value: c.id, label: `${c.name} (${c.code})` })));
+const serviceOptions = computed(() => props.services.map(s => ({ value: s.id, label: s.name })));
+const violationOptions = computed(() => unbilledViolations.value.map(v => ({ value: v.id, label: `${v.violation_number} - ${v.passport_name||'بدون اسم'} (${v.cost_sar} SAR)` })));
 
 const subtotalSar = computed(() => pos.items.reduce((s, i) => s + i.quantity * i.unit_price_sar, 0));
 const netSar = computed(() => Math.max(0, subtotalSar.value - (pos.discount || 0)));

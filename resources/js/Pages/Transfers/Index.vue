@@ -60,7 +60,7 @@
                 <div class="flex items-center justify-between mb-5"><h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">حوالة جديدة</h3><button @click="showForm=false" class="text-gray-400 dark:text-gray-500 hover:text-red-500 text-xl">&times;</button></div>
                 <form @submit.prevent="submitForm" class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">الوكيل *</label><select v-model="form.agent_id" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500"><option value="">اختر الوكيل</option><option v-for="a in agents" :key="a.id" :value="a.id">{{ a.name }} ({{ a.code }})</option></select><p v-if="form.errors.agent_id" class="mt-1 text-xs text-red-500">{{ form.errors.agent_id }}</p></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">الوكيل *</label><SearchableSelect v-model="form.agent_id" :options="agentOptions" placeholder="اختر الوكيل" search-placeholder="ابحث عن وكيل..." /><p v-if="form.errors.agent_id" class="mt-1 text-xs text-red-500">{{ form.errors.agent_id }}</p></div>
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">المبلغ (SAR) *</label><input v-model="form.amount_sar" type="number" step="0.01" min="0.01" required dir="ltr" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">التكلفة (JOD)</label><input v-model="form.cost_jod" type="number" step="0.001" min="0" dir="ltr" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">سعر الصرف</label><input v-model="form.exchange_rate" type="number" step="0.000001" min="0" dir="ltr" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
@@ -103,10 +103,12 @@
     </AppLayout>
 </template>
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/AppLayout.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 const props = defineProps({ transfers: Object, filters: Object, agents: Array });
+const agentOptions = computed(() => props.agents.map(a => ({ value: a.id, label: `${a.name} (${a.code})` })));
 const search = ref(props.filters?.search||'');
 const statusFilter = ref(props.filters?.status||'');
 const showForm = ref(false);
