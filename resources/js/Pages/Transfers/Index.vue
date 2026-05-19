@@ -103,7 +103,7 @@
     </AppLayout>
 </template>
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/AppLayout.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
@@ -120,6 +120,41 @@ const statusLabels = { pending:'معلقة', approved:'معتمدة', rejected:'
 const statusClasses = { pending:'bg-yellow-100 text-yellow-700', approved:'bg-green-100 text-green-700', rejected:'bg-red-100 text-red-700' };
 const payMethods = { cash:'نقدي', bank:'تحويل بنكي', check:'شيك' };
 const form = useForm({ agent_id:'', amount_sar:'', cost_jod:'', exchange_rate:'', payment_method:'cash', reference_number:'', notes:'' });
+
+// حساب تلقائي: عند تغيير المبلغ بالريال أو سعر الصرف → يُحسب الدينار
+let calcLock = false;
+watch(() => form.amount_sar, (val) => {
+    if (calcLock) return;
+    const sar = parseFloat(val);
+    const rate = parseFloat(form.exchange_rate);
+    if (sar > 0 && rate > 0) {
+        calcLock = true;
+        form.cost_jod = (sar * rate).toFixed(3);
+        calcLock = false;
+    }
+});
+watch(() => form.exchange_rate, (val) => {
+    if (calcLock) return;
+    const rate = parseFloat(val);
+    const sar = parseFloat(form.amount_sar);
+    if (sar > 0 && rate > 0) {
+        calcLock = true;
+        form.cost_jod = (sar * rate).toFixed(3);
+        calcLock = false;
+    }
+});
+// عند تغيير الدينار → يُحسب الريال (إذا سعر الصرف موجود)
+watch(() => form.cost_jod, (val) => {
+    if (calcLock) return;
+    const jod = parseFloat(val);
+    const rate = parseFloat(form.exchange_rate);
+    if (jod > 0 && rate > 0) {
+        calcLock = true;
+        form.amount_sar = (jod / rate).toFixed(2);
+        calcLock = false;
+    }
+});
+
 const openForm = () => { form.reset(); form.clearErrors(); showForm.value=true; };
 const submitForm = () => { form.post('/transfers', { onSuccess:()=>{showForm.value=false}, preserveScroll:true }); };
 const approveItem = (t) => { router.post('/transfers/'+t.id+'/approve', {}, {preserveScroll:true}); };

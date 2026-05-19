@@ -81,11 +81,11 @@ class ReportController extends Controller
     {
         $date = $request->date ?? now()->toDateString();
 
-        $transfers = Transfer::with('agent:id,name')->where('transfer_date', $date)->get();
-        $receipts = Receipt::with('client:id,name')->where('receipt_date', $date)->get();
-        $invoices = Invoice::with(['agent:id,name', 'client:id,name'])->where('invoice_date', $date)->get();
-        $violations = Violation::with(['agent:id,name', 'violationType:id,name'])->where('violation_date', $date)->get();
-        $expenses = Expense::with('category:id,name')->where('expense_date', $date)->get();
+        $transfers = Transfer::with('agent:id,name')->whereDate('transfer_date', $date)->get();
+        $receipts = Receipt::with('client:id,name')->whereDate('receipt_date', $date)->get();
+        $invoices = Invoice::with(['agent:id,name', 'client:id,name'])->whereDate('invoice_date', $date)->get();
+        $violations = Violation::with(['agent:id,name', 'violationType:id,name'])->whereDate('violation_date', $date)->get();
+        $expenses = Expense::with('category:id,name')->whereDate('expense_date', $date)->get();
 
         return Inertia::render('Reports/DailySummary', [
             'title' => 'ملخص يومي',
