@@ -124,18 +124,12 @@
                     </div>
 
                     <!-- Totals -->
-                    <div v-if="pos.items.length" class="bg-gray-50 rounded-xl p-4 space-y-3">
+                    <div v-if="pos.items.length" class="bg-gray-50 rounded-xl p-4">
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div><span class="text-gray-500">الإجمالي الفرعي:</span><p class="font-bold font-mono" dir="ltr">{{ subtotalSar.toFixed(2) }} SAR</p></div>
                             <div><label class="text-gray-500">الخصم SAR:</label><input v-model.number="pos.discount" type="number" step="0.01" min="0" dir="ltr" class="w-full px-2 py-1 rounded border border-gray-200 text-xs font-mono mt-1"/></div>
                             <div><span class="text-gray-500">الصافي:</span><p class="font-bold font-mono text-lg" dir="ltr">{{ netSar.toFixed(2) }} SAR</p></div>
-                            <div><span class="text-gray-500">تكلفة الوكيل (JOD):</span><p class="font-bold font-mono text-lg text-orange-600" dir="ltr">{{ agentCostJod.toFixed(3) }} JOD</p></div>
-                        </div>
-                        <div class="border-t border-gray-200 pt-3 flex items-center justify-between">
-                            <div class="flex items-center gap-6 text-sm">
-                                <div><span class="text-gray-500">إجمالي العميل (JOD):</span><span class="font-bold font-mono text-blue-600 mr-2" dir="ltr">{{ clientTotalJod.toFixed(3) }}</span></div>
-                                <div><span class="text-gray-500">الربح:</span><span class="font-bold font-mono mr-2" :class="profitJod >= 0 ? 'text-green-600' : 'text-red-600'" dir="ltr">{{ profitJod.toFixed(3) }} JOD</span></div>
-                            </div>
+                            <div><span class="text-gray-500">الإجمالي بالدينار:</span><p class="font-bold font-mono text-lg text-blue-600" dir="ltr">{{ agentCostJod.toFixed(3) }} JOD</p></div>
                         </div>
                     </div>
 
