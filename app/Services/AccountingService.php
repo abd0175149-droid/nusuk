@@ -533,9 +533,13 @@ class AccountingService
      */
     public static function profitAndLoss(string $from, string $to): array
     {
-        $revenues = Account::where('type', 'revenue')->where('is_active', true)->get()
-            ->map(function ($acc) use ($from, $to) {
-                $totals = $acc->totalsForPeriod($from, $to);
+        $toEnd = $to . ' 23:59:59';
+
+        $revenues = Account::where('type', 'revenue')->where('is_active', true)
+            ->whereDoesntHave('children') // الحسابات الورقية فقط
+            ->get()
+            ->map(function ($acc) use ($from, $toEnd) {
+                $totals = $acc->totalsForPeriod($from, $toEnd);
                 return [
                     'id' => $acc->id,
                     'code' => $acc->code,
@@ -544,9 +548,11 @@ class AccountingService
                 ];
             })->filter(fn($r) => $r['amount'] != 0)->values();
 
-        $expenses = Account::where('type', 'expense')->where('is_active', true)->get()
-            ->map(function ($acc) use ($from, $to) {
-                $totals = $acc->totalsForPeriod($from, $to);
+        $expenses = Account::where('type', 'expense')->where('is_active', true)
+            ->whereDoesntHave('children') // الحسابات الورقية فقط
+            ->get()
+            ->map(function ($acc) use ($from, $toEnd) {
+                $totals = $acc->totalsForPeriod($from, $toEnd);
                 return [
                     'id' => $acc->id,
                     'code' => $acc->code,
