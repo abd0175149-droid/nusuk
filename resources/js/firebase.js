@@ -3,12 +3,12 @@ import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import axios from 'axios';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAxjH7hHTj5TbTfT5WUyLFV0Jsc6nQx8_o",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "nusuk-930f3.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "nusuk-930f3",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "nusuk-930f3.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "982933275772",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:982933275772:web:b7ec5412c43e63f21f35f9"
 };
 
 const app = initializeApp(firebaseConfig);
