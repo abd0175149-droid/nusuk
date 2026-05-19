@@ -276,7 +276,11 @@ class AccountingService
         $agentAccount = $invoice->agent->account_id
             ? Account::find($invoice->agent->account_id)
             : self::account('1300');
-        $revenueAccount = self::account('4001');
+        // إيرادات الخدمات - نسجل على الحساب الورقي (الفرعي) وليس الأب
+        $revenueParent = self::account('4001');
+        $revenueAccount = Account::where('parent_id', $revenueParent->id)
+            ->whereDoesntHave('children')
+            ->first() ?? $revenueParent;
 
         $lines = [
             [
