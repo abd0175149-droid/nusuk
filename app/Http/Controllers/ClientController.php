@@ -113,8 +113,7 @@ class ClientController extends Controller
 
         $client = Client::create($validated);
 
-        // إنشاء حساب محاسبي فرعي تلقائياً
-        try { \App\Services\AccountLinkService::createClientAccount($client); } catch (\Exception $e) {}
+        // حساب محاسبي يُنشأ تلقائياً عبر ClientObserver
 
         return redirect()->route('clients.index')
             ->with('success', 'تم إضافة العميل بنجاح');

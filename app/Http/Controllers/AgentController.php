@@ -59,8 +59,7 @@ class AgentController extends Controller
 
         $agent = Agent::create($validated);
 
-        // إنشاء حساب محاسبي فرعي تلقائياً
-        try { \App\Services\AccountLinkService::createAgentAccount($agent); } catch (\Exception $e) {}
+        // حساب محاسبي يُنشأ تلقائياً عبر AgentObserver
 
         return redirect()->route('agents.index')
             ->with('success', 'تم إضافة الوكيل بنجاح');
