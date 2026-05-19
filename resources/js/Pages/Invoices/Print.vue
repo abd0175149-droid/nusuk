@@ -41,10 +41,12 @@
         </table>
 
         <div class="summary-box">
-            <div class="summary-row"><span>الإجمالي الفرعي</span><span class="mono">{{ Number(invoice.subtotal_sar).toFixed(2) }} SAR</span></div>
+            <div class="summary-row"><span>إجمالي التكلفة (SAR)</span><span class="mono">{{ Number(invoice.subtotal_sar).toFixed(2) }} SAR</span></div>
             <div class="summary-row" v-if="Number(invoice.discount_sar)>0"><span>الخصم</span><span class="mono red">-{{ Number(invoice.discount_sar).toFixed(2) }} SAR</span></div>
-            <div class="summary-row total"><span>الصافي</span><span class="mono">{{ Number(invoice.total_sar).toFixed(2) }} SAR</span></div>
-            <div class="summary-row total"><span>المبلغ بالدينار</span><span class="mono" style="color:#2563eb">{{ Number(invoice.total_jod).toFixed(3) }} JOD</span></div>
+            <div class="summary-row"><span>صافي التكلفة (SAR)</span><span class="mono">{{ Number(invoice.total_sar).toFixed(2) }} SAR</span></div>
+            <div class="summary-row" style="border-top:2px solid #e5e7eb;padding-top:8px;margin-top:4px;"><span>تكلفة الوكيل (JOD)</span><span class="mono" style="color:#ea580c">{{ (Number(invoice.total_sar) * Number(invoice.exchange_rate_snapshot)).toFixed(3) }} JOD</span></div>
+            <div class="summary-row total"><span>إجمالي العميل (JOD)</span><span class="mono" style="color:#2563eb">{{ Number(invoice.total_jod).toFixed(3) }} JOD</span></div>
+            <div class="summary-row total"><span>الربح</span><span class="mono" :style="{color: Number(invoice.profit_jod) >= 0 ? '#16a34a' : '#dc2626'}">{{ Number(invoice.profit_jod).toFixed(3) }} JOD</span></div>
         </div>
 
         <div v-if="invoice.notes" style="margin-top:12px;font-size:9pt;color:#666;"><strong>ملاحظات:</strong> {{ invoice.notes }}</div>
