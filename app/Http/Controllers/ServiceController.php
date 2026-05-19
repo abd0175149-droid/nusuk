@@ -28,8 +28,6 @@ class ServiceController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'default_price_sar' => 'required|numeric|min:0',
-            'default_price_jod' => 'required|numeric|min:0',
             'description' => 'nullable|string|max:1000',
         ]);
 
@@ -37,6 +35,8 @@ class ServiceController extends Controller
         $nextNum = $lastCode ? (int)substr($lastCode, 4) + 1 : 1;
         $validated['code'] = 'SRV-' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
         $validated['is_active'] = true;
+        $validated['default_price_sar'] = 0;
+        $validated['default_price_jod'] = 0;
 
         Service::create($validated);
 
@@ -47,8 +47,6 @@ class ServiceController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'default_price_sar' => 'required|numeric|min:0',
-            'default_price_jod' => 'required|numeric|min:0',
             'description' => 'nullable|string|max:1000',
             'is_active' => 'boolean',
         ]);

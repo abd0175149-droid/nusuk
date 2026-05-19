@@ -33,7 +33,12 @@ class AccountObserver
                 // Agent
                 $agent = Agent::where('account_id', $account->id)->first();
                 if (!$agent) {
-                    $entityData['code'] = 'AGT-' . rand(1000, 9999);
+                    $lastCode = Agent::where('code', 'like', 'AGT-%')->orderByDesc('code')->value('code');
+                    $nextNum = $lastCode ? (int)substr($lastCode, 4) + 1 : 1;
+                    $entityData['code'] = 'AGT-' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
+                    $entityData['country'] = 'JO';
+                    $entityData['currency'] = 'JOD';
+                    $entityData['balance_sar'] = 0;
                     Agent::create($entityData);
                 } else {
                     $agent->update(['name' => $account->name, 'is_active' => $account->is_active]);
@@ -42,14 +47,14 @@ class AccountObserver
                 // Client
                 $client = Client::where('account_id', $account->id)->first();
                 if (!$client) {
-                    $entityData['code'] = 'CLI-' . rand(1000, 9999);
-                    // Requires agent_id. Since we don't know the agent, we might need a default or leave nullable if the schema allows.
-                    // Assuming agent_id is required, we find the first agent. If no agent, create a default.
-                    $defaultAgent = Agent::first();
-                    if ($defaultAgent) {
-                        $entityData['agent_id'] = $defaultAgent->id;
-                        Client::create($entityData);
-                    }
+                    $lastCode = Client::where('code', 'like', 'CLT-%')->orderByDesc('code')->value('code');
+                    $nextNum = $lastCode ? (int)substr($lastCode, 4) + 1 : 1;
+                    $entityData['code'] = 'CLT-' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
+                    $entityData['country'] = 'JO';
+                    $entityData['currency'] = 'JOD';
+                    $entityData['balance_jod'] = 0;
+                    $entityData['credit_limit_jod'] = 0;
+                    Client::create($entityData);
                 } else {
                     $client->update(['name' => $account->name, 'is_active' => $account->is_active]);
                 }
@@ -57,7 +62,11 @@ class AccountObserver
                 // Service
                 $service = Service::where('account_id', $account->id)->first();
                 if (!$service) {
-                    $entityData['code'] = 'SRV-' . rand(100, 999);
+                    $lastCode = Service::where('code', 'like', 'SRV-%')->orderByDesc('code')->value('code');
+                    $nextNum = $lastCode ? (int)substr($lastCode, 4) + 1 : 1;
+                    $entityData['code'] = 'SRV-' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
+                    $entityData['default_price_sar'] = 0;
+                    $entityData['default_price_jod'] = 0;
                     Service::create($entityData);
                 } else {
                     $service->update(['name' => $account->name, 'is_active' => $account->is_active]);
