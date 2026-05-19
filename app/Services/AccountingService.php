@@ -381,8 +381,18 @@ class AccountingService
      */
     public static function recordExpense(Expense $expense): JournalEntry
     {
+        $expense->loadMissing('category');
+
         $paymentAccount = self::paymentAccount($expense->payment_method);
-        $expenseAccount = self::account('5100');
+
+        // استخدام حساب التصنيف الفرعي إن وجد، وإلا الحساب الأب
+        $expenseAccount = ($expense->category && $expense->category->account_id)
+            ? Account::find($expense->category->account_id)
+            : self::account('5100');
+
+        if (!$expenseAccount) {
+            $expenseAccount = self::account('5100');
+        }
 
         // تحويل العملة إذا كان المبلغ بالريال
         $amountJod = ($expense->currency === 'SAR')
@@ -406,7 +416,8 @@ class AccountingService
                     'credit' => $amountJod,
                     'description' => "دفع مصروف {$expense->expense_number}",
                 ],
-            ]
+            ],
+            $expense->expense_date?->toDateString()
         );
     }
 

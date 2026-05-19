@@ -70,6 +70,11 @@ Route::middleware('auth')->group(function () {
     Route::post('api/fcm-token', [\App\Http\Controllers\FcmTokenController::class, 'store']);
     Route::delete('api/fcm-token', [\App\Http\Controllers\FcmTokenController::class, 'destroy']);
 
+    // API: Notifications
+    Route::get('api/notifications', [\App\Http\Controllers\NotificationController::class, 'index']);
+    Route::post('api/notifications/{notification}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead']);
+    Route::post('api/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead']);
+
     // Expense Categories
     Route::resource('expense-categories', \App\Http\Controllers\ExpenseCategoryController::class)->only(['index', 'store', 'update', 'destroy']);
 

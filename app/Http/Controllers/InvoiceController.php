@@ -183,6 +183,7 @@ class InvoiceController extends Controller
 
             // قيد محاسبي
             try { \App\Services\AccountingService::recordInvoice($invoice); } catch (\Exception $e) { \Log::error('Accounting Invoice: ' . $e->getMessage()); }
+            try { \App\Services\NotificationService::invoiceCreated($invoice); } catch (\Exception $e) {}
         });
 
         AuditLog::log('approve', 'invoice', $invoice->id, $invoice->invoice_number);

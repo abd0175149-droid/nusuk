@@ -65,6 +65,9 @@ class ExpenseController extends Controller
         // قيد محاسبي
         try { \App\Services\AccountingService::recordExpense($expense); } catch (\Exception $e) { \Log::error('Accounting Expense: ' . $e->getMessage()); }
 
+        // إشعار
+        try { \App\Services\NotificationService::expenseApproved($expense); } catch (\Exception $e) {}
+
         return back()->with('success', 'تم اعتماد المصروف');
     }
 

@@ -105,14 +105,46 @@
 
                 <div class="flex items-center gap-1 sm:gap-3">
                     <!-- Notification Bell -->
-                    <button class="relative p-2 rounded-lg transition-colors"
-                            :class="isDark ? 'text-gray-400 hover:text-gold-400 hover:bg-gray-800' : 'text-gray-500 hover:text-gold-600 hover:bg-gray-100'">
-                        <span class="text-lg sm:text-xl">🔔</span>
-                        <span v-if="unreadCount > 0"
-                              class="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                            {{ unreadCount }}
-                        </span>
-                    </button>
+                    <div class="relative">
+                        <button @click="toggleNotifications" class="relative p-2 rounded-lg transition-colors"
+                                :class="isDark ? 'text-gray-400 hover:text-gold-400 hover:bg-gray-800' : 'text-gray-500 hover:text-gold-600 hover:bg-gray-100'">
+                            <span class="text-lg sm:text-xl">🔔</span>
+                            <span v-if="unreadCount > 0"
+                                  class="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
+                                {{ unreadCount > 9 ? '9+' : unreadCount }}
+                            </span>
+                        </button>
+                        <!-- Notifications Dropdown -->
+                        <div v-if="showNotifications"
+                             class="absolute left-0 sm:left-auto sm:right-0 mt-2 w-80 max-h-96 overflow-y-auto rounded-xl shadow-2xl border z-50"
+                             :class="isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'">
+                            <div class="flex items-center justify-between p-3 border-b" :class="isDark ? 'border-gray-700' : 'border-gray-100'">
+                                <span class="font-bold text-sm">الإشعارات</span>
+                                <button v-if="notifications.length" @click="markAllRead" class="text-xs text-blue-500 hover:underline">تعليم الكل كمقروء</button>
+                            </div>
+                            <div v-if="notificationsLoading" class="p-6 text-center text-gray-400 text-sm">جاري التحميل...</div>
+                            <div v-else-if="!notifications.length" class="p-6 text-center text-gray-400 text-sm">لا يوجد إشعارات</div>
+                            <div v-else>
+                                <div v-for="n in notifications" :key="n.id"
+                                     @click="openNotification(n)"
+                                     class="p-3 cursor-pointer border-b transition-colors text-sm"
+                                     :class="[
+                                         isDark ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-50 hover:bg-gray-50',
+                                         !n.read_at ? (isDark ? 'bg-blue-900/20' : 'bg-blue-50/50') : ''
+                                     ]">
+                                    <div class="flex items-start gap-2">
+                                        <span class="mt-0.5">{{ {info:'ℹ️',success:'✅',warning:'⚠️',error:'❌'}[n.type] || 'ℹ️' }}</span>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="font-bold text-xs" :class="!n.read_at ? 'text-blue-600' : ''">{{ n.title }}</p>
+                                            <p class="text-xs mt-0.5 truncate" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ n.body }}</p>
+                                            <p class="text-[10px] mt-1" :class="isDark ? 'text-gray-500' : 'text-gray-400'">{{ n.time_ago }}</p>
+                                        </div>
+                                        <span v-if="!n.read_at" class="w-2 h-2 bg-blue-500 rounded-full mt-1 flex-shrink-0"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Theme Toggle -->
                     <button @click="toggleTheme"
@@ -142,6 +174,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { usePage, Link, router } from '@inertiajs/vue3';
 import { requestFirebaseToken } from '../../firebase';
+import axios from 'axios';
 
 const page = usePage();
 const user = computed(() => page.props.auth?.user);
@@ -149,6 +182,46 @@ const isDark = ref(document.documentElement.classList.contains('dark'));
 const isMobile = ref(window.innerWidth < 1024);
 const sidebarOpen = ref(!isMobile.value);
 const unreadCount = computed(() => page.props.unreadNotifications || 0);
+
+// Notification state
+const showNotifications = ref(false);
+const notifications = ref([]);
+const notificationsLoading = ref(false);
+
+const toggleNotifications = async () => {
+    showNotifications.value = !showNotifications.value;
+    if (showNotifications.value) {
+        notificationsLoading.value = true;
+        try {
+            const { data } = await axios.get('/api/notifications');
+            notifications.value = data.notifications;
+        } catch (e) { console.warn('Failed to load notifications'); }
+        notificationsLoading.value = false;
+    }
+};
+
+const openNotification = async (n) => {
+    if (!n.read_at) {
+        await axios.post(`/api/notifications/${n.id}/read`);
+        n.read_at = new Date().toISOString();
+    }
+    showNotifications.value = false;
+    if (n.action_url) router.visit(n.action_url);
+};
+
+const markAllRead = async () => {
+    await axios.post('/api/notifications/read-all');
+    notifications.value.forEach(n => n.read_at = new Date().toISOString());
+    showNotifications.value = false;
+    router.reload({ only: ['unreadNotifications'] });
+};
+
+// Close dropdown on outside click
+const handleClickOutside = (e) => {
+    if (showNotifications.value && !e.target.closest('.relative')) {
+        showNotifications.value = false;
+    }
+};
 
 // حالة السايدبار المرئية
 const sidebarVisible = computed(() => {
@@ -176,6 +249,7 @@ const removeBeforeListener = router.on('before', () => {
 
 onMounted(() => {
     window.addEventListener('resize', handleResize);
+    document.addEventListener('click', handleClickOutside);
     
     // Request FCM Token for notifications
     if (user.value) {
@@ -199,6 +273,7 @@ onMounted(() => {
 
 onUnmounted(() => {
     window.removeEventListener('resize', handleResize);
+    document.removeEventListener('click', handleClickOutside);
     removeBeforeListener();
 });
 

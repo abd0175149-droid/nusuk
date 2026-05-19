@@ -70,6 +70,7 @@ class ReceiptController extends Controller
             );
             // قيد محاسبي
             try { AccountingService::recordReceipt($receipt); } catch (\Exception $e) { \Log::error('Accounting Receipt: ' . $e->getMessage()); }
+            try { \App\Services\NotificationService::receiptCreated($receipt); } catch (\Exception $e) {}
         });
 
         return back()->with('success', 'تم اعتماد سند القبض');

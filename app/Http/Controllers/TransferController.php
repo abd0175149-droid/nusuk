@@ -74,6 +74,7 @@ class TransferController extends Controller
             AuditLog::log('approve', 'transfer', $transfer->id, $transfer->transfer_number);
             // قيد محاسبي
             try { \App\Services\AccountingService::recordTransfer($transfer); } catch (\Exception $e) { \Log::error('Accounting Transfer: ' . $e->getMessage()); }
+            try { \App\Services\NotificationService::transferApproved($transfer); } catch (\Exception $e) {}
         });
 
         return back()->with('success', "تم اعتماد الحوالة {$transfer->transfer_number}");
