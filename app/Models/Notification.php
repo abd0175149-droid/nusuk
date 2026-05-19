@@ -18,6 +18,7 @@ class Notification extends Model
         'data' => 'array',
         'is_read' => 'boolean',
         'read_at' => 'datetime',
+        'created_at' => 'datetime',
     ];
 
     protected static function booted()
