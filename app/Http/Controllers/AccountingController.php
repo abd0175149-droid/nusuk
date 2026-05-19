@@ -382,7 +382,7 @@ class AccountingController extends Controller
     public function periods()
     {
         $periods = AccountingPeriod::orderByDesc('year')->orderByDesc('month')->get();
-        $years = JournalEntry::selectRaw('YEAR(entry_date) as year')
+        $years = JournalEntry::selectRaw("strftime('%Y', entry_date) as year")
             ->groupBy('year')->orderByDesc('year')->pluck('year');
 
         return Inertia::render('Accounting/Periods', [
