@@ -233,7 +233,6 @@ const menuGroups = [
     { label: '📈 التقارير', items: [
         { icon: '📊', label: 'أرصدة الوكلاء', route: '/reports/agents-balances', permission: 'reports.view' },
         { icon: '📋', label: 'ذمم العملاء', route: '/reports/clients-balances', permission: 'reports.view' },
-        { icon: '💹', label: 'الأرباح والخسائر', route: '/reports/profit-loss', permission: 'reports.view' },
         { icon: '📅', label: 'الملخص اليومي', route: '/reports/daily-summary', permission: 'reports.view' },
     ]},
     { label: '🏛️ المحاسبة', items: [

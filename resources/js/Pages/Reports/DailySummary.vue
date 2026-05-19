@@ -46,6 +46,13 @@
                 <tbody><tr v-for="v in violations" :key="v.id" class="border-t"><td class="px-3 py-2 font-mono">{{ v.violation_number }}</td><td class="px-3 py-2">{{ v.agent?.name }}</td><td class="px-3 py-2">{{ v.violation_type?.name }}</td><td class="px-3 py-2 font-mono" dir="ltr">{{ Number(v.cost_sar).toFixed(2) }} SAR</td><td class="px-3 py-2"><span class="px-1.5 py-0.5 rounded text-xs" :class="{'bg-yellow-100 text-yellow-700':v.status==='pending','bg-green-100 text-green-700':v.status==='approved','bg-red-100 text-red-700':v.status==='rejected'}">{{ {pending:'معلقة',approved:'معتمدة',rejected:'مرفوضة'}[v.status] }}</span></td></tr></tbody></table>
             </section>
 
+            <!-- Expenses -->
+            <section v-if="expenses.length" class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+                <h4 class="font-bold text-sm text-gray-700 mb-3">💰 المصاريف ({{ expenses.length }})</h4>
+                <table class="w-full text-xs"><thead><tr class="bg-gray-50"><th class="px-3 py-2 text-right">الرقم</th><th class="px-3 py-2 text-right">التصنيف</th><th class="px-3 py-2 text-right">الوصف</th><th class="px-3 py-2 text-right">المبلغ</th><th class="px-3 py-2 text-right">الحالة</th></tr></thead>
+                <tbody><tr v-for="e in expenses" :key="e.id" class="border-t"><td class="px-3 py-2 font-mono">{{ e.expense_number }}</td><td class="px-3 py-2">{{ e.category?.name }}</td><td class="px-3 py-2">{{ e.description }}</td><td class="px-3 py-2 font-mono" dir="ltr">{{ Number(e.amount).toFixed(2) }} {{ e.currency }}</td><td class="px-3 py-2"><span class="px-1.5 py-0.5 rounded text-xs" :class="{'bg-yellow-100 text-yellow-700':e.status==='pending','bg-green-100 text-green-700':e.status==='approved','bg-red-100 text-red-700':e.status==='rejected'}">{{ {pending:'معلقة',approved:'معتمدة',rejected:'مرفوضة'}[e.status] }}</span></td></tr></tbody></table>
+            </section>
+
             <p v-if="!transfers.length && !receipts.length && !invoices.length && !violations.length && !expenses.length" class="text-center text-gray-400 py-12">لا يوجد عمليات في هذا اليوم</p>
         </div>
     </AppLayout>
