@@ -2,7 +2,16 @@ import { createApp, h } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { ZiggyVue } from 'ziggy-js';
+import axios from 'axios';
 import '../css/app.css';
+
+// Axios global setup: CSRF token + credentials
+axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+axios.defaults.withCredentials = true;
+const csrfToken = document.querySelector('meta[name="csrf-token"]');
+if (csrfToken) {
+    axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken.content;
+}
 
 createInertiaApp({
     title: (title) => title ? `${title} - NUSUK` : 'NUSUK',

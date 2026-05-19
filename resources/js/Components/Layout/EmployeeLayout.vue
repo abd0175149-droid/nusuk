@@ -113,15 +113,21 @@ const goHome = () => router.visit('/');
 const showNotifications = ref(false);
 const notifications = ref([]);
 const notificationsLoading = ref(false);
+let pollInterval = null;
 
 const toggleNotifications = async () => {
     showNotifications.value = !showNotifications.value;
     if (showNotifications.value) {
         notificationsLoading.value = true;
         try {
-            const { data } = await axios.get('/api/notifications');
-            notifications.value = data.notifications;
-        } catch (e) { console.warn('Failed to load notifications'); }
+            const { data } = await axios.get('/api/notifications', {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            notifications.value = data.notifications || [];
+        } catch (e) {
+            console.warn('Failed to load notifications', e);
+            notifications.value = [];
+        }
         notificationsLoading.value = false;
     }
 };
@@ -136,7 +142,11 @@ const openNotification = async (n) => {
 };
 
 const markAllRead = async () => {
-    await axios.post('/api/notifications/read-all');
+    try {
+        await axios.post('/api/notifications/read-all', {}, {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        });
+    } catch(e) {}
     notifications.value.forEach(n => n.is_read = true);
     showNotifications.value = false;
     router.reload({ only: ['unreadNotifications'] });
@@ -161,10 +171,15 @@ onMounted(() => {
     if (user.value) {
         try { requestFirebaseToken(); } catch(e) {}
     }
+    // Polling: تحديث عداد الإشعارات كل 15 ثانية
+    pollInterval = setInterval(() => {
+        router.reload({ only: ['unreadNotifications'] });
+    }, 15000);
 });
 
 onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside);
+    if (pollInterval) clearInterval(pollInterval);
 });
 
 const can = (permission) => {

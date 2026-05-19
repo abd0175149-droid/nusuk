@@ -187,15 +187,21 @@ const unreadCount = computed(() => page.props.unreadNotifications || 0);
 const showNotifications = ref(false);
 const notifications = ref([]);
 const notificationsLoading = ref(false);
+let pollInterval = null;
 
 const toggleNotifications = async () => {
     showNotifications.value = !showNotifications.value;
     if (showNotifications.value) {
         notificationsLoading.value = true;
         try {
-            const { data } = await axios.get('/api/notifications');
-            notifications.value = data.notifications;
-        } catch (e) { console.warn('Failed to load notifications'); }
+            const { data } = await axios.get('/api/notifications', {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            notifications.value = data.notifications || [];
+        } catch (e) {
+            console.warn('Failed to load notifications', e);
+            notifications.value = [];
+        }
         notificationsLoading.value = false;
     }
 };
@@ -210,7 +216,11 @@ const openNotification = async (n) => {
 };
 
 const markAllRead = async () => {
-    await axios.post('/api/notifications/read-all');
+    try {
+        await axios.post('/api/notifications/read-all', {}, {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        });
+    } catch(e) {}
     notifications.value.forEach(n => n.is_read = true);
     showNotifications.value = false;
     router.reload({ only: ['unreadNotifications'] });
@@ -253,8 +263,13 @@ onMounted(() => {
     
     // Request FCM Token for notifications
     if (user.value) {
-        requestFirebaseToken();
+        try { requestFirebaseToken(); } catch(e) {}
     }
+    
+    // Polling: تحديث عداد الإشعارات كل 15 ثانية
+    pollInterval = setInterval(() => {
+        router.reload({ only: ['unreadNotifications'] });
+    }, 15000);
     
     // Restore sidebar groups state
     const savedGroups = localStorage.getItem('nusuk-sidebar-groups');
@@ -275,6 +290,7 @@ onUnmounted(() => {
     window.removeEventListener('resize', handleResize);
     document.removeEventListener('click', handleClickOutside);
     removeBeforeListener();
+    if (pollInterval) clearInterval(pollInterval);
 });
 
 const can = (permission) => {
