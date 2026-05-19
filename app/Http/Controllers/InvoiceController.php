@@ -76,10 +76,13 @@ class InvoiceController extends Controller
             $servicesCost = 0;
             $violationsCost = 0;
             $subtotal = 0;
+            $totalSellJod = 0;
 
             foreach ($validated['items'] as $item) {
                 $lineTotal = $item['quantity'] * $item['unit_price_sar'];
+                $lineSellJod = $item['quantity'] * $item['sell_price_jod'];
                 $subtotal += $lineTotal;
+                $totalSellJod += $lineSellJod;
                 if ($item['item_type'] === 'service') {
                     $servicesCost += $lineTotal;
                 } else {
@@ -88,7 +91,13 @@ class InvoiceController extends Controller
             }
 
             $totalSar = $subtotal - $discount;
-            $totalJod = round($totalSar * $rate, 3);
+            // إجمالي العميل بالدينار (مجموع سعر البيع × الكمية)
+            $totalJod = round($totalSellJod, 3);
+            // تكلفة الوكيل بالدينار
+            $agentCostJod = round($totalSar * $rate, 3);
+            // الربح = إجمالي العميل - تكلفة الوكيل
+            $profitJod = round($totalJod - $agentCostJod, 3);
+            $profitSar = $rate > 0 ? round($profitJod / $rate, 2) : 0;
 
             $invoice = Invoice::create([
                 'invoice_number' => NumberingService::generate('INV'),
@@ -101,8 +110,8 @@ class InvoiceController extends Controller
                 'total_jod' => $totalJod,
                 'services_cost_sar' => $servicesCost,
                 'violations_cost_sar' => $violationsCost,
-                'profit_sar' => 0,
-                'profit_jod' => 0,
+                'profit_sar' => $profitSar,
+                'profit_jod' => $profitJod,
                 'invoice_date' => now()->toDateString(),
                 'status' => 'pending',
                 'notes' => $validated['notes'] ?? null,
