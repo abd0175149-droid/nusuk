@@ -7,7 +7,7 @@
 
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <input v-model="search" type="text" placeholder="بحث بالاسم أو الكود أو الهاتف..." class="w-72 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500" @input="debounceSearch" />
-                <button @click="openModal(null)" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md hover:shadow-gold-500/25">+ إضافة وكيل</button>
+                <button v-if="can('agents.create')" @click="openModal(null)" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md hover:shadow-gold-500/25">+ إضافة وكيل</button>
             </div>
 
             <div class="rounded-xl border overflow-hidden shadow-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
@@ -30,8 +30,8 @@
                             <td class="px-5 py-3 text-center whitespace-nowrap">
                                 <a :href="'/agents/'+a.id" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg">📊 كشف</a>
                                 <button @click="openView(a)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg">👁️ عرض</button>
-                                <button @click="openModal(a)" class="px-2 py-1 text-xs text-gold-700 hover:bg-gold-50 rounded-lg">✏️ تعديل</button>
-                                <button @click="del(a)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️ حذف</button>
+                                <button v-if="can('agents.update')" @click="openModal(a)" class="px-2 py-1 text-xs text-gold-700 hover:bg-gold-50 rounded-lg">✏️ تعديل</button>
+                                <button v-if="can('agents.delete')" @click="del(a)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️ حذف</button>
                             </td>
                         </tr>
                         <tr v-if="!agents.data?.length"><td colspan="6" class="px-5 py-12 text-center text-gray-400">لا يوجد وكلاء</td></tr>
@@ -143,6 +143,8 @@
 import { ref, computed, watch } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/SmartLayout.vue';
+import { usePermissions } from '@/composables/usePermissions';
+const { can } = usePermissions();
 
 const saCities = ['الرياض','جدة','مكة المكرمة','المدينة المنورة','الدمام','الخبر','الطائف','تبوك','أبها','القصيم','حائل','نجران','ينبع','الأحساء','الجبيل','القطيف'];
 const joCities = ['عمان','إربد','الزرقاء','العقبة','السلط','الكرك','مادبا','جرش','عجلون','معان','الطفيلة','البلقاء'];

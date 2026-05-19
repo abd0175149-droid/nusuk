@@ -15,7 +15,7 @@
                         <option value="rejected">مرفوضة</option>
                     </select>
                 </div>
-                <button @click="openForm()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md">+ حوالة جديدة</button>
+                <button v-if="can('transfers.create')" @click="openForm()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md">+ حوالة جديدة</button>
             </div>
 
             <div class="rounded-xl border overflow-hidden shadow-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
@@ -41,9 +41,9 @@
                             <td class="px-5 py-3 text-xs text-gray-500"><div>📝 {{ t.creator?.name || '—' }}</div><div v-if="t.status !== 'pending'" class="mt-0.5">{{ t.status === 'approved' ? '✅' : '❌' }} {{ t.approver?.name || '—' }}</div></td>
                             <td class="px-5 py-3 text-center space-x-1 space-x-reverse">
                                 <template v-if="t.status==='pending'">
-                                    <button @click="approveItem(t)" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg">✅ اعتماد</button>
-                                    <button @click="rejectTarget=t" class="px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 rounded-lg">❌ رفض</button>
-                                    <button @click="deleteTarget=t" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button>
+                                    <button v-if="can('transfers.approve')" @click="approveItem(t)" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg">✅ اعتماد</button>
+                                    <button v-if="can('transfers.reject')" @click="rejectTarget=t" class="px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 rounded-lg">❌ رفض</button>
+                                    <button v-if="can('transfers.delete')" @click="deleteTarget=t" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button>
                                 </template>
                                 <span v-else class="text-xs text-gray-400">—</span>
                             </td>
@@ -107,6 +107,8 @@ import { ref, computed, watch } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/SmartLayout.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
+import { usePermissions } from '@/composables/usePermissions';
+const { can } = usePermissions();
 const props = defineProps({ transfers: Object, filters: Object, agents: Array });
 const agentOptions = computed(() => props.agents.map(a => ({ value: a.id, label: `${a.name} (${a.code})` })));
 const search = ref(props.filters?.search||'');

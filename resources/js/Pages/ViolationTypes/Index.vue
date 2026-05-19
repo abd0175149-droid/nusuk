@@ -60,6 +60,8 @@
 import { ref } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/SmartLayout.vue';
+import { usePermissions } from '@/composables/usePermissions';
+const { can } = usePermissions();
 const props = defineProps({ types: Object, filters: Object });
 const search = ref(props.filters?.search||'');
 const showForm = ref(false); const editItem = ref(null); const deleteTarget = ref(null);

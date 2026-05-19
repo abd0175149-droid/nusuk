@@ -13,7 +13,7 @@
                         <option value="">كل الحالات</option><option value="pending">معلقة</option><option value="approved">معتمدة</option><option value="rejected">مرفوضة</option>
                     </select>
                 </div>
-                <button @click="openPOS()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md hover:shadow-gold-500/25">🧾 فاتورة جديدة</button>
+                <button v-if="can('invoices.create')" @click="openPOS()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md hover:shadow-gold-500/25">🧾 فاتورة جديدة</button>
             </div>
 
             <!-- Table -->
@@ -44,9 +44,9 @@
                             <td class="px-4 py-3 text-center whitespace-nowrap">
                                 <a :href="'/invoices/'+inv.id+'/print'" target="_blank" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg">🖨️</a>
                                 <button @click="viewInv(inv)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg">👁️</button>
-                                <button v-if="inv.status==='pending'" @click="approveInv(inv)" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg">✅</button>
-                                <button v-if="inv.status==='pending'" @click="rejectInv(inv)" class="px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 rounded-lg">❌</button>
-                                <button v-if="inv.status!=='approved'" @click="delInv(inv)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button>
+                                <button v-if="inv.status==='pending' && can('invoices.approve')" @click="approveInv(inv)" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg">✅</button>
+                                <button v-if="inv.status==='pending' && can('invoices.reject')" @click="rejectInv(inv)" class="px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 rounded-lg">❌</button>
+                                <button v-if="inv.status!=='approved' && can('invoices.delete')" @click="delInv(inv)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button>
                             </td>
                         </tr>
                         <tr v-if="!invoices.data?.length"><td colspan="9" class="px-5 py-12 text-center text-gray-400">لا يوجد فواتير</td></tr>
@@ -180,6 +180,8 @@
 import { ref, computed, reactive } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/SmartLayout.vue';
+import { usePermissions } from '@/composables/usePermissions';
+const { can } = usePermissions();
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 
 const props = defineProps({ invoices: Object, filters: Object, agents: Array, clients: Array, services: Array, exchangeRate: Number });

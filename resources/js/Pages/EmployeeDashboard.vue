@@ -65,16 +65,25 @@ const can = (permission) => {
     return page.props.auth?.isAdmin || perms.includes(permission);
 };
 
+// التحقق إذا المستخدم عنده أي صلاحية في الموديول (view أو create أو update أو أي شي)
+const canAny = (module) => {
+    const perms = page.props.auth?.permissions || [];
+    if (page.props.auth?.isAdmin) return true;
+    return perms.some(p => p.startsWith(module + '.'));
+};
+
 const allCards = [
-    { icon: '🏢', label: 'الوكلاء', route: '/agents', permission: 'agents.view', color: 'blue' },
-    { icon: '👥', label: 'العملاء', route: '/clients', permission: 'clients.view', color: 'green' },
-    { icon: '💱', label: 'الحوالات', route: '/transfers', permission: 'transfers.view', color: 'purple' },
-    { icon: '📄', label: 'سندات القبض', route: '/receipts', permission: 'receipts.view', color: 'cyan' },
-    { icon: '⚠️', label: 'المخالفات', route: '/violations', permission: 'violations.view', color: 'orange' },
-    { icon: '🧾', label: 'الفواتير', route: '/invoices', permission: 'invoices.view', color: 'indigo' },
-    { icon: '💰', label: 'المصاريف', route: '/expenses', permission: 'expenses.view', color: 'red' },
-    { icon: '📊', label: 'الملخص اليومي', route: '/reports/daily-summary', permission: 'reports.view', color: 'teal' },
+    { icon: '🏢', label: 'الوكلاء', route: '/agents', module: 'agents' },
+    { icon: '👥', label: 'العملاء', route: '/clients', module: 'clients' },
+    { icon: '💱', label: 'الحوالات', route: '/transfers', module: 'transfers' },
+    { icon: '📄', label: 'سندات القبض', route: '/receipts', module: 'receipts' },
+    { icon: '⚠️', label: 'المخالفات', route: '/violations', module: 'violations' },
+    { icon: '🧾', label: 'الفواتير', route: '/invoices', module: 'invoices' },
+    { icon: '💰', label: 'المصاريف', route: '/expenses', module: 'expenses' },
+    { icon: '🔧', label: 'الخدمات', route: '/services', module: 'services' },
+    { icon: '📋', label: 'أنواع المخالفات', route: '/violation-types', module: 'violation_types' },
+    { icon: '📊', label: 'الملخص اليومي', route: '/reports/daily-summary', module: 'reports' },
 ];
 
-const availableCards = computed(() => allCards.filter(c => can(c.permission)));
+const availableCards = computed(() => allCards.filter(c => canAny(c.module)));
 </script>

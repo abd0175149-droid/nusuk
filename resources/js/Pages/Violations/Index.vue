@@ -10,7 +10,7 @@
                     <select v-model="statusFilter" class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm" @change="applyFilter"><option value="">كل الحالات</option><option value="pending">معلقة</option><option value="approved">معتمدة</option><option value="rejected">مرفوضة</option></select>
                     <select v-model="billingFilter" class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm" @change="applyFilter"><option value="">كل الفوترة</option><option value="unbilled">غير مفوترة</option><option value="billed">مفوترة</option></select>
                 </div>
-                <button @click="openModal()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md">+ تسجيل مخالفة</button>
+                <button v-if="can('violations.create')" @click="openModal()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md">+ تسجيل مخالفة</button>
             </div>
             <div class="rounded-xl border overflow-hidden shadow-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
                 <div class="overflow-x-auto">
@@ -39,9 +39,9 @@
                         <td class="px-4 py-3 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="v.billing_status==='billed'?'bg-blue-100 text-blue-700':'bg-gray-100 text-gray-600'">{{ v.billing_status==='billed'?'مفوترة':'غير مفوترة' }}</span></td>
                         <td class="px-4 py-3 text-right text-xs text-gray-500"><div>📝 {{ v.creator?.name || '—' }}</div><div v-if="v.status !== 'pending'" class="mt-0.5">{{ v.status === 'approved' ? '✅' : '❌' }} {{ v.approver?.name || '—' }}</div></td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
-                            <button v-if="v.status==='pending'" @click="approveVio(v)" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg">✅</button>
-                            <button v-if="v.status==='pending'" @click="rejectVio(v)" class="px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 rounded-lg">❌</button>
-                            <button v-if="v.status==='pending'" @click="del(v)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button>
+                            <button v-if="v.status==='pending' && can('violations.approve')" @click="approveVio(v)" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg">✅</button>
+                            <button v-if="v.status==='pending' && can('violations.reject')" @click="rejectVio(v)" class="px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 rounded-lg">❌</button>
+                            <button v-if="v.status==='pending' && can('violations.delete')" @click="del(v)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button>
                         </td>
                     </tr>
                     <tr v-if="!violations.data?.length"><td colspan="10" class="px-5 py-12 text-center text-gray-400">لا يوجد مخالفات</td></tr>
@@ -91,6 +91,8 @@
 import { ref, computed } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/SmartLayout.vue';
+import { usePermissions } from '@/composables/usePermissions';
+const { can } = usePermissions();
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 
 const props = defineProps({ violations: Object, filters: Object, agents: Array, clients: Array, violationTypes: Array });

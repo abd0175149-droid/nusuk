@@ -6,7 +6,7 @@
             <div v-if="$page.props.flash?.error" class="p-4 rounded-xl border text-sm bg-red-50 border-red-200 text-red-700">❌ {{ $page.props.flash.error }}</div>
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <input v-model="search" type="text" placeholder="بحث..." class="w-64 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500" @input="debounceSearch"/>
-                <button @click="openForm()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md">+ مصروف جديد</button>
+                <button v-if="can('expenses.create')" @click="openForm()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md">+ مصروف جديد</button>
             </div>
             <div class="rounded-xl border overflow-hidden shadow-sm bg-white"><table class="w-full text-sm">
                 <thead><tr class="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400"><th class="px-5 py-3 text-right font-bold">الرقم</th><th class="px-5 py-3 text-right font-bold">التصنيف</th><th class="px-5 py-3 text-right font-bold">الوصف</th><th class="px-5 py-3 text-right font-bold">المبلغ</th><th class="px-5 py-3 text-right font-bold">الحالة</th><th class="px-5 py-3 text-right font-bold">بواسطة</th><th class="px-5 py-3 text-center font-bold">إجراءات</th></tr></thead>
@@ -19,7 +19,7 @@
                     <td class="px-5 py-3 text-right text-xs text-gray-500"><div>📝 {{ e.creator?.name || '—' }}</div><div v-if="e.status !== 'pending'" class="mt-0.5">{{ e.status === 'approved' ? '✅' : '❌' }} {{ e.approver?.name || '—' }}</div></td>
                     <td class="px-5 py-3 text-center whitespace-nowrap">
                         <a :href="'/expenses/'+e.id+'/print'" target="_blank" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg">🖨️</a>
-                        <template v-if="e.status==='pending'"><button @click="router.post('/expenses/'+e.id+'/approve')" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg">✅</button><button @click="router.delete('/expenses/'+e.id)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button></template>
+                        <template v-if="e.status==='pending'"><button v-if="can('expenses.approve')" @click="router.post('/expenses/'+e.id+'/approve')" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg">✅</button><button v-if="can('expenses.delete')" @click="router.delete('/expenses/'+e.id)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button></template>
                     </td>
                 </tr><tr v-if="!expenses.data?.length"><td colspan="7" class="px-5 py-12 text-center text-gray-400">لا يوجد مصروفات</td></tr></tbody>
             </table></div>
@@ -46,6 +46,8 @@
 import { ref, computed } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/SmartLayout.vue';
+import { usePermissions } from '@/composables/usePermissions';
+const { can } = usePermissions();
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 const props = defineProps({ expenses: Object, filters: Object, categories: Array });
 const categoryOptions = computed(() => props.categories.map(c => ({ value: c.id, label: c.name })));

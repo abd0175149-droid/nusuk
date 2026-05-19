@@ -22,7 +22,7 @@
                         <td class="px-5 py-3"><span class="px-2.5 py-1 rounded-full text-xs font-bold" :class="s.is_active?'bg-green-100 text-green-700':'bg-red-100 text-red-700'">{{ s.is_active?'نشط':'معطل' }}</span></td>
                         <td class="px-5 py-3 text-center">
                             <button @click="openModal(s)" class="px-2 py-1 text-xs text-gold-700 hover:bg-gold-50 rounded-lg">✏️</button>
-                            <button @click="del(s)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button>
+                            <button v-if="can('services.delete')" @click="del(s)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button>
                         </td>
                     </tr>
                     <tr v-if="!services.data?.length"><td colspan="4" class="px-5 py-12 text-center text-gray-400">لا يوجد خدمات</td></tr>
@@ -59,6 +59,8 @@
 import { ref } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/SmartLayout.vue';
+import { usePermissions } from '@/composables/usePermissions';
+const { can } = usePermissions();
 const props = defineProps({ services: Object, filters: Object });
 const search = ref(props.filters?.search||'');
 const showForm = ref(false); const editItem = ref(null); const deleteTarget = ref(null);
