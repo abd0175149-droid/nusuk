@@ -130,16 +130,16 @@
                                      class="p-3 cursor-pointer border-b transition-colors text-sm"
                                      :class="[
                                          isDark ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-50 hover:bg-gray-50',
-                                         !n.read_at ? (isDark ? 'bg-blue-900/20' : 'bg-blue-50/50') : ''
+                                         !n.is_read ? (isDark ? 'bg-blue-900/20' : 'bg-blue-50/50') : ''
                                      ]">
                                     <div class="flex items-start gap-2">
-                                        <span class="mt-0.5">{{ {info:'ℹ️',success:'✅',warning:'⚠️',error:'❌'}[n.type] || 'ℹ️' }}</span>
+                                        <span class="mt-0.5">{{ n.icon || 'ℹ️' }}</span>
                                         <div class="flex-1 min-w-0">
-                                            <p class="font-bold text-xs" :class="!n.read_at ? 'text-blue-600' : ''">{{ n.title }}</p>
+                                            <p class="font-bold text-xs" :class="!n.is_read ? 'text-blue-600' : ''">{{ n.title }}</p>
                                             <p class="text-xs mt-0.5 truncate" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ n.body }}</p>
                                             <p class="text-[10px] mt-1" :class="isDark ? 'text-gray-500' : 'text-gray-400'">{{ n.time_ago }}</p>
                                         </div>
-                                        <span v-if="!n.read_at" class="w-2 h-2 bg-blue-500 rounded-full mt-1 flex-shrink-0"></span>
+                                        <span v-if="!n.is_read" class="w-2 h-2 bg-blue-500 rounded-full mt-1 flex-shrink-0"></span>
                                     </div>
                                 </div>
                             </div>
@@ -201,9 +201,9 @@ const toggleNotifications = async () => {
 };
 
 const openNotification = async (n) => {
-    if (!n.read_at) {
+    if (!n.is_read) {
         await axios.post(`/api/notifications/${n.id}/read`);
-        n.read_at = new Date().toISOString();
+        n.is_read = true;
     }
     showNotifications.value = false;
     if (n.action_url) router.visit(n.action_url);
@@ -211,7 +211,7 @@ const openNotification = async (n) => {
 
 const markAllRead = async () => {
     await axios.post('/api/notifications/read-all');
-    notifications.value.forEach(n => n.read_at = new Date().toISOString());
+    notifications.value.forEach(n => n.is_read = true);
     showNotifications.value = false;
     router.reload({ only: ['unreadNotifications'] });
 };

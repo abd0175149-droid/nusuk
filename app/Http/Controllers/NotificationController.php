@@ -21,8 +21,9 @@ class NotificationController extends Controller
                 'title' => $n->title,
                 'body' => $n->body,
                 'type' => $n->type,
+                'icon' => $n->icon,
                 'action_url' => $n->action_url,
-                'read_at' => $n->read_at,
+                'is_read' => $n->is_read,
                 'time_ago' => $n->created_at->diffForHumans(),
                 'created_at' => $n->created_at->toISOString(),
             ]);
@@ -42,7 +43,7 @@ class NotificationController extends Controller
             abort(403);
         }
 
-        $notification->update(['read_at' => now()]);
+        $notification->update(['is_read' => true, 'read_at' => now()]);
 
         return response()->json(['success' => true]);
     }
@@ -54,7 +55,7 @@ class NotificationController extends Controller
     {
         Notification::where('user_id', auth()->id())
             ->unread()
-            ->update(['read_at' => now()]);
+            ->update(['is_read' => true, 'read_at' => now()]);
 
         return response()->json(['success' => true]);
     }

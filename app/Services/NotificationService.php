@@ -17,9 +17,10 @@ class NotificationService
             'title' => $title,
             'body' => $body,
             'type' => $options['type'] ?? 'info',
+            'icon' => $options['icon'] ?? null,
             'action_url' => $options['action_url'] ?? null,
-            'reference_type' => $options['reference_type'] ?? null,
-            'reference_id' => $options['reference_id'] ?? null,
+            'data' => $options['data'] ?? null,
+            'is_read' => false,
         ]);
     }
 
@@ -47,18 +48,18 @@ class NotificationService
     }
 
     /**
-     * إشعار عند إنشاء فاتورة
+     * إشعار عند اعتماد فاتورة
      */
     public static function invoiceCreated($invoice): void
     {
         self::broadcast(
             'فاتورة جديدة',
-            "تم إنشاء فاتورة {$invoice->invoice_number} بمبلغ " . number_format($invoice->total_jod, 3) . ' JOD',
+            "تم اعتماد الفاتورة {$invoice->invoice_number} بمبلغ " . number_format($invoice->total_jod, 3) . ' JOD',
             [
-                'type' => 'info',
+                'type' => 'invoice',
+                'icon' => '🧾',
                 'action_url' => "/invoices/{$invoice->id}",
-                'reference_type' => 'invoice',
-                'reference_id' => $invoice->id,
+                'data' => ['reference_type' => 'invoice', 'reference_id' => $invoice->id],
             ],
             auth()->id()
         );
@@ -73,10 +74,10 @@ class NotificationService
             'حوالة معتمدة',
             "تم اعتماد الحوالة {$transfer->transfer_number} بمبلغ " . number_format($transfer->amount_sar, 2) . ' SAR',
             [
-                'type' => 'success',
+                'type' => 'transfer',
+                'icon' => '💱',
                 'action_url' => "/transfers",
-                'reference_type' => 'transfer',
-                'reference_id' => $transfer->id,
+                'data' => ['reference_type' => 'transfer', 'reference_id' => $transfer->id],
             ],
             auth()->id()
         );
@@ -91,28 +92,28 @@ class NotificationService
             'مصروف معتمد',
             "تم اعتماد المصروف {$expense->expense_number} بمبلغ " . number_format($expense->amount, 2) . " {$expense->currency}",
             [
-                'type' => 'warning',
+                'type' => 'expense',
+                'icon' => '💰',
                 'action_url' => "/expenses",
-                'reference_type' => 'expense',
-                'reference_id' => $expense->id,
+                'data' => ['reference_type' => 'expense', 'reference_id' => $expense->id],
             ],
             auth()->id()
         );
     }
 
     /**
-     * إشعار عند إنشاء سند قبض
+     * إشعار عند اعتماد سند قبض
      */
     public static function receiptCreated($receipt): void
     {
         self::broadcast(
-            'سند قبض جديد',
-            "تم إنشاء سند قبض {$receipt->receipt_number} بمبلغ " . number_format($receipt->amount_jod, 3) . ' JOD',
+            'سند قبض معتمد',
+            "تم اعتماد سند القبض {$receipt->receipt_number} بمبلغ " . number_format($receipt->amount_jod, 3) . ' JOD',
             [
-                'type' => 'info',
+                'type' => 'receipt',
+                'icon' => '📄',
                 'action_url' => "/receipts",
-                'reference_type' => 'receipt',
-                'reference_id' => $receipt->id,
+                'data' => ['reference_type' => 'receipt', 'reference_id' => $receipt->id],
             ],
             auth()->id()
         );
