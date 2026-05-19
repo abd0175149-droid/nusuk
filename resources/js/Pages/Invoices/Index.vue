@@ -32,7 +32,9 @@
                         <th class="px-4 py-3 text-center font-bold">إجراءات</th>
                     </tr></thead>
                     <tbody>
-                        <tr v-for="inv in invoices.data" :key="inv.id" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
+                        <tr v-for="inv in invoices.data" :key="inv.id" :data-row-id="inv.id"
+                            class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                            :class="{ 'row-glow': isHighlighted(inv.id) }">
                             <td class="px-4 py-3 text-right font-mono text-xs text-gold-700">{{ inv.invoice_number }}</td>
                             <td class="px-4 py-3 text-right text-xs">{{ inv.agent?.name||'—' }}</td>
                             <td class="px-4 py-3 text-right text-xs">{{ inv.client?.name||'—' }}</td>
@@ -181,7 +183,9 @@ import { ref, computed, reactive } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/SmartLayout.vue';
 import { usePermissions } from '@/composables/usePermissions';
+import { useHighlight } from '@/composables/useHighlight';
 const { can } = usePermissions();
+const { isHighlighted } = useHighlight();
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 
 const props = defineProps({ invoices: Object, filters: Object, agents: Array, clients: Array, services: Array, exchangeRate: Number });

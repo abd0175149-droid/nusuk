@@ -33,10 +33,7 @@
                 <!-- Notification Bell -->
                 <div class="relative">
                     <button @click="toggleNotifications" class="relative p-2 rounded-lg transition-colors"
-                            :class="[
-                                isDark ? 'text-gray-400 hover:text-gold-400 hover:bg-gray-800' : 'text-gray-500 hover:text-gold-600 hover:bg-gray-100',
-                                unreadCount > 0 ? 'notification-glow' : ''
-                            ]">
+                            :class="isDark ? 'text-gray-400 hover:text-gold-400 hover:bg-gray-800' : 'text-gray-500 hover:text-gold-600 hover:bg-gray-100'">
                         <span class="text-lg sm:text-xl">🔔</span>
                         <span v-if="unreadCount > 0"
                               class="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
@@ -177,14 +174,3 @@ const can = (permission) => {
 
 defineExpose({ can, isDark });
 </script>
-
-<style scoped>
-@keyframes notificationGlow {
-    0%, 100% { box-shadow: 0 0 4px rgba(234, 179, 8, 0.3); }
-    50% { box-shadow: 0 0 16px rgba(234, 179, 8, 0.7), 0 0 30px rgba(234, 179, 8, 0.3); }
-}
-.notification-glow {
-    animation: notificationGlow 2s ease-in-out infinite;
-    border-radius: 0.5rem;
-}
-</style>

@@ -31,7 +31,9 @@
                         <th class="px-5 py-3 text-center font-bold">إجراءات</th>
                     </tr></thead>
                     <tbody>
-                        <tr v-for="t in transfers.data" :key="t.id" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
+                        <tr v-for="t in transfers.data" :key="t.id" :data-row-id="t.id"
+                            class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                            :class="{ 'row-glow': isHighlighted(t.id) }">
                             <td class="px-5 py-3 font-mono text-xs text-gold-700">{{ t.transfer_number }}</td>
                             <td class="px-5 py-3 font-medium">{{ t.agent?.name }}</td>
                             <td class="px-5 py-3 font-bold font-mono text-green-600">{{ Number(t.amount_sar).toLocaleString('en',{minimumFractionDigits:2}) }}</td>
@@ -108,7 +110,9 @@ import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/SmartLayout.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { usePermissions } from '@/composables/usePermissions';
+import { useHighlight } from '@/composables/useHighlight';
 const { can } = usePermissions();
+const { isHighlighted } = useHighlight();
 const props = defineProps({ transfers: Object, filters: Object, agents: Array });
 const agentOptions = computed(() => props.agents.map(a => ({ value: a.id, label: `${a.name} (${a.code})` })));
 const search = ref(props.filters?.search||'');

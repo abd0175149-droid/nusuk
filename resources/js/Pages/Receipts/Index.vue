@@ -10,7 +10,9 @@
             </div>
             <div class="rounded-xl border overflow-hidden shadow-sm bg-white"><table class="w-full text-sm">
                 <thead><tr class="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400"><th class="px-5 py-3 text-right font-bold">الرقم</th><th class="px-5 py-3 text-right font-bold">العميل</th><th class="px-5 py-3 text-right font-bold">المبلغ (JOD)</th><th class="px-5 py-3 text-right font-bold">الدفع</th><th class="px-5 py-3 text-right font-bold">الحالة</th><th class="px-5 py-3 text-right font-bold">بواسطة</th><th class="px-5 py-3 text-center font-bold">إجراءات</th></tr></thead>
-                <tbody><tr v-for="r in receipts.data" :key="r.id" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
+                <tbody><tr v-for="r in receipts.data" :key="r.id" :data-row-id="r.id"
+                            class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                            :class="{ 'row-glow': isHighlighted(r.id) }">
                     <td class="px-5 py-3 text-right font-mono text-xs text-gold-700">{{ r.receipt_number }}</td>
                     <td class="px-5 py-3 text-right font-medium">{{ r.client?.name }}</td>
                     <td class="px-5 py-3 text-right font-bold font-mono text-xs text-green-600" dir="ltr">{{ Number(r.amount_jod).toLocaleString('en',{minimumFractionDigits:3}) }}</td>
@@ -46,7 +48,9 @@ import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/SmartLayout.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { usePermissions } from '@/composables/usePermissions';
+import { useHighlight } from '@/composables/useHighlight';
 const { can } = usePermissions();
+const { isHighlighted } = useHighlight();
 const props = defineProps({ receipts: Object, filters: Object, clients: Array });
 const clientOptions = computed(() => props.clients.map(c => ({ value: c.id, label: c.name })));
 const search = ref(''); const showForm = ref(false); let t=null;

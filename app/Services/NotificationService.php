@@ -74,7 +74,7 @@ class NotificationService
             [
                 'type' => 'transfer',
                 'icon' => '💱',
-                'action_url' => '/transfers?status=pending',
+                'action_url' => "/transfers?status=pending&highlight={$transfer->id}",
                 'data' => ['reference_type' => 'transfer', 'reference_id' => $transfer->id],
             ]
         );
@@ -92,7 +92,7 @@ class NotificationService
             [
                 'type' => 'receipt',
                 'icon' => '📄',
-                'action_url' => '/receipts?status=pending',
+                'action_url' => "/receipts?highlight={$receipt->id}",
                 'data' => ['reference_type' => 'receipt', 'reference_id' => $receipt->id],
             ]
         );
@@ -110,7 +110,7 @@ class NotificationService
             [
                 'type' => 'expense',
                 'icon' => '💰',
-                'action_url' => '/expenses?status=pending',
+                'action_url' => "/expenses?highlight={$expense->id}",
                 'data' => ['reference_type' => 'expense', 'reference_id' => $expense->id],
             ]
         );
@@ -128,7 +128,7 @@ class NotificationService
             [
                 'type' => 'violation',
                 'icon' => '⚠️',
-                'action_url' => '/violations?status=pending',
+                'action_url' => "/violations?status=pending&highlight={$violation->id}",
                 'data' => ['reference_type' => 'violation', 'reference_id' => $violation->id],
             ]
         );
@@ -146,7 +146,7 @@ class NotificationService
             [
                 'type' => 'invoice',
                 'icon' => '🧾',
-                'action_url' => '/invoices?status=pending',
+                'action_url' => "/invoices?status=pending&highlight={$invoice->id}",
                 'data' => ['reference_type' => 'invoice', 'reference_id' => $invoice->id],
             ]
         );
@@ -167,7 +167,7 @@ class NotificationService
                 [
                     'type' => 'transfer',
                     'icon' => '✅',
-                    'action_url' => '/transfers',
+                    'action_url' => "/transfers?highlight={$transfer->id}",
                     'data' => ['reference_type' => 'transfer', 'reference_id' => $transfer->id],
                 ]
             );
@@ -186,7 +186,7 @@ class NotificationService
                 [
                     'type' => 'expense',
                     'icon' => '✅',
-                    'action_url' => '/expenses',
+                    'action_url' => "/expenses?highlight={$expense->id}",
                     'data' => ['reference_type' => 'expense', 'reference_id' => $expense->id],
                 ]
             );
@@ -205,7 +205,7 @@ class NotificationService
                 [
                     'type' => 'receipt',
                     'icon' => '✅',
-                    'action_url' => '/receipts',
+                    'action_url' => "/receipts?highlight={$receipt->id}",
                     'data' => ['reference_type' => 'receipt', 'reference_id' => $receipt->id],
                 ]
             );

@@ -136,4 +136,19 @@
             max-width: calc(100vw - 1rem) !important;
         }
     }
+
+    /* ---------- Row Glow (تأثير التوهج على الصف المحدد من الإشعار) ---------- */
+    @keyframes rowGlow {
+        0%   { background-color: rgba(234, 179, 8, 0.3); box-shadow: inset 0 0 20px rgba(234, 179, 8, 0.15); }
+        50%  { background-color: rgba(234, 179, 8, 0.08); box-shadow: inset 0 0 5px rgba(234, 179, 8, 0.05); }
+        100% { background-color: rgba(234, 179, 8, 0.3); box-shadow: inset 0 0 20px rgba(234, 179, 8, 0.15); }
+    }
+    .row-glow {
+        animation: rowGlow 1.5s ease-in-out infinite;
+        border-right: 4px solid #d4a017 !important;
+    }
+    .dark .row-glow {
+        animation: rowGlow 1.5s ease-in-out infinite;
+        border-right: 4px solid #e6b52e !important;
+    }
 }

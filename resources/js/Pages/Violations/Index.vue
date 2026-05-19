@@ -28,7 +28,9 @@
                     <th class="px-4 py-3 text-center font-bold">إجراءات</th>
                 </tr></thead>
                 <tbody>
-                    <tr v-for="v in violations.data" :key="v.id" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
+                    <tr v-for="v in violations.data" :key="v.id" :data-row-id="v.id"
+                            class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                            :class="{ 'row-glow': isHighlighted(v.id) }">
                         <td class="px-4 py-3 text-right font-mono text-xs text-gold-700">{{ v.violation_number }}</td>
                         <td class="px-4 py-3 text-right text-gray-800 dark:text-gray-200 text-xs">{{ v.agent?.name||'—' }}</td>
                         <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400 text-xs">{{ v.client?.name||'—' }}</td>
@@ -92,7 +94,9 @@ import { ref, computed } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/SmartLayout.vue';
 import { usePermissions } from '@/composables/usePermissions';
+import { useHighlight } from '@/composables/useHighlight';
 const { can } = usePermissions();
+const { isHighlighted } = useHighlight();
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 
 const props = defineProps({ violations: Object, filters: Object, agents: Array, clients: Array, violationTypes: Array });

@@ -10,7 +10,9 @@
             </div>
             <div class="rounded-xl border overflow-hidden shadow-sm bg-white"><table class="w-full text-sm">
                 <thead><tr class="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400"><th class="px-5 py-3 text-right font-bold">الرقم</th><th class="px-5 py-3 text-right font-bold">التصنيف</th><th class="px-5 py-3 text-right font-bold">الوصف</th><th class="px-5 py-3 text-right font-bold">المبلغ</th><th class="px-5 py-3 text-right font-bold">الحالة</th><th class="px-5 py-3 text-right font-bold">بواسطة</th><th class="px-5 py-3 text-center font-bold">إجراءات</th></tr></thead>
-                <tbody><tr v-for="e in expenses.data" :key="e.id" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
+                <tbody><tr v-for="e in expenses.data" :key="e.id" :data-row-id="e.id"
+                            class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                            :class="{ 'row-glow': isHighlighted(e.id) }">
                     <td class="px-5 py-3 text-right font-mono text-xs text-gold-700">{{ e.expense_number }}</td>
                     <td class="px-5 py-3 text-right text-xs">{{ e.category?.name||'—' }}</td>
                     <td class="px-5 py-3 text-right text-gray-600 dark:text-gray-400 text-xs max-w-xs truncate">{{ e.description }}</td>
@@ -47,7 +49,9 @@ import { ref, computed } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/SmartLayout.vue';
 import { usePermissions } from '@/composables/usePermissions';
+import { useHighlight } from '@/composables/useHighlight';
 const { can } = usePermissions();
+const { isHighlighted } = useHighlight();
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 const props = defineProps({ expenses: Object, filters: Object, categories: Array });
 const categoryOptions = computed(() => props.categories.map(c => ({ value: c.id, label: c.name })));
