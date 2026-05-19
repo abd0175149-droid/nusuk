@@ -116,7 +116,7 @@
                         </button>
                         <!-- Notifications Dropdown -->
                         <div v-if="showNotifications"
-                             class="absolute left-0 sm:left-auto sm:right-0 mt-2 w-80 max-h-96 overflow-y-auto rounded-xl shadow-2xl border z-50"
+                             class="absolute top-full end-0 mt-2 w-80 max-h-96 overflow-y-auto rounded-xl shadow-2xl border z-50"
                              :class="isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'">
                             <div class="flex items-center justify-between p-3 border-b" :class="isDark ? 'border-gray-700' : 'border-gray-100'">
                                 <span class="font-bold text-sm">الإشعارات</span>
