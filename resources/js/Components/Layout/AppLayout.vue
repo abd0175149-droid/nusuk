@@ -141,6 +141,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { usePage, Link, router } from '@inertiajs/vue3';
+import { requestFirebaseToken } from '../../firebase';
 
 const page = usePage();
 const user = computed(() => page.props.auth?.user);
@@ -175,6 +176,11 @@ const removeBeforeListener = router.on('before', () => {
 
 onMounted(() => {
     window.addEventListener('resize', handleResize);
+    
+    // Request FCM Token for notifications
+    if (user.value) {
+        requestFirebaseToken();
+    }
     
     // Restore sidebar groups state
     const savedGroups = localStorage.getItem('nusuk-sidebar-groups');

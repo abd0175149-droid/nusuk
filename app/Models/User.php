@@ -15,7 +15,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'password', 'role_id', 'phone',
-        'avatar', 'locale', 'theme', 'is_active', 'fcm_token', 'last_login_at',
+        'avatar', 'locale', 'theme', 'is_active', 'last_login_at',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -33,6 +33,11 @@ class User extends Authenticatable
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
+    }
+
+    public function fcmTokens()
+    {
+        return $this->hasMany(FcmToken::class);
     }
 
     public function can($ability, $arguments = []): bool

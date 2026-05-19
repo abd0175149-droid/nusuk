@@ -66,6 +66,10 @@ Route::middleware('auth')->group(function () {
     // API: Unbilled violations for client
     Route::get('api/clients/{client}/violations/unbilled', [\App\Http\Controllers\InvoiceController::class, 'unbilledViolations']);
 
+    // API: FCM Tokens
+    Route::post('api/fcm-token', [\App\Http\Controllers\FcmTokenController::class, 'store']);
+    Route::delete('api/fcm-token', [\App\Http\Controllers\FcmTokenController::class, 'destroy']);
+
     // Expense Categories
     Route::resource('expense-categories', \App\Http\Controllers\ExpenseCategoryController::class)->only(['index', 'store', 'update', 'destroy']);
 
