@@ -44,7 +44,9 @@ class ExpenseController extends Controller
         $validated['status'] = 'pending';
         $validated['created_by'] = auth()->id();
 
-        Expense::create($validated);
+        $expense = Expense::create($validated);
+
+        try { \App\Services\NotificationService::expenseCreated($expense); } catch (\Exception $e) {}
 
         return redirect()->route('expenses.index')
             ->with('success', 'تم إنشاء المصروف بنجاح');
@@ -84,6 +86,8 @@ class ExpenseController extends Controller
             'approved_at' => now(),
             'rejection_reason' => $request->rejection_reason,
         ]);
+
+        try { \App\Services\NotificationService::operationRejected($expense, 'مصروف', $expense->expense_number); } catch (\Exception $e) {}
 
         return back()->with('success', 'تم رفض المصروف');
     }

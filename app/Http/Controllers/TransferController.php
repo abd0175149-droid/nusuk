@@ -53,6 +53,8 @@ class TransferController extends Controller
 
         $transfer = Transfer::create($validated);
 
+        try { \App\Services\NotificationService::transferCreated($transfer); } catch (\Exception $e) {}
+
         return redirect()->route('transfers.index')
             ->with('success', "تم إنشاء الحوالة {$transfer->transfer_number} بنجاح");
     }
@@ -89,6 +91,8 @@ class TransferController extends Controller
         $request->validate(['rejection_reason' => 'required|string|max:500']);
         $transfer->reject(auth()->user(), $request->rejection_reason);
         AuditLog::log('reject', 'transfer', $transfer->id, $transfer->transfer_number);
+
+        try { \App\Services\NotificationService::operationRejected($transfer, 'حوالة', $transfer->transfer_number); } catch (\Exception $e) {}
 
         return back()->with('success', "تم رفض الحوالة {$transfer->transfer_number}");
     }

@@ -48,7 +48,9 @@ class ReceiptController extends Controller
         $validated['status'] = 'pending';
         $validated['created_by'] = auth()->id();
 
-        Receipt::create($validated);
+        $receipt = Receipt::create($validated);
+
+        try { \App\Services\NotificationService::receiptCreated($receipt); } catch (\Exception $e) {}
 
         return redirect()->route('receipts.index')
             ->with('success', 'تم إنشاء سند القبض بنجاح');
@@ -70,7 +72,7 @@ class ReceiptController extends Controller
             );
             // قيد محاسبي
             try { AccountingService::recordReceipt($receipt); } catch (\Exception $e) { \Log::error('Accounting Receipt: ' . $e->getMessage()); }
-            try { \App\Services\NotificationService::receiptCreated($receipt); } catch (\Exception $e) {}
+            try { \App\Services\NotificationService::receiptApproved($receipt); } catch (\Exception $e) {}
         });
 
         return back()->with('success', 'تم اعتماد سند القبض');
@@ -84,6 +86,8 @@ class ReceiptController extends Controller
 
         $request->validate(['rejection_reason' => 'required|string|max:500']);
         $receipt->reject(auth()->user(), $request->rejection_reason);
+
+        try { \App\Services\NotificationService::operationRejected($receipt, 'سند قبض', $receipt->receipt_number); } catch (\Exception $e) {}
 
         return back()->with('success', 'تم رفض سند القبض');
     }

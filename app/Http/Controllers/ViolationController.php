@@ -61,7 +61,9 @@ class ViolationController extends Controller
         $validated['billing_status'] = 'unbilled';
         $validated['created_by'] = auth()->id();
 
-        Violation::create($validated);
+        $violation = Violation::create($validated);
+
+        try { \App\Services\NotificationService::violationCreated($violation); } catch (\Exception $e) {}
 
         return redirect()->back()->with('success', 'تم تسجيل المخالفة بنجاح');
     }
@@ -87,6 +89,12 @@ class ViolationController extends Controller
         });
 
         AuditLog::log('approve', 'violation', $violation->id, $violation->violation_number);
+
+        // إشعار لصانع المخالفة
+        if ($violation->created_by && $violation->created_by !== auth()->id()) {
+            try { \App\Services\NotificationService::send($violation->created_by, '✅ تم اعتماد المخالفة', "تم اعتماد المخالفة {$violation->violation_number}", ['type' => 'violation', 'icon' => '✅', 'action_url' => '/violations']); } catch (\Exception $e) {}
+        }
+
         return back()->with('success', 'تم اعتماد المخالفة وخصم التكلفة من الوكيل');
     }
 
@@ -97,6 +105,9 @@ class ViolationController extends Controller
         }
 
         $violation->reject($request->input('reason', ''));
+
+        try { \App\Services\NotificationService::operationRejected($violation, 'مخالفة', $violation->violation_number); } catch (\Exception $e) {}
+
         return back()->with('success', 'تم رفض المخالفة');
     }
 

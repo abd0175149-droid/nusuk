@@ -134,6 +134,8 @@ class InvoiceController extends Controller
                     'sort_order' => $i + 1,
                 ]);
             }
+
+            try { \App\Services\NotificationService::invoiceCreated($invoice); } catch (\Exception $e) {}
         });
 
         return redirect()->back()->with('success', 'تم إنشاء الفاتورة بنجاح');
@@ -183,7 +185,11 @@ class InvoiceController extends Controller
 
             // قيد محاسبي
             try { \App\Services\AccountingService::recordInvoice($invoice); } catch (\Exception $e) { \Log::error('Accounting Invoice: ' . $e->getMessage()); }
-            try { \App\Services\NotificationService::invoiceCreated($invoice); } catch (\Exception $e) {}
+
+            // إشعار لصانع الفاتورة أنه تم الاعتماد
+            if ($invoice->created_by && $invoice->created_by !== auth()->id()) {
+                try { \App\Services\NotificationService::send($invoice->created_by, '✅ تم اعتماد فاتورتك', "تم اعتماد الفاتورة {$invoice->invoice_number}", ['type' => 'invoice', 'icon' => '✅', 'action_url' => '/invoices']); } catch (\Exception $e) {}
+            }
         });
 
         AuditLog::log('approve', 'invoice', $invoice->id, $invoice->invoice_number);
@@ -201,6 +207,9 @@ class InvoiceController extends Controller
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);
+
+        try { \App\Services\NotificationService::operationRejected($invoice, 'فاتورة', $invoice->invoice_number); } catch (\Exception $e) {}
+
         return back()->with('success', 'تم رفض الفاتورة');
     }
 
