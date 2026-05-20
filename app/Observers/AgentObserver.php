@@ -15,27 +15,28 @@ class AgentObserver
         AccountingSync::$isSyncing = true;
 
         try {
-            $parentAccount = Account::where('code', '1300')->first();
+            // الوكلاء يندرجون تحت 2101 دائنون متنوعون (التزامات)
+            $parentAccount = Account::where('code', '2101')->first();
             
             if ($parentAccount) {
                 if (!$agent->account_id) {
-                    // Create Account
+                    // إنشاء حساب فرعي جديد للوكيل
                     $nextCode = Account::where('parent_id', $parentAccount->id)
                         ->max('code');
-                    $newCode = $nextCode ? strval(intval($nextCode) + 1) : '1301';
+                    $newCode = $nextCode ? strval(intval($nextCode) + 1) : '2111';
 
                     $account = Account::create([
                         'code' => $newCode,
                         'name' => $agent->name,
                         'parent_id' => $parentAccount->id,
-                        'type' => 'asset',
+                        'type' => 'liability',  // التزام (دائن)
                         'is_active' => $agent->is_active,
                         'currency' => 'JOD',
                     ]);
 
                     $agent->update(['account_id' => $account->id]);
                 } else {
-                    // Update existing Account
+                    // تحديث الحساب الموجود
                     Account::where('id', $agent->account_id)->update([
                         'name' => $agent->name,
                         'is_active' => $agent->is_active,

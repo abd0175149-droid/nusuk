@@ -17,12 +17,11 @@ class ChartOfAccountsSeeder extends Seeder
             ['code' => '1102', 'name' => 'البنك', 'type' => 'asset', 'parent_code' => '1100', 'is_system' => true, 'currency' => 'JOD', 'description' => 'الأرصدة البنكية'],
             ['code' => '1103', 'name' => 'شيكات تحت التحصيل', 'type' => 'asset', 'parent_code' => '1100', 'is_system' => true, 'currency' => 'JOD', 'description' => 'شيكات مستلمة لم تُصرف بعد'],
             ['code' => '1200', 'name' => 'ذمم العملاء', 'type' => 'asset', 'parent_code' => '1100', 'is_system' => true, 'currency' => 'JOD', 'description' => 'المبالغ المستحقة على العملاء'],
-            ['code' => '1300', 'name' => 'أرصدة الوكلاء', 'type' => 'asset', 'parent_code' => '1100', 'is_system' => true, 'currency' => 'JOD', 'description' => 'أرصدة الوكلاء (محولة بالدينار)'],
 
             // === 2000 الالتزامات ===
             ['code' => '2000', 'name' => 'الالتزامات', 'type' => 'liability', 'parent_id' => null, 'is_system' => true, 'currency' => 'JOD'],
             ['code' => '2100', 'name' => 'التزامات قصيرة الأجل', 'type' => 'liability', 'parent_code' => '2000', 'is_system' => true, 'currency' => 'JOD'],
-            ['code' => '2101', 'name' => 'دائنون متنوعون', 'type' => 'liability', 'parent_code' => '2100', 'is_system' => true, 'currency' => 'JOD'],
+            ['code' => '2101', 'name' => 'دائنون متنوعون (الوكلاء)', 'type' => 'liability', 'parent_code' => '2100', 'is_system' => true, 'currency' => 'JOD', 'description' => 'حسابات الوكلاء — تُنشأ فرعياً تلقائياً عند إضافة وكيل جديد'],
 
             // === 3000 حقوق الملكية ===
             ['code' => '3000', 'name' => 'حقوق الملكية', 'type' => 'equity', 'parent_id' => null, 'is_system' => true, 'currency' => 'JOD'],
