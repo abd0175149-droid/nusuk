@@ -23,13 +23,20 @@ class AccountObserver
             $parent = Account::find($account->parent_id);
             if (!$parent) return;
 
+            // تحقق إذا الأب أو الجد هو 2110 (الوكلاء)
+            $isAgentAccount = $parent->code === '2110';
+            if (!$isAgentAccount && $parent->parent_id) {
+                $grandParent = Account::find($parent->parent_id);
+                $isAgentAccount = $grandParent && $grandParent->code === '2110';
+            }
+
             $entityData = [
                 'name' => $account->name,
                 'account_id' => $account->id,
                 'is_active' => $account->is_active ?? true,
             ];
 
-            if ($parent->code === '2110') {
+            if ($isAgentAccount) {
                 // Agent
                 $agent = Agent::where('account_id', $account->id)->first();
                 if (!$agent) {

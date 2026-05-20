@@ -18,6 +18,28 @@ class AgentObserver
             // الوكلاء يندرجون تحت 2110 الوكلاء (فرع من دائنون متنوعون)
             $parentAccount = Account::where('code', '2110')->first();
             
+            // إنشاء تلقائي إذا لم يوجد
+            if (!$parentAccount) {
+                $creditors = Account::where('code', '2101')->first();
+                if (!$creditors) {
+                    $liabilities = Account::where('code', '2000')->first();
+                    if ($liabilities) {
+                        $creditors = Account::create([
+                            'code' => '2101', 'name' => 'دائنون متنوعون',
+                            'type' => 'liability', 'parent_id' => $liabilities->id,
+                            'is_system' => true, 'currency' => 'JOD',
+                        ]);
+                    }
+                }
+                if ($creditors) {
+                    $parentAccount = Account::create([
+                        'code' => '2110', 'name' => 'الوكلاء',
+                        'type' => 'liability', 'parent_id' => $creditors->id,
+                        'is_system' => true, 'currency' => 'JOD',
+                    ]);
+                }
+            }
+            
             if ($parentAccount) {
                 if (!$agent->account_id) {
                     // إنشاء حساب فرعي جديد للوكيل
