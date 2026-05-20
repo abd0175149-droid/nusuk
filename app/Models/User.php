@@ -7,13 +7,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laragear\WebAuthn\WebAuthnAuthenticatable;
-use Laragear\WebAuthn\Contracts\WebAuthnAuthenticatable as WebAuthnAuthenticatableContract;
+use Laragear\WebAuthn\WebAuthnAuthentication;
+use Laragear\WebAuthn\Contracts\WebAuthnAuthenticatable;
 
-class User extends Authenticatable implements WebAuthnAuthenticatableContract
+class User extends Authenticatable implements WebAuthnAuthenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, WebAuthnAuthenticatable;
+    use HasFactory, Notifiable, WebAuthnAuthentication;
 
     protected $fillable = [
         'name', 'email', 'password', 'role_id', 'phone',
