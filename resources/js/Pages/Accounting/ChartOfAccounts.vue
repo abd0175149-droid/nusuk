@@ -220,6 +220,13 @@ const AccountRow = defineComponent({
         const indent = props.depth * 28;
         const bg = depthBg[Math.min(props.depth, depthBg.length - 1)];
 
+        // حساب المجموع التراكمي (مجموع كل الأطفال بشكل عودي)
+        const calcTotal = (acc) => {
+            if (!acc.children_recursive?.length) return parseFloat(acc.balance || 0);
+            return acc.children_recursive.reduce((sum, c) => sum + calcTotal(c), 0);
+        };
+        const totalBalance = computed(() => isLeaf ? parseFloat(a.balance || 0) : calcTotal(a));
+
         return () => h('div', {}, [
             h('div', {
                 class: `group flex items-center gap-2 py-2 px-3 transition-all duration-150 cursor-pointer ${bg} ${
@@ -246,14 +253,14 @@ const AccountRow = defineComponent({
                     }`,
                 }, a.name),
                 h('span', { class: `px-2 py-0.5 rounded-md text-[10px] font-bold ${typeColors[a.type] || ''}` }, typeLabels[a.type]),
-                isLeaf ? h('span', {
+                h('span', {
                     class: `font-mono text-xs font-bold min-w-[70px] text-left ${
-                        parseFloat(a.balance) > 0 ? 'text-green-600 dark:text-green-400' :
-                        parseFloat(a.balance) < 0 ? 'text-red-600 dark:text-red-400' :
+                        totalBalance.value > 0 ? 'text-green-600 dark:text-green-400' :
+                        totalBalance.value < 0 ? 'text-red-600 dark:text-red-400' :
                         'text-gray-400 dark:text-gray-500'
                     }`,
                     dir: 'ltr',
-                }, Number(a.balance || 0).toLocaleString('en', { minimumFractionDigits: 3 })) : null,
+                }, Number(totalBalance.value).toLocaleString('en', { minimumFractionDigits: 3 })),
                 h('span', { class: 'text-[10px] text-gray-400 dark:text-gray-500 font-mono min-w-[28px]' }, a.currency),
                 h('div', { class: 'hidden group-hover:flex items-center gap-1 mr-1' }, [
                     h('button', {
