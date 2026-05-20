@@ -11,10 +11,10 @@ class RolePermissionSeeder extends Seeder
     public function run(): void
     {
         // إنشاء الأدوار
-        $admin = Role::create(['name' => 'مدير عام', 'slug' => 'admin', 'description' => 'صلاحيات كاملة']);
-        $sales = Role::create(['name' => 'موظف مبيعات', 'slug' => 'sales', 'description' => 'إدخال عمليات']);
-        $accountant = Role::create(['name' => 'محاسب', 'slug' => 'accountant', 'description' => 'عمليات مالية محدودة']);
-        $hrManager = Role::create(['name' => 'مدير موارد بشرية', 'slug' => 'hr_manager', 'description' => 'إدارة الموظفين والحضور والرواتب']);
+        $admin = Role::firstOrCreate(['slug' => 'admin'], ['name' => 'مدير عام', 'description' => 'صلاحيات كاملة']);
+        $sales = Role::firstOrCreate(['slug' => 'sales'], ['name' => 'موظف مبيعات', 'description' => 'إدخال عمليات']);
+        $accountant = Role::firstOrCreate(['slug' => 'accountant'], ['name' => 'محاسب', 'description' => 'عمليات مالية محدودة']);
+        $hrManager = Role::firstOrCreate(['slug' => 'hr_manager'], ['name' => 'مدير موارد بشرية', 'description' => 'إدارة الموظفين والحضور والرواتب']);
 
         // تعريف الصلاحيات لكل وحدة
         $modules = [
@@ -44,12 +44,15 @@ class RolePermissionSeeder extends Seeder
         $allPermissions = [];
         foreach ($modules as $module => $actions) {
             foreach ($actions as $action) {
-                $perm = Permission::create([
-                    'name' => ucfirst($action) . ' ' . str_replace('_', ' ', $module),
-                    'slug' => "{$module}.{$action}",
-                    'module' => $module,
-                ]);
-                $allPermissions["{$module}.{$action}"] = $perm->id;
+                $slug = "{$module}.{$action}";
+                $perm = Permission::firstOrCreate(
+                    ['slug' => $slug],
+                    [
+                        'name' => ucfirst($action) . ' ' . str_replace('_', ' ', $module),
+                        'module' => $module,
+                    ]
+                );
+                $allPermissions[$slug] = $perm->id;
             }
         }
 
@@ -72,18 +75,6 @@ class RolePermissionSeeder extends Seeder
             'reports.view',
         ];
 
-        foreach ($salesPerms as $slug) {
-            if (isset($allPermissions[$slug])) {
-                $sales->permissions()->attach($allPermissions[$slug]);
-            }
-        }
-
-        foreach ($accountantPerms as $slug) {
-            if (isset($allPermissions[$slug])) {
-                $accountant->permissions()->attach($allPermissions[$slug]);
-            }
-        }
-
         // صلاحيات مدير الموارد البشرية
         $hrPerms = [
             'employees.view', 'employees.create', 'employees.update', 'employees.delete',
@@ -95,10 +86,28 @@ class RolePermissionSeeder extends Seeder
             'hr_reports.view',
         ];
 
-        foreach ($hrPerms as $slug) {
+        $salesIds = [];
+        foreach ($salesPerms as $slug) {
             if (isset($allPermissions[$slug])) {
-                $hrManager->permissions()->attach($allPermissions[$slug]);
+                $salesIds[] = $allPermissions[$slug];
             }
         }
+        $sales->permissions()->syncWithoutDetaching($salesIds);
+
+        $accountantIds = [];
+        foreach ($accountantPerms as $slug) {
+            if (isset($allPermissions[$slug])) {
+                $accountantIds[] = $allPermissions[$slug];
+            }
+        }
+        $accountant->permissions()->syncWithoutDetaching($accountantIds);
+
+        $hrIds = [];
+        foreach ($hrPerms as $slug) {
+            if (isset($allPermissions[$slug])) {
+                $hrIds[] = $allPermissions[$slug];
+            }
+        }
+        $hrManager->permissions()->syncWithoutDetaching($hrIds);
     }
 }
