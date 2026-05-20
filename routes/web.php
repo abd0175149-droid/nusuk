@@ -119,4 +119,10 @@ Route::middleware('auth')->group(function () {
     // Users & Roles
     Route::resource('users', \App\Http\Controllers\UserController::class)->except(['create', 'show', 'edit']);
     Route::resource('roles', \App\Http\Controllers\RoleController::class)->except(['create', 'show']);
+
+    // HR Module
+    Route::resource('departments', \App\Http\Controllers\DepartmentController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::resource('shifts', \App\Http\Controllers\ShiftController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::resource('employees', \App\Http\Controllers\EmployeeController::class);
+    Route::get('employees/{employee}/print-statement', [\App\Http\Controllers\EmployeeController::class, 'printStatement'])->name('employees.print-statement');
 });

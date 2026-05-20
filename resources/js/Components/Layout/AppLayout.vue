@@ -363,6 +363,17 @@ const menuGroups = [
         { icon: '📋', label: 'ذمم العملاء', route: '/reports/clients-balances', permission: 'reports.view' },
         { icon: '📅', label: 'الملخص اليومي', route: '/reports/daily-summary', permission: 'reports.view' },
     ]},
+    { label: '📋 الموارد البشرية', items: [
+        { icon: '👤', label: 'الموظفين', route: '/employees', permission: 'employees.view' },
+        { icon: '🏢', label: 'الأقسام', route: '/departments', permission: 'employees.view' },
+        { icon: '⏰', label: 'الورديات', route: '/shifts', permission: 'employees.view' },
+        { icon: '📅', label: 'الحضور والانصراف', route: '/attendance', permission: 'attendance.view' },
+        { icon: '🏖️', label: 'الإجازات', route: '/leaves', permission: 'leaves.view' },
+        { icon: '💳', label: 'السلف', route: '/advances', permission: 'advances.view' },
+        { icon: '⚠️', label: 'المخالفات', route: '/penalties', permission: 'penalties.view' },
+        { icon: '💰', label: 'مسيرات الرواتب', route: '/payrolls', permission: 'payroll.view' },
+        { icon: '📊', label: 'تقارير HR', route: '/hr/reports', permission: 'hr_reports.view' },
+    ]},
     { label: '🏛️ المحاسبة', items: [
         { icon: '🌳', label: 'شجرة الحسابات', route: '/accounting/chart-of-accounts', permission: 'reports.view' },
         { icon: '⚖️', label: 'ميزان المراجعة', route: '/accounting/trial-balance', permission: 'reports.view' },
