@@ -193,7 +193,7 @@ const AccountRow = defineComponent({
 
         return () => h('div', {}, [
             h('div', {
-                class: `group flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors ${props.depth === 0 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`,
+                class: `group flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors border-b border-gray-300 dark:border-gray-600`,
                 style: { paddingRight: `${12 + indent}px` },
             }, [
                 h('span', { class: 'text-sm' }, isLeaf ? '📄' : (typeIcons[a.type] || '📂')),
