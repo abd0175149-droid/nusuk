@@ -162,7 +162,7 @@ watch(() => form.cost_jod, (val) => {
 });
 
 const openForm = () => { form.reset(); form.clearErrors(); showForm.value=true; };
-const submitForm = () => { form.post('/transfers', { onSuccess:()=>{showForm.value=false; form.reset(); form.clearErrors();}, preserveScroll:true }); };
+const submitForm = () => { form.post('/transfers', { onSuccess:()=>{showForm.value=false; form.reset(); form.clearErrors();}, preserveScroll:true, preserveState:false }); };
 const approveItem = (t) => { router.post('/transfers/'+t.id+'/approve', {}, {preserveScroll:true}); };
 const submitReject = () => { router.post('/transfers/'+rejectTarget.value.id+'/reject', { rejection_reason: rejectReason.value }, { preserveScroll:true, onSuccess:()=>{rejectTarget.value=null;rejectReason.value='';} }); };
 const confirmDelete = () => { router.delete('/transfers/'+deleteTarget.value.id, { preserveScroll:true, onSuccess:()=>{deleteTarget.value=null;} }); };

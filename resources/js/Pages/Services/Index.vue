@@ -67,7 +67,7 @@ const showForm = ref(false); const editItem = ref(null); const deleteTarget = re
 let t=null;
 const form = useForm({ name:'',description:'',is_active:true });
 const openModal=(s)=>{ editItem.value=s; form.name=s?.name||''; form.description=s?.description||''; form.is_active=s?.is_active??true; form.clearErrors(); showForm.value=true; };
-const submit=()=>{ const o={onSuccess:()=>{showForm.value=false; form.reset(); form.clearErrors(); editItem.value=null;},preserveScroll:true}; editItem.value?form.put('/services/'+editItem.value.id,o):form.post('/services',o); };
+const submit=()=>{ const o={onSuccess:()=>{showForm.value=false; form.reset(); form.clearErrors(); editItem.value=null;},preserveScroll:true,preserveState:false}; editItem.value?form.put('/services/'+editItem.value.id,o):form.post('/services',o); };
 const del=(s)=>{ deleteTarget.value=s; };
 const debounceSearch=()=>{clearTimeout(t);t=setTimeout(()=>router.get('/services',{search:search.value},{preserveState:true,replace:true}),400)};
 </script>

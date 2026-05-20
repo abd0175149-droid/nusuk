@@ -47,6 +47,6 @@ const props = defineProps({ categories: Array });
 const showForm = ref(false); const editItem = ref(null); const deleteTarget = ref(null);
 const form = useForm({ name:'',description:'',is_active:true });
 const openModal = (c) => { editItem.value=c; form.name=c?.name||''; form.description=c?.description||''; form.is_active=c?.is_active??true; form.clearErrors(); showForm.value=true; };
-const submit = () => { const o={onSuccess:()=>{showForm.value=false; form.reset(); form.clearErrors(); editItem.value=null;},preserveScroll:true}; editItem.value?form.put('/expense-categories/'+editItem.value.id,o):form.post('/expense-categories',o); };
+const submit = () => { const o={onSuccess:()=>{showForm.value=false; form.reset(); form.clearErrors(); editItem.value=null;},preserveScroll:true,preserveState:false}; editItem.value?form.put('/expense-categories/'+editItem.value.id,o):form.post('/expense-categories',o); };
 const del = (c) => { deleteTarget.value=c; };
 </script>

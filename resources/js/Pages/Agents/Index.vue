@@ -196,7 +196,7 @@ const submit = () => {
         const digits = form.phone.replace(/\D/g, '');
         form.phone = prefix + digits;
     }
-    const opts = { onSuccess:()=>{showForm.value=false; form.reset(); form.clearErrors(); editing.value=null;}, preserveScroll:true };
+    const opts = { onSuccess:()=>{showForm.value=false; form.reset(); form.clearErrors(); editing.value=null;}, preserveScroll:true, preserveState:false };
     editing.value ? form.put('/agents/'+editing.value.id, opts) : form.post('/agents', opts);
 };
 const debounceSearch = () => { clearTimeout(timeout); timeout=setTimeout(()=>router.get('/agents',{search:search.value},{preserveState:true,replace:true}),400) };

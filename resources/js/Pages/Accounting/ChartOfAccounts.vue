@@ -171,9 +171,17 @@ const openEdit = (account) => {
 
 const submitForm = () => {
     if (editingId.value) {
-        form.put('/accounting/accounts/' + editingId.value, { onSuccess: () => { showModal.value = false; form.reset(); form.clearErrors(); editingId.value = null; } });
+        form.put('/accounting/accounts/' + editingId.value, {
+            preserveState: false,
+            preserveScroll: true,
+            onSuccess: () => { showModal.value = false; form.reset(); form.clearErrors(); editingId.value = null; }
+        });
     } else {
-        form.post('/accounting/accounts', { onSuccess: () => { showModal.value = false; form.reset(); form.clearErrors(); nextCodePreview.value = ''; } });
+        form.post('/accounting/accounts', {
+            preserveState: false,
+            preserveScroll: true,
+            onSuccess: () => { showModal.value = false; form.reset(); form.clearErrors(); nextCodePreview.value = ''; }
+        });
     }
 };
 
