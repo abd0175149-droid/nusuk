@@ -392,7 +392,7 @@ const menuGroups = [
     ]},
 ];
 
-const openGroups = ref({ '💼 العمليات': true, '📈 التقارير': true, '🏛️ المحاسبة': true, '⚙️ الإعدادات': true });
+const openGroups = ref({ '💼 العمليات': true, '📈 التقارير': true, '📋 الموارد البشرية': true, '🏛️ المحاسبة': true, '⚙️ الإعدادات': true });
 const toggleGroup = (label) => { 
     openGroups.value[label] = !openGroups.value[label]; 
     localStorage.setItem('nusuk-sidebar-groups', JSON.stringify(openGroups.value));
