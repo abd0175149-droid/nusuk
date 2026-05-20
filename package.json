@@ -22,6 +22,8 @@
         "@vitejs/plugin-vue": "^6.0.7",
         "axios": "^1.16.1",
         "firebase": "^12.13.0",
+        "laravel-echo": "^2.3.4",
+        "pusher-js": "^8.5.0",
         "vue": "^3.5.34",
         "ziggy-js": "^2.6.2"
     }
