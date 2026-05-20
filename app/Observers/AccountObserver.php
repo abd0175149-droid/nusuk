@@ -13,24 +13,14 @@ use Illuminate\Support\Facades\Log;
 
 class AccountObserver
 {
-    public function created(Account $account): void
-    {
-        $this->syncEntityForAccount($account);
-    }
-
-    public function updated(Account $account): void
-    {
-        $this->syncEntityForAccount($account);
-    }
-
-    private function syncEntityForAccount(Account $account): void
+    public function saved(Account $account): void
     {
         if (AccountingSync::$isSyncing) return;
         AccountingSync::$isSyncing = true;
 
         try {
             if (!$account->parent_id) return;
-
+            
             $parent = Account::find($account->parent_id);
             if (!$parent) return;
 
@@ -42,9 +32,9 @@ class AccountObserver
             }
 
             $entityData = [
-                'name'       => $account->name,
+                'name' => $account->name,
                 'account_id' => $account->id,
-                'is_active'  => $account->is_active ?? true,
+                'is_active' => $account->is_active ?? true,
             ];
 
             if ($isAgentAccount) {
@@ -57,15 +47,10 @@ class AccountObserver
                     $entityData['country'] = 'JO';
                     $entityData['currency'] = 'JOD';
                     $entityData['balance_sar'] = 0;
-
-                    Agent::withoutEvents(function () use ($entityData) {
-                        Agent::create($entityData);
-                    });
-                    Log::info("[AccountObserver] ✅ تم إنشاء وكيل من الشجرة: {$account->name}");
+                    Agent::create($entityData);
+                    Log::info("[AccountObserver] ✅ وكيل جديد من الشجرة: {$account->name}");
                 } else {
-                    Agent::withoutEvents(function () use ($agent, $account) {
-                        $agent->update(['name' => $account->name, 'is_active' => $account->is_active]);
-                    });
+                    $agent->update(['name' => $account->name, 'is_active' => $account->is_active]);
                 }
             } elseif ($parent->code === '1200') {
                 // Client
@@ -78,14 +63,9 @@ class AccountObserver
                     $entityData['currency'] = 'JOD';
                     $entityData['balance_jod'] = 0;
                     $entityData['credit_limit_jod'] = 0;
-
-                    Client::withoutEvents(function () use ($entityData) {
-                        Client::create($entityData);
-                    });
+                    Client::create($entityData);
                 } else {
-                    Client::withoutEvents(function () use ($client, $account) {
-                        $client->update(['name' => $account->name, 'is_active' => $account->is_active]);
-                    });
+                    $client->update(['name' => $account->name, 'is_active' => $account->is_active]);
                 }
             } elseif ($parent->code === '4001') {
                 // Service
@@ -96,40 +76,27 @@ class AccountObserver
                     $entityData['code'] = 'SRV-' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
                     $entityData['default_price_sar'] = 0;
                     $entityData['default_price_jod'] = 0;
-
-                    Service::withoutEvents(function () use ($entityData) {
-                        Service::create($entityData);
-                    });
+                    Service::create($entityData);
                 } else {
-                    Service::withoutEvents(function () use ($service, $account) {
-                        $service->update(['name' => $account->name, 'is_active' => $account->is_active]);
-                    });
+                    $service->update(['name' => $account->name, 'is_active' => $account->is_active]);
                 }
             } elseif ($parent->code === '5100') {
                 // Expense Category
                 $category = ExpenseCategory::where('account_id', $account->id)->first();
                 if (!$category) {
                     $entityData['code'] = 'EXP-' . rand(100, 999);
-                    ExpenseCategory::withoutEvents(function () use ($entityData) {
-                        ExpenseCategory::create($entityData);
-                    });
+                    ExpenseCategory::create($entityData);
                 } else {
-                    ExpenseCategory::withoutEvents(function () use ($category, $account) {
-                        $category->update(['name' => $account->name, 'is_active' => $account->is_active]);
-                    });
+                    $category->update(['name' => $account->name, 'is_active' => $account->is_active]);
                 }
             } elseif ($parent->code === '5200') {
                 // Violation Type
                 $type = ViolationType::where('account_id', $account->id)->first();
                 if (!$type) {
                     $entityData['code'] = 'VIO-' . rand(100, 999);
-                    ViolationType::withoutEvents(function () use ($entityData) {
-                        ViolationType::create($entityData);
-                    });
+                    ViolationType::create($entityData);
                 } else {
-                    ViolationType::withoutEvents(function () use ($type, $account) {
-                        $type->update(['name' => $account->name, 'is_active' => $account->is_active]);
-                    });
+                    $type->update(['name' => $account->name, 'is_active' => $account->is_active]);
                 }
             }
         } catch (\Throwable $e) {
@@ -145,11 +112,11 @@ class AccountObserver
         AccountingSync::$isSyncing = true;
 
         try {
-            Agent::withoutEvents(fn() => Agent::where('account_id', $account->id)->delete());
-            Client::withoutEvents(fn() => Client::where('account_id', $account->id)->delete());
-            Service::withoutEvents(fn() => Service::where('account_id', $account->id)->delete());
-            ExpenseCategory::withoutEvents(fn() => ExpenseCategory::where('account_id', $account->id)->delete());
-            ViolationType::withoutEvents(fn() => ViolationType::where('account_id', $account->id)->delete());
+            Agent::where('account_id', $account->id)->delete();
+            Client::where('account_id', $account->id)->delete();
+            Service::where('account_id', $account->id)->delete();
+            ExpenseCategory::where('account_id', $account->id)->delete();
+            ViolationType::where('account_id', $account->id)->delete();
         } finally {
             AccountingSync::$isSyncing = false;
         }
