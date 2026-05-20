@@ -21,7 +21,8 @@ return new class extends Migration
     {
         $creditors = Account::where('code', '2101')->first();
         if (!$creditors) {
-            throw new \Exception('حساب 2101 (دائنون متنوعون) غير موجود!');
+            // قاعدة بيانات جديدة — لا حاجة للإصلاح
+            return;
         }
 
         // 1. إنشاء حساب "الوكلاء" (2110) تحت دائنون متنوعون
