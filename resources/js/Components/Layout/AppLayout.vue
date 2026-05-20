@@ -44,12 +44,13 @@
 
                 <!-- Menu Groups -->
                 <template v-for="group in menuGroups" :key="group.label">
-                    <button @click="toggleGroup(group.label)"
-                        class="flex items-center justify-between w-full px-4 py-2 mt-3 mx-0 text-xs font-bold uppercase tracking-wide transition-colors"
-                        :class="isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'">
-                        <span>{{ group.label }}</span>
-                        <span class="text-[10px] transition-transform duration-200" :class="openGroups[group.label]?'rotate-180':''">▼</span>
-                    </button>
+                    <template v-if="group.items.some(item => !item.permission || can(item.permission))">
+                        <button @click="toggleGroup(group.label)"
+                            class="flex items-center justify-between w-full px-4 py-2 mt-3 mx-0 text-xs font-bold uppercase tracking-wide transition-colors"
+                            :class="isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'">
+                            <span>{{ group.label }}</span>
+                            <span class="text-[10px] transition-transform duration-200" :class="openGroups[group.label]?'rotate-180':''">▼</span>
+                        </button>
                     <div v-show="openGroups[group.label]" class="space-y-0.5">
                         <template v-for="item in group.items" :key="item.route">
                             <Link v-if="!item.permission || can(item.permission)"
@@ -64,6 +65,7 @@
                             </Link>
                         </template>
                     </div>
+                    </template>
                 </template>
             </nav>
 
