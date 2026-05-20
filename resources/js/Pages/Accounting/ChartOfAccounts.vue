@@ -174,50 +174,80 @@ const deleteAccount = (account) => {
 
 // Component: صف الحساب
 const typeColors = {
-    asset: 'bg-blue-100 text-blue-700', liability: 'bg-orange-100 text-orange-700',
-    equity: 'bg-purple-100 text-purple-700', revenue: 'bg-green-100 text-green-700',
-    expense: 'bg-red-100 text-red-700',
+    asset: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+    liability: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+    equity: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
+    revenue: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+    expense: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
 };
 const typeLabels = { asset: 'أصول', liability: 'التزامات', equity: 'ملكية', revenue: 'إيرادات', expense: 'مصروفات' };
-const typeIcons = { asset: '📂', liability: '📋', equity: '💰', revenue: '📈', expense: '📉' };
+
+const depthBg = [
+    'bg-gray-100/80 dark:bg-gray-800/60',
+    'bg-gray-50/60 dark:bg-gray-800/30',
+    'bg-white dark:bg-gray-900/40',
+    'bg-white dark:bg-transparent',
+];
 
 const AccountRow = defineComponent({
     name: 'AccountRow',
     props: { account: Object, depth: Number },
     emits: ['edit', 'delete'],
     setup(props, { emit }) {
+        const collapsed = ref(false);
         const a = props.account;
         const hasChildren = a.children_recursive?.length > 0;
         const isLeaf = !hasChildren;
-        const indent = props.depth * 24;
+        const indent = props.depth * 28;
+        const bg = depthBg[Math.min(props.depth, depthBg.length - 1)];
 
         return () => h('div', {}, [
             h('div', {
-                class: `group flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors border-b border-gray-300 dark:border-gray-600`,
-                style: { paddingRight: `${12 + indent}px` },
+                class: `group flex items-center gap-2 py-2 px-3 transition-all duration-150 cursor-pointer ${bg} ${
+                    props.depth === 0
+                        ? 'border-b-2 border-gray-300 dark:border-gray-600 mb-1'
+                        : 'border-b border-gray-200/70 dark:border-gray-700/50'
+                } ${isLeaf ? 'hover:bg-gold-50/50 dark:hover:bg-gold-900/10' : 'hover:bg-gray-200/50 dark:hover:bg-gray-700/30'}`,
+                style: { paddingRight: `${14 + indent}px` },
+                onClick: () => { if (hasChildren) collapsed.value = !collapsed.value; },
             }, [
-                h('span', { class: 'text-sm' }, isLeaf ? '📄' : (typeIcons[a.type] || '📂')),
-                h('span', { class: 'font-mono text-xs text-gold-700 font-bold min-w-[50px]' }, a.code),
-                h('span', { class: `text-sm font-medium flex-1 ${props.depth === 0 ? 'font-bold' : ''}` }, a.name),
-                h('span', { class: `px-2 py-0.5 rounded text-xs font-bold ${typeColors[a.type] || ''}` }, typeLabels[a.type]),
+                h('span', {
+                    class: `w-5 h-5 flex items-center justify-center text-xs rounded transition-transform duration-200 ${hasChildren ? (collapsed.value ? 'rotate-[-90deg]' : '') : 'text-gray-300 dark:text-gray-600'}`,
+                }, hasChildren ? '▾' : '·'),
+                h('span', { class: 'text-base' }, isLeaf ? '📄' : (collapsed.value ? '📁' : '📂')),
+                h('span', {
+                    class: `font-mono text-xs font-bold min-w-[55px] ${props.depth === 0 ? 'text-gold-600 dark:text-gold-400 text-sm' : 'text-gold-700/70 dark:text-gold-500/70'}`,
+                    dir: 'ltr',
+                }, a.code),
+                h('span', {
+                    class: `flex-1 text-sm ${
+                        props.depth === 0 ? 'font-extrabold text-gray-900 dark:text-white text-base' :
+                        props.depth === 1 ? 'font-bold text-gray-800 dark:text-gray-200' :
+                        'font-medium text-gray-700 dark:text-gray-300'
+                    }`,
+                }, a.name),
+                h('span', { class: `px-2 py-0.5 rounded-md text-[10px] font-bold ${typeColors[a.type] || ''}` }, typeLabels[a.type]),
                 isLeaf ? h('span', {
-                    class: `font-mono text-xs font-bold ${parseFloat(a.balance) >= 0 ? 'text-green-600' : 'text-red-600'}`,
+                    class: `font-mono text-xs font-bold min-w-[70px] text-left ${
+                        parseFloat(a.balance) > 0 ? 'text-green-600 dark:text-green-400' :
+                        parseFloat(a.balance) < 0 ? 'text-red-600 dark:text-red-400' :
+                        'text-gray-400 dark:text-gray-500'
+                    }`,
                     dir: 'ltr',
                 }, Number(a.balance || 0).toLocaleString('en', { minimumFractionDigits: 3 })) : null,
-                h('span', { class: 'text-xs text-gray-400 font-mono' }, a.currency),
-                // أزرار تعديل/حذف
-                h('div', { class: 'hidden group-hover:flex items-center gap-1 mr-2' }, [
+                h('span', { class: 'text-[10px] text-gray-400 dark:text-gray-500 font-mono min-w-[28px]' }, a.currency),
+                h('div', { class: 'hidden group-hover:flex items-center gap-1 mr-1' }, [
                     h('button', {
-                        class: 'px-1.5 py-0.5 text-xs text-blue-600 hover:bg-blue-50 rounded',
+                        class: 'px-1.5 py-0.5 text-xs text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded',
                         onClick: (e) => { e.stopPropagation(); emit('edit', a); },
                     }, '✏️'),
                     !a.is_system ? h('button', {
-                        class: 'px-1.5 py-0.5 text-xs text-red-600 hover:bg-red-50 rounded',
+                        class: 'px-1.5 py-0.5 text-xs text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded',
                         onClick: (e) => { e.stopPropagation(); emit('delete', a); },
                     }, '🗑️') : null,
                 ]),
             ]),
-            ...(hasChildren ? a.children_recursive.map(child =>
+            ...(hasChildren && !collapsed.value ? a.children_recursive.map(child =>
                 h(AccountRow, { account: child, depth: props.depth + 1, key: child.id, onEdit: (ac) => emit('edit', ac), onDelete: (ac) => emit('delete', ac) })
             ) : []),
         ]);
