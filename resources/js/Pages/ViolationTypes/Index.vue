@@ -68,7 +68,7 @@ const showForm = ref(false); const editItem = ref(null); const deleteTarget = re
 let t=null;
 const form = useForm({ name:'',default_cost_sar:'',description:'',is_active:true });
 const openModal=(v)=>{ editItem.value=v; form.name=v?.name||''; form.default_cost_sar=v?.default_cost_sar||''; form.description=v?.description||''; form.is_active=v?.is_active??true; form.clearErrors(); showForm.value=true; };
-const submit=()=>{ const o={onSuccess:()=>{showForm.value=false},preserveScroll:true}; editItem.value?form.put('/violation-types/'+editItem.value.id,o):form.post('/violation-types',o); };
+const submit=()=>{ const o={onSuccess:()=>{showForm.value=false; form.reset(); form.clearErrors(); editItem.value=null;},preserveScroll:true}; editItem.value?form.put('/violation-types/'+editItem.value.id,o):form.post('/violation-types',o); };
 const del=(v)=>{ deleteTarget.value=v; };
 const debounceSearch=()=>{clearTimeout(t);t=setTimeout(()=>router.get('/violation-types',{search:search.value},{preserveState:true,replace:true}),400)};
 </script>

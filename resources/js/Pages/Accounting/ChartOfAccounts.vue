@@ -34,7 +34,7 @@
                     <!-- اختيار الحساب الأب أولاً (مطلوب عند الإضافة) -->
                     <div v-if="!editingId">
                         <label class="block text-sm font-medium mb-1">الحساب الأب *</label>
-                        <select v-model="form.parent_id" required @change="fetchNextCode" class="w-full px-4 py-2.5 rounded-xl border text-sm">
+                        <select v-model="form.parent_id" required @change="onParentChange" class="w-full px-4 py-2.5 rounded-xl border text-sm">
                             <option :value="null" disabled>— اختر الحساب الأب —</option>
                             <option v-for="a in parentOptions" :key="a.id" :value="a.id">{{ a.code }} — {{ a.name }}</option>
                         </select>
@@ -101,6 +101,8 @@
 import { ref, computed, h, defineComponent } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/AppLayout.vue';
+import { useRealtimeUpdates } from '@/composables/useRealtimeUpdates';
+useRealtimeUpdates(['account', 'agent', 'client', 'service']);
 
 const props = defineProps({ accounts: Array });
 const showModal = ref(false);
@@ -116,7 +118,7 @@ const form = useForm({
 // قائمة مسطحة لكل الحسابات (للحساب الأب)
 const flattenAccounts = (accs, result = []) => {
     (accs || []).forEach(a => {
-        result.push({ id: a.id, code: a.code, name: a.name });
+        result.push({ id: a.id, code: a.code, name: a.name, type: a.type });
         if (a.children_recursive?.length) flattenAccounts(a.children_recursive, result);
     });
     return result;
@@ -124,6 +126,15 @@ const flattenAccounts = (accs, result = []) => {
 
 const parentOptions = computed(() => flattenAccounts(props.accounts));
 const flatCount = computed(() => parentOptions.value.length);
+
+// عند تغيير الحساب الأب — جلب الرقم + ضبط النوع تلقائياً
+const onParentChange = () => {
+    fetchNextCode();
+    const parent = parentOptions.value.find(a => a.id === form.parent_id);
+    if (parent) {
+        form.type = parent.type;
+    }
+};
 
 // جلب الرقم التالي من السيرفر
 const fetchNextCode = async () => {
@@ -160,9 +171,9 @@ const openEdit = (account) => {
 
 const submitForm = () => {
     if (editingId.value) {
-        form.put('/accounting/accounts/' + editingId.value, { onSuccess: () => showModal.value = false });
+        form.put('/accounting/accounts/' + editingId.value, { onSuccess: () => { showModal.value = false; form.reset(); form.clearErrors(); editingId.value = null; } });
     } else {
-        form.post('/accounting/accounts', { onSuccess: () => showModal.value = false });
+        form.post('/accounting/accounts', { onSuccess: () => { showModal.value = false; form.reset(); form.clearErrors(); nextCodePreview.value = ''; } });
     }
 };
 

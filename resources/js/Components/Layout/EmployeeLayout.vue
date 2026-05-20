@@ -144,7 +144,7 @@ const showNotifications = ref(false);
 const notifications = ref([]);
 const notificationsLoading = ref(false);
 const showSettings = ref(false);
-let pollInterval = null;
+let echoChannel = null;
 
 const toggleNotifications = async () => {
     showSettings.value = false; // أغلق الإعدادات لو مفتوحة
@@ -206,15 +206,23 @@ onMounted(() => {
     if (user.value) {
         try { requestFirebaseToken(); } catch(e) {}
     }
-    // Polling: تحديث عداد الإشعارات كل 15 ثانية
-    pollInterval = setInterval(() => {
-        router.reload({ only: ['unreadNotifications'] });
-    }, 15000);
+    // WebSocket: إشعارات لحظية عبر Reverb
+    if (window.Echo && user.value?.id) {
+        echoChannel = window.Echo.private(`user.${user.value.id}`)
+            .listen('.notification.new', (data) => {
+                page.props.unreadNotifications = (page.props.unreadNotifications || 0) + 1;
+                if (showNotifications.value) {
+                    notifications.value.unshift(data.notification);
+                }
+            });
+    }
 });
 
 onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside);
-    if (pollInterval) clearInterval(pollInterval);
+    if (echoChannel && window.Echo && user.value?.id) {
+        window.Echo.leave(`user.${user.value.id}`);
+    }
 });
 
 const can = (permission) => {

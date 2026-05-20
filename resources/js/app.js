@@ -4,6 +4,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { ZiggyVue } from 'ziggy-js';
 import axios from 'axios';
 import '../css/app.css';
+import './echo';
 
 // Axios global setup: CSRF token + credentials
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';

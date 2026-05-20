@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Agent;
 use App\Models\Account;
 use App\Models\LedgerEntry;
+use App\Events\DataUpdated;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -64,6 +65,8 @@ class AgentController extends Controller
         if (!$agent->account_id) {
             $this->createAccountForAgent($agent);
         }
+
+        event(new DataUpdated('agent', 'created', $agent->id));
 
         return redirect()->route('agents.index')
             ->with('success', 'تم إضافة الوكيل بنجاح');

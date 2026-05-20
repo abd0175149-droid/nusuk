@@ -172,12 +172,12 @@ const submit = () => {
     if (form.id) {
         form.put(`/roles/${form.id}`, {
             preserveScroll: true,
-            onSuccess: () => { showModal.value = false; }
+            onSuccess: () => { showModal.value = false; form.reset(); form.clearErrors(); }
         });
     } else {
         form.post('/roles', {
             preserveScroll: true,
-            onSuccess: () => { showModal.value = false; }
+            onSuccess: () => { showModal.value = false; form.reset(); form.clearErrors(); }
         });
     }
 };

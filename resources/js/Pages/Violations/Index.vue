@@ -120,7 +120,7 @@ const onTypeChange = () => {
     if (vt) form.cost_sar = vt.default_cost_sar;
 };
 
-const submit = () => { form.post('/violations', { onSuccess: () => { showForm.value = false; }, preserveScroll: true }); };
+const submit = () => { form.post('/violations', { onSuccess: () => { showForm.value = false; form.reset(); form.clearErrors(); }, preserveScroll: true }); };
 
 const approveVio = (v) => { if (confirm('اعتماد المخالفة وخصم ' + v.cost_sar + ' SAR من الوكيل؟')) router.post('/violations/' + v.id + '/approve', {}, { preserveScroll: true }); };
 const rejectVio = (v) => { const r = prompt('سبب الرفض:'); if (r !== null) router.post('/violations/' + v.id + '/reject', { reason: r }, { preserveScroll: true }); };

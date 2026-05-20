@@ -8,6 +8,7 @@ use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use App\Services\AccountingService;
+use App\Events\DataUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -261,6 +262,8 @@ class AccountingController extends Controller
                 ]);
             }
         }
+
+        event(new DataUpdated('account', 'created', $account->id));
 
         return redirect()->back()->with('success', 'تم إضافة الحساب بنجاح');
     }

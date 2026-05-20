@@ -144,7 +144,9 @@ import { ref, computed, watch } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/SmartLayout.vue';
 import { usePermissions } from '@/composables/usePermissions';
+import { useRealtimeUpdates } from '@/composables/useRealtimeUpdates';
 const { can } = usePermissions();
+useRealtimeUpdates(['agent']);
 
 const saCities = ['الرياض','جدة','مكة المكرمة','المدينة المنورة','الدمام','الخبر','الطائف','تبوك','أبها','القصيم','حائل','نجران','ينبع','الأحساء','الجبيل','القطيف'];
 const joCities = ['عمان','إربد','الزرقاء','العقبة','السلط','الكرك','مادبا','جرش','عجلون','معان','الطفيلة','البلقاء'];
@@ -194,7 +196,7 @@ const submit = () => {
         const digits = form.phone.replace(/\D/g, '');
         form.phone = prefix + digits;
     }
-    const opts = { onSuccess:()=>{showForm.value=false}, preserveScroll:true };
+    const opts = { onSuccess:()=>{showForm.value=false; form.reset(); form.clearErrors(); editing.value=null;}, preserveScroll:true };
     editing.value ? form.put('/agents/'+editing.value.id, opts) : form.post('/agents', opts);
 };
 const debounceSearch = () => { clearTimeout(timeout); timeout=setTimeout(()=>router.get('/agents',{search:search.value},{preserveState:true,replace:true}),400) };
