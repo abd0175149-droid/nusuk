@@ -216,7 +216,51 @@ class AccountingController extends Controller
         $validated['is_active'] = true;
         $validated['balance'] = 0;
 
-        Account::create($validated);
+        $account = Account::create($validated);
+
+        // === مزامنة مباشرة: إذا الحساب تحت "الوكلاء" (2110) — أنشئ وكيل ===
+        $parent = Account::find($validated['parent_id']);
+        $isAgentAccount = $parent && $parent->code === '2110';
+        if (!$isAgentAccount && $parent && $parent->parent_id) {
+            $grandParent = Account::find($parent->parent_id);
+            $isAgentAccount = $grandParent && $grandParent->code === '2110';
+        }
+
+        if ($isAgentAccount) {
+            $existing = \App\Models\Agent::where('account_id', $account->id)->first();
+            if (!$existing) {
+                $lastCode = \App\Models\Agent::where('code', 'like', 'AGT-%')->orderByDesc('code')->value('code');
+                $nextNum = $lastCode ? (int)substr($lastCode, 4) + 1 : 1;
+                \App\Models\Agent::create([
+                    'name' => $account->name,
+                    'code' => 'AGT-' . str_pad($nextNum, 3, '0', STR_PAD_LEFT),
+                    'account_id' => $account->id,
+                    'country' => 'JO',
+                    'currency' => 'JOD',
+                    'balance_sar' => 0,
+                    'is_active' => true,
+                ]);
+            }
+        }
+
+        // === مزامنة: إذا تحت "ذمم العملاء" (1200) — أنشئ عميل ===
+        if ($parent && $parent->code === '1200') {
+            $existing = \App\Models\Client::where('account_id', $account->id)->first();
+            if (!$existing) {
+                $lastCode = \App\Models\Client::where('code', 'like', 'CLT-%')->orderByDesc('code')->value('code');
+                $nextNum = $lastCode ? (int)substr($lastCode, 4) + 1 : 1;
+                \App\Models\Client::create([
+                    'name' => $account->name,
+                    'code' => 'CLT-' . str_pad($nextNum, 3, '0', STR_PAD_LEFT),
+                    'account_id' => $account->id,
+                    'country' => 'JO',
+                    'currency' => 'JOD',
+                    'balance_jod' => 0,
+                    'credit_limit_jod' => 0,
+                    'is_active' => true,
+                ]);
+            }
+        }
 
         return redirect()->back()->with('success', 'تم إضافة الحساب بنجاح');
     }

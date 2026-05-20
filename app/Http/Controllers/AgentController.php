@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agent;
+use App\Models\Account;
 use App\Models\LedgerEntry;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -59,7 +60,10 @@ class AgentController extends Controller
 
         $agent = Agent::create($validated);
 
-        // حساب محاسبي يُنشأ تلقائياً عبر AgentObserver
+        // === إنشاء حساب محاسبي مباشرة (بدون الاعتماد على Observer) ===
+        if (!$agent->account_id) {
+            $this->createAccountForAgent($agent);
+        }
 
         return redirect()->route('agents.index')
             ->with('success', 'تم إضافة الوكيل بنجاح');
@@ -150,6 +154,16 @@ class AgentController extends Controller
         $validated['currency'] = $validated['country'] === 'JO' ? 'JOD' : 'SAR';
         $agent->update($validated);
 
+        // مزامنة الحساب المحاسبي
+        if ($agent->account_id) {
+            Account::where('id', $agent->account_id)->update([
+                'name' => $agent->name,
+                'is_active' => $agent->is_active,
+            ]);
+        } else {
+            $this->createAccountForAgent($agent);
+        }
+
         return redirect()->route('agents.index')
             ->with('success', 'تم تحديث بيانات الوكيل بنجاح');
     }
@@ -176,5 +190,50 @@ class AgentController extends Controller
 
         return redirect()->route('agents.index')
             ->with('success', 'تم حذف الوكيل بنجاح');
+    }
+
+    /**
+     * إنشاء حساب محاسبي للوكيل تحت 2110 الوكلاء
+     */
+    private function createAccountForAgent(Agent $agent): void
+    {
+        // ضمان وجود 2101 دائنون متنوعون
+        $creditors = Account::where('code', '2101')->first();
+        if (!$creditors) {
+            $liabilities = Account::where('code', '2000')->first();
+            if (!$liabilities) return;
+            $creditors = Account::create([
+                'code' => '2101', 'name' => 'دائنون متنوعون',
+                'type' => 'liability', 'parent_id' => $liabilities->id,
+                'is_system' => true, 'is_active' => true, 'currency' => 'JOD', 'balance' => 0,
+            ]);
+        }
+
+        // ضمان وجود 2110 الوكلاء
+        $agentsParent = Account::where('code', '2110')->first();
+        if (!$agentsParent) {
+            $agentsParent = Account::create([
+                'code' => '2110', 'name' => 'الوكلاء',
+                'type' => 'liability', 'parent_id' => $creditors->id,
+                'is_system' => true, 'is_active' => true, 'currency' => 'JOD', 'balance' => 0,
+            ]);
+        }
+
+        // إنشاء الحساب الفرعي للوكيل
+        $nextCode = Account::where('parent_id', $agentsParent->id)->max('code');
+        $newCode = $nextCode ? strval(intval($nextCode) + 1) : '2111';
+
+        $account = Account::create([
+            'code' => $newCode,
+            'name' => $agent->name,
+            'parent_id' => $agentsParent->id,
+            'type' => 'liability',
+            'is_active' => $agent->is_active ?? true,
+            'is_system' => false,
+            'currency' => 'JOD',
+            'balance' => 0,
+        ]);
+
+        $agent->update(['account_id' => $account->id]);
     }
 }
