@@ -109,5 +109,15 @@ class RolePermissionSeeder extends Seeder
             }
         }
         $hrManager->permissions()->syncWithoutDetaching($hrIds);
+
+        // ربط كافة الصلاحيات بـ دور المدير العام لضمان المزامنة الكاملة
+        $admin->permissions()->syncWithoutDetaching(array_values($allPermissions));
+
+        // ضمان ربط حساب المدير العام بدور الأدمن في قاعدة البيانات
+        $adminUser = \App\Models\User::where('email', 'admin@nusuk.com')->orWhere('id', 1)->first();
+        if ($adminUser) {
+            $adminUser->role_id = $admin->id;
+            $adminUser->save();
+        }
     }
 }

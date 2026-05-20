@@ -101,7 +101,14 @@ const moduleTranslations = {
     invoices: 'الفواتير',
     reports: 'التقارير',
     settings: 'الإعدادات',
-    users: 'الموظفين'
+    users: 'الموظفين (الإدارة العامة)',
+    employees: 'الموظفين (HR)',
+    attendance: 'الحضور والانصراف',
+    leaves: 'الإجازات',
+    advances: 'السلف',
+    penalties: 'الجزاءات والمخالفات',
+    payroll: 'مسيرات الرواتب',
+    hr_reports: 'تقارير الموارد البشرية'
 };
 
 const actionTranslations = {
@@ -111,7 +118,9 @@ const actionTranslations = {
     delete: 'حذف',
     approve: 'اعتماد',
     reject: 'رفض',
-    submit: 'إرسال للاعتماد'
+    submit: 'إرسال للاعتماد',
+    manual_edit: 'تعديل يدوي',
+    generate: 'توليد'
 };
 
 const translateModule = (mod) => moduleTranslations[mod] || mod;
