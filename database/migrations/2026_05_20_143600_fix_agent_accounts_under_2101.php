@@ -15,7 +15,8 @@ return new class extends Migration
     {
         $newParent = Account::where('code', '2101')->first();
         if (!$newParent) {
-            throw new \Exception('حساب 2101 (دائنون متنوعون) غير موجود!');
+            // قاعدة بيانات جديدة — لا حاجة للإصلاح
+            return;
         }
 
         // جلب كل الوكلاء
