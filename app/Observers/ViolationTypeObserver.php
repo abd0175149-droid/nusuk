@@ -18,8 +18,7 @@ class ViolationTypeObserver
             
             if ($parentAccount) {
                 if (!$type->account_id) {
-                    $nextCode = Account::where('parent_id', $parentAccount->id)->max('code');
-                    $newCode = $nextCode ? strval(intval($nextCode) + 1) : '5201';
+                    $newCode = AccountingSync::generateChildCode($parentAccount->id, $parentAccount->code);
 
                     $account = Account::create([
                         'code' => $newCode,

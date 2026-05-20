@@ -18,8 +18,7 @@ class ServiceObserver
             
             if ($parentAccount) {
                 if (!$service->account_id) {
-                    $nextCode = Account::where('parent_id', $parentAccount->id)->max('code');
-                    $newCode = $nextCode ? strval(intval($nextCode) + 1) : '400101';
+                    $newCode = AccountingSync::generateChildCode($parentAccount->id, $parentAccount->code);
 
                     $account = Account::create([
                         'code' => $newCode,

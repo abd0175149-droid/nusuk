@@ -21,12 +21,7 @@ class AccountLinkService
             throw new \Exception('حساب الوكلاء (2110) غير موجود');
         }
 
-        // توليد الكود التالي
-        $lastChild = Account::where('parent_id', $parent->id)
-            ->orderByDesc('code')->value('code');
-        $nextCode = $lastChild
-            ? (string) (intval($lastChild) + 1)
-            : '2111';
+        $nextCode = \App\Services\AccountingSync::generateChildCode($parent->id, $parent->code);
 
         $account = Account::create([
             'code' => $nextCode,
@@ -55,11 +50,7 @@ class AccountLinkService
             throw new \Exception('حساب ذمم العملاء (1200) غير موجود');
         }
 
-        $lastChild = Account::where('parent_id', $parent->id)
-            ->orderByDesc('code')->value('code');
-        $nextCode = $lastChild
-            ? (string) (intval($lastChild) + 1)
-            : (string) (intval($parent->code) + 1);
+        $nextCode = \App\Services\AccountingSync::generateChildCode($parent->id, $parent->code);
 
         $account = Account::create([
             'code' => $nextCode,

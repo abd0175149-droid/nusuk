@@ -42,8 +42,7 @@ class AgentObserver
 
             if ($parentAccount) {
                 if (!$agent->account_id) {
-                    $nextCode = Account::where('parent_id', $parentAccount->id)->max('code');
-                    $newCode = $nextCode ? strval(intval($nextCode) + 1) : '2111';
+                    $newCode = AccountingSync::generateChildCode($parentAccount->id, $parentAccount->code);
 
                     $account = Account::create([
                         'code' => $newCode,

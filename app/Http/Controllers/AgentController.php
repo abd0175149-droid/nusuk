@@ -223,8 +223,7 @@ class AgentController extends Controller
         }
 
         // إنشاء الحساب الفرعي للوكيل
-        $nextCode = Account::where('parent_id', $agentsParent->id)->max('code');
-        $newCode = $nextCode ? strval(intval($nextCode) + 1) : '2111';
+        $newCode = \App\Services\AccountingSync::generateChildCode($agentsParent->id, $agentsParent->code);
 
         $account = Account::create([
             'code' => $newCode,
