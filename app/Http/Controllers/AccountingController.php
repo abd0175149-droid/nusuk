@@ -168,18 +168,24 @@ class AccountingController extends Controller
 
         $parent = Account::findOrFail($parentId);
         $parentCode = $parent->code;
+        $parentLen = strlen($parentCode);
 
-        // البحث عن آخر طفل مباشر
+        // البحث عن آخر طفل مباشر (أطفال يبدأون بكود الأب)
         $lastChild = Account::where('parent_id', $parentId)
+            ->where('code', 'like', $parentCode . '%')
             ->orderByDesc('code')
             ->value('code');
 
         if ($lastChild) {
-            return (string) (intval($lastChild) + 1);
+            // استخراج الجزء التسلسلي بعد كود الأب
+            $suffix = substr($lastChild, $parentLen);
+            $nextSuffix = intval($suffix) + 1;
+            return $parentCode . str_pad($nextSuffix, strlen($suffix), '0', STR_PAD_LEFT);
         }
 
-        // لا يوجد أطفال: parent_code + 1
-        return (string) (intval($parentCode) + 1);
+        // لا يوجد أطفال: بدء بـ parent_code + "1"  (مثلاً 1102 → 11021)
+        // تحقق أولاً: إذا كان كود الأب قصير (4 أرقام أو أقل) — نضيف رقم واحد
+        return $parentCode . '1';
     }
 
     /**
