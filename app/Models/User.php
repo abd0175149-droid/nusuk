@@ -7,11 +7,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laragear\WebAuthn\WebAuthnAuthenticatable;
+use Laragear\WebAuthn\Contracts\WebAuthnAuthenticatable as WebAuthnAuthenticatableContract;
 
-class User extends Authenticatable
+class User extends Authenticatable implements WebAuthnAuthenticatableContract
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, WebAuthnAuthenticatable;
 
     protected $fillable = [
         'name', 'email', 'password', 'role_id', 'phone',
@@ -64,5 +66,20 @@ class User extends Authenticatable
     public function isAccountant(): bool
     {
         return $this->role?->slug === 'accountant';
+    }
+
+    public function isHR(): bool
+    {
+        return $this->role?->slug === 'hr_manager';
+    }
+
+    public function employee()
+    {
+        return $this->hasOne(Employee::class);
+    }
+
+    public function isEmployee(): bool
+    {
+        return $this->employee !== null;
     }
 }
