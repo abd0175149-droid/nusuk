@@ -21,7 +21,8 @@ class ChartOfAccountsSeeder extends Seeder
             // === 2000 الالتزامات ===
             ['code' => '2000', 'name' => 'الالتزامات', 'type' => 'liability', 'parent_id' => null, 'is_system' => true, 'currency' => 'JOD'],
             ['code' => '2100', 'name' => 'التزامات قصيرة الأجل', 'type' => 'liability', 'parent_code' => '2000', 'is_system' => true, 'currency' => 'JOD'],
-            ['code' => '2101', 'name' => 'دائنون متنوعون (الوكلاء)', 'type' => 'liability', 'parent_code' => '2100', 'is_system' => true, 'currency' => 'JOD', 'description' => 'حسابات الوكلاء — تُنشأ فرعياً تلقائياً عند إضافة وكيل جديد'],
+            ['code' => '2101', 'name' => 'دائنون متنوعون', 'type' => 'liability', 'parent_code' => '2100', 'is_system' => true, 'currency' => 'JOD'],
+            ['code' => '2110', 'name' => 'الوكلاء', 'type' => 'liability', 'parent_code' => '2101', 'is_system' => true, 'currency' => 'JOD', 'description' => 'حسابات الوكلاء — تُنشأ فرعياً تلقائياً عند إضافة وكيل جديد'],
 
             // === 3000 حقوق الملكية ===
             ['code' => '3000', 'name' => 'حقوق الملكية', 'type' => 'equity', 'parent_id' => null, 'is_system' => true, 'currency' => 'JOD'],

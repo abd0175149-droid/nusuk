@@ -29,7 +29,7 @@ class AccountObserver
                 'is_active' => $account->is_active ?? true,
             ];
 
-            if ($parent->code === '2101') {
+            if ($parent->code === '2110') {
                 // Agent
                 $agent = Agent::where('account_id', $account->id)->first();
                 if (!$agent) {

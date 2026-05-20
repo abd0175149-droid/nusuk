@@ -236,7 +236,7 @@ class AccountingService
         $paymentAccount = self::paymentAccount($transfer->payment_method);
         $agentAccount = $transfer->agent->account_id
             ? Account::find($transfer->agent->account_id)
-            : self::account('2101');
+            : self::account('2110');
 
         // المبلغ بالدينار (cost_jod) — لا نحتاج تحويل
         $amountJod = (float) $transfer->cost_jod;
@@ -275,7 +275,7 @@ class AccountingService
             : self::account('1200');
         $agentAccount = $invoice->agent->account_id
             ? Account::find($invoice->agent->account_id)
-            : self::account('2101');
+            : self::account('2110');
         // إيرادات الخدمات - نسجل على الحساب الورقي (الفرعي) وليس الأب
         $revenueParent = self::account('4001');
         $revenueAccount = Account::where('parent_id', $revenueParent->id)
@@ -347,7 +347,7 @@ class AccountingService
         $violationExpenseAccount = self::account('5200');
         $agentAccount = $violation->agent->account_id
             ? Account::find($violation->agent->account_id)
-            : self::account('2101');
+            : self::account('2110');
 
         // تحويل المبلغ من SAR إلى JOD
         $amountJod = self::sarToJod($violation->cost_sar);

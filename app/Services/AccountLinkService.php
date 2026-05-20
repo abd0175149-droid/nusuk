@@ -12,13 +12,13 @@ use App\Models\Client;
 class AccountLinkService
 {
     /**
-     * إنشاء حساب فرعي لوكيل جديد تحت "دائنون متنوعون" (2101)
+     * إنشاء حساب فرعي لوكيل جديد تحت "الوكلاء" (2110)
      */
     public static function createAgentAccount(Agent $agent): Account
     {
-        $parent = Account::where('code', '2101')->first();
+        $parent = Account::where('code', '2110')->first();
         if (!$parent) {
-            throw new \Exception('حساب دائنون متنوعون (2101) غير موجود');
+            throw new \Exception('حساب الوكلاء (2110) غير موجود');
         }
 
         // توليد الكود التالي

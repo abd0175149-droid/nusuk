@@ -15,8 +15,8 @@ class AgentObserver
         AccountingSync::$isSyncing = true;
 
         try {
-            // الوكلاء يندرجون تحت 2101 دائنون متنوعون (التزامات)
-            $parentAccount = Account::where('code', '2101')->first();
+            // الوكلاء يندرجون تحت 2110 الوكلاء (فرع من دائنون متنوعون)
+            $parentAccount = Account::where('code', '2110')->first();
             
             if ($parentAccount) {
                 if (!$agent->account_id) {
