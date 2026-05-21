@@ -35,10 +35,12 @@ class HRTestDataSeeder extends Seeder
                     'code' => 'MORN',
                     'start_time' => '09:00:00',
                     'end_time' => '17:00:00',
-                    'late_grace_minutes' => 15,
-                    'early_leave_grace_minutes' => 10,
-                    'is_overtime_allowed' => true,
-                    'work_days' => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'],
+                    'grace_minutes' => 15,
+                    'working_days' => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'],
+                    'break_minutes' => 60,
+                    'is_flexible' => false,
+                    'min_hours' => 8,
+                    'country' => 'SA',
                 ]
             );
 
@@ -74,7 +76,7 @@ class HRTestDataSeeder extends Seeder
             $today = Carbon::today();
             for ($i = 1; $i <= 5; $i++) {
                 $date = $today->copy()->subDays($i);
-                if (!in_array($date->format('l'), $morningShift->work_days)) continue;
+                if (!in_array($date->format('l'), $morningShift->working_days)) continue;
 
                 Attendance::firstOrCreate([
                     'employee_id' => $employee1->id,
