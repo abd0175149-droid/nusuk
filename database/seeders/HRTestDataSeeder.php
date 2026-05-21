@@ -25,8 +25,8 @@ class HRTestDataSeeder extends Seeder
     {
         DB::transaction(function () {
             // 1. الأقسام (Departments)
-            $itDept = Department::firstOrCreate(['name' => 'تقنية المعلومات'], ['code' => 'IT', 'description' => 'قسم التكنولوجيا']);
-            $salesDept = Department::firstOrCreate(['name' => 'المبيعات'], ['code' => 'SALES', 'description' => 'قسم المبيعات']);
+            $itDept = Department::firstOrCreate(['name' => 'تقنية المعلومات'], ['code' => 'IT']);
+            $salesDept = Department::firstOrCreate(['name' => 'المبيعات'], ['code' => 'SALES']);
 
             // 2. الورديات (Shifts)
             $morningShift = Shift::firstOrCreate(
