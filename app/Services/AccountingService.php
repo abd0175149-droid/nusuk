@@ -263,8 +263,7 @@ class AccountingService
             ]
         );
     }
-        );
-    }
+
 
     /**
      * قيد اعتماد سلفة موظف
