@@ -161,4 +161,14 @@ Route::middleware('auth')->group(function () {
     Route::get('payrolls/{payroll}/print', [\App\Http\Controllers\PayrollController::class, 'print'])->name('payrolls.print');
     Route::get('payrolls/{payroll}/export-bank', [\App\Http\Controllers\PayrollController::class, 'exportBank'])->name('payrolls.export-bank');
     Route::get('payslip/{employee}/{month}/{year}', [\App\Http\Controllers\PayrollController::class, 'payslip'])->name('payslip');
+
+    // ESS (Employee Self-Service)
+    Route::get('hr/my-attendance', [\App\Http\Controllers\HRReportController::class, 'myAttendance'])->name('hr.my-attendance');
+    Route::get('hr/my-requests', [\App\Http\Controllers\HRReportController::class, 'myRequests'])->name('hr.my-requests');
+
+    // HR Reports
+    Route::get('hr/reports', [\App\Http\Controllers\HRReportController::class, 'attendance'])->name('hr.reports');
+    Route::get('hr/reports/attendance', [\App\Http\Controllers\HRReportController::class, 'attendance'])->name('hr.reports.attendance');
+    Route::get('hr/reports/payroll', [\App\Http\Controllers\HRReportController::class, 'payrollSummary'])->name('hr.reports.payroll');
+    Route::get('hr/reports/employee-statement/{employee}', [\App\Http\Controllers\HRReportController::class, 'employeeStatement'])->name('hr.reports.employee-statement');
 });

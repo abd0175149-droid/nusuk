@@ -10,6 +10,11 @@ use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Violation;
 use App\Models\ExchangeRate;
+use App\Models\Employee;
+use App\Models\Attendance;
+use App\Models\Payroll;
+use App\Models\LeaveRequest;
+use App\Models\Advance;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -81,6 +86,18 @@ class DashboardController extends Controller
             ];
         }
 
+        // ===== HR KPIs =====
+        $hr = [
+            'total_employees' => Employee::active()->count(),
+            'late_today' => Attendance::where('date', today())->where('status', 'late')->count(),
+            'absent_today' => Attendance::where('date', today())->where('status', 'absent')->count(),
+            'present_today' => Attendance::where('date', today())->whereIn('status', ['present', 'late'])->count(),
+            'pending_leaves' => LeaveRequest::where('status', 'pending')->count(),
+            'pending_advances' => Advance::where('status', 'pending')->count(),
+            'total_payroll_sar' => (float) Payroll::where('month', now()->month)->where('year', now()->year)->where('currency', 'SAR')->where('status', 'approved')->sum('total_net'),
+            'total_payroll_jod' => (float) Payroll::where('month', now()->month)->where('year', now()->year)->where('currency', 'JOD')->where('status', 'approved')->sum('total_net'),
+        ];
+
         return Inertia::render('Dashboard/Index', [
             'title' => 'لوحة القيادة',
             'stats' => $stats,
@@ -90,6 +107,7 @@ class DashboardController extends Controller
             'monthly' => $monthly,
             'chartData' => $chartData,
             'exchangeRate' => $rate,
+            'hr' => $hr,
         ]);
     }
 }
