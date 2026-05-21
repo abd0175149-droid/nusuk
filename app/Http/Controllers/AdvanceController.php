@@ -141,7 +141,8 @@ class AdvanceController extends Controller
                 ]);
             }
 
-            // TODO: AccountingService::recordAdvance($advance);
+            // إثبات السلفة محاسبياً
+            \App\Services\AccountingService::recordAdvance($advance);
 
             NotificationService::advanceApproved($advance);
         });

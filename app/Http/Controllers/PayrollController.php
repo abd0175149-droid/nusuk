@@ -112,7 +112,8 @@ class PayrollController extends Controller
             // تعليم الأقساط والمخالفات كمخصومة
             PayrollService::markDeductionsAsPaid($payroll);
 
-            // TODO: AccountingService::recordPayroll($payroll);
+            // تسجيل القيد المحاسبي للرواتب
+            \App\Services\AccountingService::recordPayroll($payroll);
 
             // إشعار الموظفين
             NotificationService::payrollReady($payroll);

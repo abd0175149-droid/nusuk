@@ -17,6 +17,7 @@ class ChartOfAccountsSeeder extends Seeder
             ['code' => '1102', 'name' => 'البنك', 'type' => 'asset', 'parent_code' => '1100', 'is_system' => true, 'currency' => 'JOD', 'description' => 'الأرصدة البنكية'],
             ['code' => '1103', 'name' => 'شيكات تحت التحصيل', 'type' => 'asset', 'parent_code' => '1100', 'is_system' => true, 'currency' => 'JOD', 'description' => 'شيكات مستلمة لم تُصرف بعد'],
             ['code' => '1200', 'name' => 'ذمم العملاء', 'type' => 'asset', 'parent_code' => '1100', 'is_system' => true, 'currency' => 'JOD', 'description' => 'المبالغ المستحقة على العملاء'],
+            ['code' => '1300', 'name' => 'ذمم الموظفين (سلف)', 'type' => 'asset', 'parent_code' => '1100', 'is_system' => true, 'currency' => 'JOD', 'description' => 'سلف الموظفين'],
 
             // === 2000 الالتزامات ===
             ['code' => '2000', 'name' => 'الالتزامات', 'type' => 'liability', 'parent_id' => null, 'is_system' => true, 'currency' => 'JOD'],
@@ -40,6 +41,9 @@ class ChartOfAccountsSeeder extends Seeder
             ['code' => '5100', 'name' => 'مصاريف تشغيلية', 'type' => 'expense', 'parent_code' => '5000', 'is_system' => true, 'currency' => 'JOD', 'description' => 'المصاريف اليومية والتشغيلية'],
             ['code' => '5200', 'name' => 'مصاريف المخالفات', 'type' => 'expense', 'parent_code' => '5000', 'is_system' => true, 'currency' => 'JOD', 'description' => 'تكلفة مخالفات الوكلاء (محولة بالدينار)'],
             ['code' => '5300', 'name' => 'مصاريف أخرى', 'type' => 'expense', 'parent_code' => '5000', 'is_system' => true, 'currency' => 'JOD'],
+            ['code' => '5400', 'name' => 'مصاريف الرواتب', 'type' => 'expense', 'parent_code' => '5000', 'is_system' => true, 'currency' => 'JOD', 'description' => 'رواتب الموظفين'],
+            ['code' => '5410', 'name' => 'مصاريف البدلات', 'type' => 'expense', 'parent_code' => '5000', 'is_system' => true, 'currency' => 'JOD', 'description' => 'بدلات سكن ومواصلات وأخرى'],
+            ['code' => '5420', 'name' => 'مصاريف العمل الإضافي', 'type' => 'expense', 'parent_code' => '5000', 'is_system' => true, 'currency' => 'JOD', 'description' => 'ساعات العمل الإضافي للموظفين'],
         ];
 
         foreach ($accounts as $data) {

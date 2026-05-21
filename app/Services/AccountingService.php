@@ -10,6 +10,8 @@ use App\Models\Expense;
 use App\Models\Transfer;
 use App\Models\Invoice;
 use App\Models\Violation;
+use App\Models\Advance;
+use App\Models\Payroll;
 use Illuminate\Support\Facades\DB;
 
 class AccountingService
@@ -259,6 +261,143 @@ class AccountingService
                     'description' => "دفع حوالة {$transfer->transfer_number}",
                 ],
             ]
+        );
+    }
+        );
+    }
+
+    /**
+     * قيد اعتماد سلفة موظف
+     * مدين: ذمم الموظفين (سلف) (1300)
+     * دائن: الصندوق/البنك
+     */
+    public static function recordAdvance(Advance $advance): JournalEntry
+    {
+        $paymentAccount = self::paymentAccount($advance->payment_method);
+        $advancesAccount = self::account('1300'); // ذمم الموظفين
+
+        // حساب المبلغ بالدينار (إذا كانت العملة SAR نضرب بسعر الصرف)
+        $amountJod = $advance->currency === 'SAR' 
+            ? round($advance->amount * self::getExchangeRate(), 3) 
+            : $advance->amount;
+
+        return self::createEntry(
+            "سلفة للموظف {$advance->employee->user->name} — {$advance->advance_number}",
+            'advance',
+            $advance->id,
+            [
+                [
+                    'account_id' => $advancesAccount->id,
+                    'debit' => $amountJod,
+                    'credit' => 0,
+                    'description' => "إثبات سلفة الموظف {$advance->employee->user->name}",
+                ],
+                [
+                    'account_id' => $paymentAccount->id,
+                    'debit' => 0,
+                    'credit' => $amountJod,
+                    'description' => "صرف سلفة الموظف {$advance->employee->user->name}",
+                ],
+            ]
+        );
+    }
+
+    /**
+     * قيد اعتماد مسير الرواتب
+     */
+    public static function recordPayroll(Payroll $payroll): JournalEntry
+    {
+        // حساب الإجماليات للمسير بالكامل
+        // إذا كان المسير بالريال السعودي نحوله للدينار أولاً
+        $isSar = $payroll->currency === 'SAR';
+        $rate = self::getExchangeRate();
+
+        $payroll->load('items');
+        
+        $totalBasic = $isSar ? round($payroll->items->sum('basic_salary') * $rate, 3) : $payroll->items->sum('basic_salary');
+        $totalAllowances = $isSar ? round( ($payroll->items->sum('housing_allowance') + $payroll->items->sum('transport_allowance') + $payroll->items->sum('other_allowance')) * $rate, 3) : ($payroll->items->sum('housing_allowance') + $payroll->items->sum('transport_allowance') + $payroll->items->sum('other_allowance'));
+        $totalOvertime = $isSar ? round($payroll->items->sum('overtime_amount') * $rate, 3) : $payroll->items->sum('overtime_amount');
+        
+        $totalLate = $isSar ? round($payroll->items->sum('late_deduction') * $rate, 3) : $payroll->items->sum('late_deduction');
+        $totalAbsence = $isSar ? round($payroll->items->sum('absence_deduction') * $rate, 3) : $payroll->items->sum('absence_deduction');
+        $totalUnpaidLeave = $isSar ? round($payroll->items->sum('unpaid_leave_deduction') * $rate, 3) : $payroll->items->sum('unpaid_leave_deduction');
+
+        $totalAdvanceDeductions = $isSar ? round($payroll->items->sum('advance_deduction') * $rate, 3) : $payroll->items->sum('advance_deduction');
+        $totalPenaltyDeductions = $isSar ? round($payroll->items->sum('penalty_deduction') * $rate, 3) : $payroll->items->sum('penalty_deduction');
+
+        $netSalary = $isSar ? round($payroll->total_net * $rate, 3) : $payroll->total_net;
+
+        // المصروف الفعلي للرواتب بعد خصم الغياب والتأخير (لأننا لا ندفع مقابل الغياب فلا يعتبر مصروف)
+        $actualBasicExpense = $totalBasic - $totalLate - $totalAbsence - $totalUnpaidLeave;
+
+        $lines = [];
+
+        // 1. مدين: مصاريف الرواتب (5400)
+        if ($actualBasicExpense > 0) {
+            $lines[] = [
+                'account_id' => self::account('5400')->id,
+                'debit' => $actualBasicExpense,
+                'credit' => 0,
+                'description' => "مصاريف الرواتب الأساسية",
+            ];
+        }
+
+        // 2. مدين: مصاريف البدلات (5410)
+        if ($totalAllowances > 0) {
+            $lines[] = [
+                'account_id' => self::account('5410')->id,
+                'debit' => $totalAllowances,
+                'credit' => 0,
+                'description' => "مصاريف بدلات الموظفين",
+            ];
+        }
+
+        // 3. مدين: مصاريف العمل الإضافي (5420)
+        if ($totalOvertime > 0) {
+            $lines[] = [
+                'account_id' => self::account('5420')->id,
+                'debit' => $totalOvertime,
+                'credit' => 0,
+                'description' => "مصاريف العمل الإضافي",
+            ];
+        }
+
+        // 4. دائن: ذمم الموظفين للخصومات (سلف) (1300)
+        if ($totalAdvanceDeductions > 0) {
+            $lines[] = [
+                'account_id' => self::account('1300')->id,
+                'debit' => 0,
+                'credit' => $totalAdvanceDeductions,
+                'description' => "سداد سلف الموظفين",
+            ];
+        }
+
+        // 5. دائن: إيرادات أخرى للمخالفات المالية (4003)
+        if ($totalPenaltyDeductions > 0) {
+            $lines[] = [
+                'account_id' => self::account('4003')->id,
+                'debit' => 0,
+                'credit' => $totalPenaltyDeductions,
+                'description' => "خصومات المخالفات المالية",
+            ];
+        }
+
+        // 6. دائن: البنك/الصندوق لإجمالي الرواتب المحولة (الصافي) (1102)
+        // نفترض أن مسير الرواتب يُدفع عبر البنك (يمكن تخصيصها لاحقاً)
+        if ($netSalary > 0) {
+            $lines[] = [
+                'account_id' => self::account('1102')->id,
+                'debit' => 0,
+                'credit' => $netSalary,
+                'description' => "تحويل رواتب الموظفين",
+            ];
+        }
+
+        return self::createEntry(
+            "مسير الرواتب رقم {$payroll->payroll_number} لشهر {$payroll->month}/{$payroll->year} ({$payroll->currency})",
+            'payroll',
+            $payroll->id,
+            $lines
         );
     }
 
