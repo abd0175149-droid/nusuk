@@ -45,14 +45,15 @@ class HRTestDataSeeder extends Seeder
             );
 
             // 3. إنشاء مستخدم وموظف تجريبي (Employee)
+            $salesRole = \App\Models\Role::firstOrCreate(['slug' => 'sales'], ['name' => 'موظف مبيعات']);
             $user1 = User::firstOrCreate(
                 ['email' => 'emp1@nusuk.test'],
                 [
                     'name' => 'أحمد الموظف',
                     'password' => Hash::make('password'),
+                    'role_id' => $salesRole->id,
                 ]
             );
-            $user1->assignRole('موظف مبيعات');
 
             $employee1 = Employee::firstOrCreate(
                 ['user_id' => $user1->id],
