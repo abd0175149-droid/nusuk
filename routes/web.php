@@ -150,4 +150,15 @@ Route::middleware('auth')->group(function () {
 
     // Employee Penalties
     Route::resource('penalties', \App\Http\Controllers\EmployeePenaltyController::class)->only(['index', 'store', 'destroy']);
+
+    // Payroll
+    Route::get('payrolls', [\App\Http\Controllers\PayrollController::class, 'index'])->name('payrolls.index');
+    Route::post('payrolls/generate', [\App\Http\Controllers\PayrollController::class, 'generate'])->name('payrolls.generate');
+    Route::get('payrolls/{payroll}', [\App\Http\Controllers\PayrollController::class, 'show'])->name('payrolls.show');
+    Route::post('payrolls/{payroll}/submit', [\App\Http\Controllers\PayrollController::class, 'submit'])->name('payrolls.submit');
+    Route::post('payrolls/{payroll}/approve', [\App\Http\Controllers\PayrollController::class, 'approve'])->name('payrolls.approve');
+    Route::post('payrolls/{payroll}/reject', [\App\Http\Controllers\PayrollController::class, 'reject'])->name('payrolls.reject');
+    Route::get('payrolls/{payroll}/print', [\App\Http\Controllers\PayrollController::class, 'print'])->name('payrolls.print');
+    Route::get('payrolls/{payroll}/export-bank', [\App\Http\Controllers\PayrollController::class, 'exportBank'])->name('payrolls.export-bank');
+    Route::get('payslip/{employee}/{month}/{year}', [\App\Http\Controllers\PayrollController::class, 'payslip'])->name('payslip');
 });

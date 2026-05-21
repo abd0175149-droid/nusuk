@@ -332,4 +332,31 @@ class NotificationService
             );
         }
     }
+
+    /**
+     * إشعار عند اعتماد مسير الرواتب — لكل الموظفين في المسير
+     */
+    public static function payrollReady($payroll): void
+    {
+        $payroll->load('items.employee');
+        $months = ['', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+                   'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+        $periodLabel = ($months[$payroll->month] ?? '') . ' ' . $payroll->year;
+
+        foreach ($payroll->items as $item) {
+            $employeeUserId = $item->employee?->user_id;
+            if ($employeeUserId) {
+                self::send($employeeUserId,
+                    '💰 قسيمة راتبك جاهزة',
+                    "تم اعتماد راتب {$periodLabel} — صافي: " . number_format((float) $item->net_salary, 2) . " {$payroll->currency}",
+                    [
+                        'type' => 'payroll',
+                        'icon' => '💰',
+                        'action_url' => "/payslip/{$item->employee_id}/{$payroll->month}/{$payroll->year}",
+                        'data' => ['reference_type' => 'payroll', 'reference_id' => $payroll->id],
+                    ]
+                );
+            }
+        }
+    }
 }
