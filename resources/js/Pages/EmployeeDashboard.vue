@@ -11,6 +11,11 @@
                 </p>
             </div>
 
+            <!-- Attendance Check-in Widget -->
+            <div v-if="page.props.auth.permissions.includes('attendance.view')" class="mb-8 max-w-lg mx-auto">
+                <CheckInWidget />
+            </div>
+
             <!-- Shortcut Cards Grid -->
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                 <template v-for="card in availableCards" :key="card.route">
@@ -55,6 +60,7 @@
 import { computed } from 'vue';
 import { usePage, Link } from '@inertiajs/vue3';
 import EmployeeLayout from '@/Components/Layout/EmployeeLayout.vue';
+import CheckInWidget from '@/Components/Attendance/CheckInWidget.vue';
 
 const page = usePage();
 const user = computed(() => page.props.auth?.user);

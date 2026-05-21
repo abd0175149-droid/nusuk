@@ -57,6 +57,7 @@ Route::middleware('auth')->group(function () {
     Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
     Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
     Route::post('settings/exchange-rate', [SettingController::class, 'storeExchangeRate'])->name('settings.exchange-rate');
+    Route::resource('attendance-locations', \App\Http\Controllers\AttendanceLocationController::class)->only(['index', 'store', 'update', 'destroy']);
 
     // Violations
     Route::resource('violations', \App\Http\Controllers\ViolationController::class)->only(['index', 'store', 'destroy']);
@@ -125,4 +126,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('shifts', \App\Http\Controllers\ShiftController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('employees', \App\Http\Controllers\EmployeeController::class);
     Route::get('employees/{employee}/print-statement', [\App\Http\Controllers\EmployeeController::class, 'printStatement'])->name('employees.print-statement');
+
+    // Attendance
+    Route::get('attendance', [\App\Http\Controllers\AttendanceController::class, 'index'])->name('attendance.index');
+    Route::post('attendance/check-in', [\App\Http\Controllers\AttendanceController::class, 'checkIn'])->name('attendance.check-in');
+    Route::post('attendance/check-out', [\App\Http\Controllers\AttendanceController::class, 'checkOut'])->name('attendance.check-out');
+    Route::get('api/attendance/status', [\App\Http\Controllers\AttendanceController::class, 'status'])->name('attendance.status');
+    Route::post('attendance/{attendance}/manual-edit', [\App\Http\Controllers\AttendanceController::class, 'manualEdit'])->name('attendance.manual-edit');
 });
