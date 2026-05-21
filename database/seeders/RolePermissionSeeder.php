@@ -34,9 +34,9 @@ class RolePermissionSeeder extends Seeder
             // HR Module
             'employees' => ['view', 'create', 'update', 'delete'],
             'attendance' => ['view', 'create', 'manual_edit'],
-            'leaves' => ['view', 'create', 'approve', 'reject'],
-            'advances' => ['view', 'create', 'approve', 'reject'],
-            'penalties' => ['view', 'create'],
+            'leaves' => ['view', 'create', 'approve', 'reject', 'delete'],
+            'advances' => ['view', 'create', 'approve', 'reject', 'delete'],
+            'penalties' => ['view', 'create', 'delete'],
             'payroll' => ['view', 'generate', 'approve', 'reject'],
             'hr_reports' => ['view'],
         ];
@@ -79,9 +79,9 @@ class RolePermissionSeeder extends Seeder
         $hrPerms = [
             'employees.view', 'employees.create', 'employees.update', 'employees.delete',
             'attendance.view', 'attendance.create', 'attendance.manual_edit',
-            'leaves.view', 'leaves.create', 'leaves.approve', 'leaves.reject',
-            'advances.view', 'advances.create', 'advances.approve', 'advances.reject',
-            'penalties.view', 'penalties.create',
+            'leaves.view', 'leaves.create', 'leaves.approve', 'leaves.reject', 'leaves.delete',
+            'advances.view', 'advances.create', 'advances.approve', 'advances.reject', 'advances.delete',
+            'penalties.view', 'penalties.create', 'penalties.delete',
             'payroll.view', 'payroll.generate', 'payroll.approve', 'payroll.reject',
             'hr_reports.view',
         ];

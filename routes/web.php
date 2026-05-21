@@ -133,4 +133,21 @@ Route::middleware('auth')->group(function () {
     Route::post('attendance/check-out', [\App\Http\Controllers\AttendanceController::class, 'checkOut'])->name('attendance.check-out');
     Route::get('api/attendance/status', [\App\Http\Controllers\AttendanceController::class, 'status'])->name('attendance.status');
     Route::post('attendance/{attendance}/manual-edit', [\App\Http\Controllers\AttendanceController::class, 'manualEdit'])->name('attendance.manual-edit');
+
+    // Leaves
+    Route::resource('leaves', \App\Http\Controllers\LeaveController::class)->only(['index', 'store', 'destroy']);
+    Route::post('leaves/{leave}/approve', [\App\Http\Controllers\LeaveController::class, 'approve'])->name('leaves.approve');
+    Route::post('leaves/{leave}/reject', [\App\Http\Controllers\LeaveController::class, 'reject'])->name('leaves.reject');
+    Route::get('hr/my-requests', [\App\Http\Controllers\LeaveController::class, 'myRequests'])->name('hr.my-requests');
+
+    // Leave Types (Settings)
+    Route::resource('leave-types', \App\Http\Controllers\LeaveTypeController::class)->only(['index', 'store', 'update', 'destroy']);
+
+    // Advances
+    Route::resource('advances', \App\Http\Controllers\AdvanceController::class)->only(['index', 'store', 'destroy']);
+    Route::post('advances/{advance}/approve', [\App\Http\Controllers\AdvanceController::class, 'approve'])->name('advances.approve');
+    Route::post('advances/{advance}/reject', [\App\Http\Controllers\AdvanceController::class, 'reject'])->name('advances.reject');
+
+    // Employee Penalties
+    Route::resource('penalties', \App\Http\Controllers\EmployeePenaltyController::class)->only(['index', 'store', 'destroy']);
 });

@@ -233,4 +233,103 @@ class NotificationService
             );
         }
     }
+
+    // ─── إشعارات الموارد البشرية ───
+
+    /**
+     * إشعار عند إنشاء طلب إجازة
+     */
+    public static function leaveRequestCreated($leave): void
+    {
+        $empName = $leave->employee?->user?->name ?? 'موظف';
+        self::notifyAdmins(
+            '🏖️ طلب إجازة جديد',
+            "{$empName} تقدم بطلب إجازة {$leave->request_number} من {$leave->start_date->format('Y-m-d')} إلى {$leave->end_date->format('Y-m-d')} ({$leave->days_count} يوم)",
+            [
+                'type' => 'leave',
+                'icon' => '🏖️',
+                'action_url' => "/leaves?status=pending&highlight={$leave->id}",
+                'data' => ['reference_type' => 'leave_request', 'reference_id' => $leave->id],
+            ]
+        );
+    }
+
+    /**
+     * إشعار عند اعتماد طلب إجازة
+     */
+    public static function leaveApproved($leave): void
+    {
+        $employeeUserId = $leave->employee?->user_id;
+        if ($employeeUserId && $employeeUserId !== auth()->id()) {
+            self::send($employeeUserId,
+                '✅ تم اعتماد طلب الإجازة',
+                "تم اعتماد إجازتك {$leave->request_number} من {$leave->start_date->format('Y-m-d')} إلى {$leave->end_date->format('Y-m-d')}",
+                [
+                    'type' => 'leave',
+                    'icon' => '✅',
+                    'action_url' => '/leaves',
+                    'data' => ['reference_type' => 'leave_request', 'reference_id' => $leave->id],
+                ]
+            );
+        }
+    }
+
+    /**
+     * إشعار عند إنشاء طلب سلفة
+     */
+    public static function advanceCreated($advance): void
+    {
+        $empName = $advance->employee?->user?->name ?? 'موظف';
+        self::notifyAdmins(
+            '💳 طلب سلفة جديد',
+            "{$empName} تقدم بطلب سلفة {$advance->advance_number} بمبلغ " . number_format($advance->amount, 2) . " {$advance->currency}",
+            [
+                'type' => 'advance',
+                'icon' => '💳',
+                'action_url' => "/advances?status=pending&highlight={$advance->id}",
+                'data' => ['reference_type' => 'advance', 'reference_id' => $advance->id],
+            ]
+        );
+    }
+
+    /**
+     * إشعار عند اعتماد سلفة
+     */
+    public static function advanceApproved($advance): void
+    {
+        $employeeUserId = $advance->employee?->user_id;
+        if ($employeeUserId && $employeeUserId !== auth()->id()) {
+            self::send($employeeUserId,
+                '✅ تم اعتماد السلفة',
+                "تم اعتماد سلفتك {$advance->advance_number} بمبلغ " . number_format($advance->amount, 2) . " {$advance->currency}",
+                [
+                    'type' => 'advance',
+                    'icon' => '✅',
+                    'action_url' => '/advances',
+                    'data' => ['reference_type' => 'advance', 'reference_id' => $advance->id],
+                ]
+            );
+        }
+    }
+
+    /**
+     * إشعار عند إصدار مخالفة للموظف
+     */
+    public static function penaltyIssued($penalty): void
+    {
+        $employeeUserId = $penalty->employee?->user_id;
+        if ($employeeUserId) {
+            $typeLabel = $penalty->penalty_type === 'warning' ? 'لفت نظر' : 'خصم مالي';
+            self::send($employeeUserId,
+                "⚠️ مخالفة جديدة: {$typeLabel}",
+                "تم إصدار مخالفة {$penalty->penalty_number}: {$penalty->reason}",
+                [
+                    'type' => 'penalty',
+                    'icon' => '⚠️',
+                    'action_url' => '/penalties',
+                    'data' => ['reference_type' => 'employee_penalty', 'reference_id' => $penalty->id],
+                ]
+            );
+        }
+    }
 }
