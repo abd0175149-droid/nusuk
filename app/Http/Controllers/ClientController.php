@@ -78,12 +78,19 @@ class ClientController extends Controller
                 ->value('balance_after') ?? 0,
         ];
 
+        $template = \App\Models\Setting::where('key', 'print_template_accounting')->first();
+        $templateUrl = $template?->value ? \Illuminate\Support\Facades\Storage::url($template->value) : null;
+        $layoutSetting = \App\Models\Setting::where('key', 'print_layout_statement')->first();
+        $layout = $layoutSetting?->value ? json_decode($layoutSetting->value, true) : null;
+
         return Inertia::render('Statements/Print', [
             'entity' => $client,
             'entries' => $entries,
             'summary' => $summary,
             'filters' => ['from' => $from, 'to' => $to],
             'type' => 'client',
+            'templateUrl' => $templateUrl,
+            'layout' => $layout,
         ]);
     }
 
