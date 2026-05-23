@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Setting;
 use App\Models\ExchangeRate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class SettingController extends Controller
@@ -15,12 +16,20 @@ class SettingController extends Controller
         $todayRate = ExchangeRate::where('rate_date', today()->toDateString())->first();
         $lastRate = ExchangeRate::orderByDesc('rate_date')->first();
 
+        // قوالب الطباعة
+        $financialTemplate = Setting::where('key', 'print_template_financial')->first();
+        $accountingTemplate = Setting::where('key', 'print_template_accounting')->first();
+
         return Inertia::render('Settings/Index', [
             'title' => 'الإعدادات',
             'settings' => $settings,
             'todayRate' => $todayRate,
             'lastRate' => $lastRate,
             'recentRates' => ExchangeRate::orderByDesc('rate_date')->limit(10)->get(),
+            'templates' => [
+                'financial' => $financialTemplate?->value ? Storage::url($financialTemplate->value) : null,
+                'accounting' => $accountingTemplate?->value ? Storage::url($accountingTemplate->value) : null,
+            ],
         ]);
     }
 
@@ -37,6 +46,37 @@ class SettingController extends Controller
         }
 
         return redirect()->back()->with('success', 'تم تحديث الإعدادات بنجاح');
+    }
+
+    /**
+     * رفع قالب طباعة PDF
+     */
+    public function uploadTemplate(Request $request)
+    {
+        $request->validate([
+            'template' => 'required|file|mimes:pdf|max:10240',
+            'type' => 'required|in:financial,accounting',
+        ]);
+
+        $type = $request->input('type');
+        $key = "print_template_{$type}";
+
+        // حذف الملف القديم
+        $old = Setting::where('key', $key)->first();
+        if ($old?->value && Storage::exists($old->value)) {
+            Storage::delete($old->value);
+        }
+
+        // رفع الملف الجديد
+        $path = $request->file('template')->store('templates', 'public');
+
+        // حفظ المسار في الإعدادات
+        Setting::updateOrCreate(
+            ['key' => $key],
+            ['value' => $path, 'group_name' => 'templates', 'label' => $type === 'financial' ? 'قالب مالي' : 'قالب محاسبي']
+        );
+
+        return redirect()->back()->with('success', 'تم رفع القالب بنجاح');
     }
 
     public function storeExchangeRate(Request $request)
@@ -58,3 +98,4 @@ class SettingController extends Controller
         return redirect()->back()->with('success', 'تم تحديث سعر الصرف بنجاح');
     }
 }
+

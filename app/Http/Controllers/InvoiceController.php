@@ -48,7 +48,14 @@ class InvoiceController extends Controller
     public function print(Invoice $invoice)
     {
         $invoice->load(['agent:id,name,code', 'client:id,name,code', 'items']);
-        return Inertia::render('Invoices/Print', ['invoice' => $invoice]);
+
+        $template = \App\Models\Setting::where('key', 'print_template_financial')->first();
+        $templateUrl = $template?->value ? \Storage::url($template->value) : null;
+
+        return Inertia::render('Invoices/Print', [
+            'invoice' => $invoice,
+            'templateUrl' => $templateUrl,
+        ]);
     }
 
     public function store(Request $request)
