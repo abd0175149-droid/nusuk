@@ -97,7 +97,7 @@ const openEditForm = (r) => {
 };
 
 const submitEdit = () => {
-    editForm.post('/receipts/'+editForm._editId+'/update-approved', {
+    editForm.put('/receipts/'+editForm._editId+'/update-approved', {
         onSuccess: () => { showEditForm.value = false; editForm.reset(); },
         preserveScroll: true,
     });

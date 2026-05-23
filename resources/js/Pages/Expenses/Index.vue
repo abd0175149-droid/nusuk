@@ -103,7 +103,7 @@ const openEditForm = (e) => {
 };
 
 const submitEdit = () => {
-    editForm.post('/expenses/'+editForm._editId+'/update-approved', {
+    editForm.put('/expenses/'+editForm._editId+'/update-approved', {
         onSuccess: () => { showEditForm.value = false; editForm.reset(); },
         preserveScroll: true,
     });

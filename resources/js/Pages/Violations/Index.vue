@@ -175,7 +175,7 @@ const openEditForm = (v) => {
 };
 
 const submitEditVio = () => {
-    editForm.post('/violations/'+editForm._editId+'/update-approved', {
+    editForm.put('/violations/'+editForm._editId+'/update-approved', {
         onSuccess: () => { showEditForm.value = false; editForm.reset(); },
         preserveScroll: true,
     });
