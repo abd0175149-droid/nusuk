@@ -60,14 +60,16 @@ class ClientController extends Controller
 
     public function printStatement(Request $request, Client $client)
     {
-        $from = $request->from ?? now()->startOfMonth()->toDateString();
-        $to = $request->to ?? now()->toDateString();
+        $from = $request->from ?: null;
+        $to = $request->to ?: null;
 
-        // 1. الفواتير المعتمدة والمعكوسة (editing) للعميل في الفترة
-        $invoices = \App\Models\Invoice::where('client_id', $client->id)
-            ->whereIn('status', ['approved', 'editing'])
-            ->whereBetween('invoice_date', [$from, $to])
-            ->with('items')
+        // 1. الفواتير المعتمدة والمعكوسة (editing) للعميل
+        $invoicesQuery = \App\Models\Invoice::where('client_id', $client->id)
+            ->whereIn('status', ['approved', 'editing']);
+        if ($from && $to) {
+            $invoicesQuery->whereBetween('invoice_date', [$from, $to]);
+        }
+        $invoices = $invoicesQuery->with('items')
             ->orderBy('invoice_date')
             ->orderBy('id')
             ->get()
@@ -91,11 +93,13 @@ class ClientController extends Controller
                 ];
             });
 
-        // 2. سندات القبض المعتمدة للعميل في الفترة
-        $receipts = \App\Models\Receipt::where('client_id', $client->id)
-            ->where('status', 'approved')
-            ->whereBetween('receipt_date', [$from, $to])
-            ->orderBy('receipt_date')
+        // 2. سندات القبض المعتمدة للعميل
+        $receiptsQuery = \App\Models\Receipt::where('client_id', $client->id)
+            ->where('status', 'approved');
+        if ($from && $to) {
+            $receiptsQuery->whereBetween('receipt_date', [$from, $to]);
+        }
+        $receipts = $receiptsQuery->orderBy('receipt_date')
             ->orderBy('id')
             ->get()
             ->map(fn ($r) => [
@@ -136,7 +140,7 @@ class ClientController extends Controller
             'invoices' => $invoices->values(),
             'receipts' => $receipts->values(),
             'summary' => $summary,
-            'filters' => ['from' => $from, 'to' => $to],
+            'filters' => ['from' => $from ?? 'الكل', 'to' => $to ?? 'الكل'],
             'templateUrl' => $templateUrl,
             'layout' => $layout,
         ]);
