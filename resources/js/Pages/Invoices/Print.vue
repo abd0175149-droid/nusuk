@@ -203,47 +203,184 @@ const doPrint = () => window.print();
 </script>
 
 <style>
-.a4-page { width: 210mm; height: 297mm; position: relative; margin: 0 auto; overflow: hidden; background: white; page-break-after: always; }
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+.a4-page {
+    width: 210mm; height: 297mm;
+    position: relative; margin: 0 auto; overflow: hidden;
+    background: white;
+    font-family: 'Cairo', sans-serif;
+    page-break-after: always;
+}
 .a4-page:last-child { page-break-after: auto; }
 .pdf-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .fallback-bg { position: absolute; inset: 0; background: white; z-index: 0; }
 .overlay { position: absolute; inset: 0; z-index: 1; direction: rtl; }
 
-.field { font-size: 11pt; }
-.label { color: #555; font-size: 9pt; margin-left: 4px; }
-.value { font-weight: 700; color: #111; }
-.value.gold { color: #b8860b; font-family: monospace; }
-.value.client-name { color: #1a1a1a; }
-.value.status-approved { color: #16a34a; }
-.value.status-pending { color: #ca8a04; }
-.value.status-rejected { color: #dc2626; }
+/* Typography */
+.field { font-family: 'Cairo', sans-serif; letter-spacing: -0.01em; }
+.label { color: #8b8680; font-size: 8pt; font-weight: 600; margin-left: 3px; }
+.value { font-weight: 700; color: #1a1715; }
+.value.gold { color: #96722a; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px; }
+.value.client-name { color: #1a1715; letter-spacing: 0.3px; }
+.value.status-approved { color: #0d7a3e; background: #e8f5ee; padding: 1px 8px; border-radius: 20px; font-size: 8pt; }
+.value.status-pending { color: #8a6d0b; background: #fef9e7; padding: 1px 8px; border-radius: 20px; font-size: 8pt; }
+.value.status-rejected { color: #b91c1c; background: #fef2f2; padding: 1px 8px; border-radius: 20px; font-size: 8pt; }
 
+/* ═══════ الجدول العصري ═══════ */
 .table-area { position: absolute; }
-.inv-table { width: 100%; border-collapse: collapse; font-size: 9pt; }
-.inv-table th { background: #f0ebe0; padding: 4px 6px; text-align: right; font-weight: 700; border: 1px solid #d4c9a8; font-size: 8pt; }
-.inv-table td { padding: 3px 6px; border: 1px solid #e5e1d5; font-size: 8pt; }
-.inv-table tr:nth-child(even) td { background: #faf9f6; }
+.inv-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 8.5pt;
+    font-family: 'Cairo', sans-serif;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+/* Header */
+.inv-table th {
+    background: linear-gradient(135deg, #2c2417 0%, #3d3227 100%);
+    color: #e8dcc8;
+    padding: 6px 10px;
+    text-align: right;
+    font-weight: 700;
+    font-size: 7.5pt;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    border: none;
+    border-bottom: 2px solid #b8960b;
+}
+.inv-table th:first-child { border-radius: 0 6px 0 0; }
+.inv-table th:last-child { border-radius: 6px 0 0 0; }
+
+/* Rows */
+.inv-table td {
+    padding: 5px 10px;
+    font-size: 8pt;
+    color: #3d3227;
+    border: none;
+    border-bottom: 1px solid #f0ece4;
+    transition: background 0.15s;
+}
+.inv-table tbody tr:nth-child(odd) td { background: #ffffff; }
+.inv-table tbody tr:nth-child(even) td { background: #faf8f5; }
+.inv-table tbody tr:last-child td { border-bottom: 2px solid #e8dcc8; }
+.inv-table tbody tr:last-child td:first-child { border-radius: 0 0 6px 0; }
+.inv-table tbody tr:last-child td:last-child { border-radius: 0 0 0 6px; }
+
+/* Cell types */
 .inv-table .center { text-align: center; }
-.inv-table .mono { font-family: monospace; }
+.inv-table .mono { font-family: 'JetBrains Mono', monospace; font-size: 7.5pt; letter-spacing: 0.3px; }
 .inv-table .ltr { direction: ltr; text-align: left; }
-.inv-table .bold { font-weight: 700; }
-.col-num { width: 6%; } .col-type { width: 14%; } .col-desc { width: 36%; }
-.col-qty { width: 10%; } .col-price { width: 17%; } .col-total { width: 17%; }
+.inv-table .bold { font-weight: 700; color: #1a1715; }
 
-.total-box { position: absolute; }
-.total-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: #f0ebe0; border: 2px solid #b8860b; border-radius: 4px; font-size: 12pt; font-weight: 900; }
-.total-amount { color: #b8860b; font-family: monospace; }
+/* Column widths */
+.col-num { width: 5%; text-align: center; }
+.col-type { width: 13%; }
+.col-desc { width: 37%; }
+.col-qty { width: 9%; }
+.col-price { width: 18%; }
+.col-total { width: 18%; }
 
+/* Row number badge */
+.inv-table td:first-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7pt;
+    color: #a09585;
+    font-weight: 600;
+}
+
+/* ═══════ الإجمالي ═══════ */
+.total-box { position: absolute; width: 100%; }
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    background: linear-gradient(135deg, #2c2417, #3d3227);
+    border: none;
+    border-radius: 6px;
+    font-size: 11pt;
+    font-weight: 900;
+    color: #e8dcc8;
+    font-family: 'Cairo', sans-serif;
+    box-shadow: 0 2px 8px rgba(44,36,23,0.15);
+}
+.total-amount {
+    color: #dbb84d;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12pt;
+    letter-spacing: 0.5px;
+}
+
+/* ═══════ التوقيعات ═══════ */
 .signatures { display: flex; justify-content: space-between; position: absolute; }
 .sig-box { text-align: center; width: 28%; }
-.sig-label { font-size: 8pt; color: #555; margin-bottom: 25px; }
-.sig-line { border-top: 1px solid #333; padding-top: 3px; font-size: 7pt; color: #999; }
+.sig-label {
+    font-size: 7.5pt;
+    color: #8b8680;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    margin-bottom: 28px;
+    font-family: 'Cairo', sans-serif;
+}
+.sig-line {
+    border-top: 1.5px solid #2c2417;
+    padding-top: 4px;
+    font-size: 6.5pt;
+    color: #b0a89e;
+    font-family: 'Cairo', sans-serif;
+}
 .sig-line::after { content: 'التوقيع والختم'; }
 
-.toolbar { display: flex; gap: 12px; justify-content: center; padding: 16px; background: #f3f4f6; }
-.print-btn { padding: 10px 24px; background: linear-gradient(135deg, #b8860b, #d4a520); color: white; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; }
-.back-btn { padding: 10px 24px; color: #666; text-decoration: none; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; }
+/* ═══════ Toolbar ═══════ */
+.toolbar {
+    display: flex; gap: 12px; justify-content: center;
+    padding: 16px;
+    background: linear-gradient(135deg, #f8f6f3, #ede9e3);
+    border-bottom: 1px solid #e0dbd3;
+}
+.print-btn {
+    padding: 10px 28px;
+    background: linear-gradient(135deg, #2c2417, #4a3c2e);
+    color: #dbb84d;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: 'Cairo', sans-serif;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(44,36,23,0.2);
+    transition: all 0.2s;
+}
+.print-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(44,36,23,0.3); }
+.back-btn {
+    padding: 10px 24px; color: #5a5046;
+    text-decoration: none;
+    border: 1.5px solid #d4cec4;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: 'Cairo', sans-serif;
+    transition: all 0.2s;
+}
+.back-btn:hover { background: #f0ece4; border-color: #b0a89e; }
 
-@media screen { body { background: #e5e7eb; margin: 0; } .a4-page { box-shadow: 0 4px 20px rgba(0,0,0,.15); margin: 20px auto; border-radius: 4px; } }
-@media print { .no-print { display: none !important; } body { margin: 0; padding: 0; } .a4-page { margin: 0; box-shadow: none; border-radius: 0; } @page { size: A4; margin: 0; } }
+/* ═══════ Screen / Print ═══════ */
+@media screen {
+    body { background: #e8e4de; margin: 0; }
+    .a4-page { box-shadow: 0 8px 30px rgba(0,0,0,.12); margin: 24px auto; border-radius: 4px; }
+}
+@media print {
+    .no-print { display: none !important; }
+    body { margin: 0; padding: 0; }
+    .a4-page { margin: 0; box-shadow: none; border-radius: 0; }
+    @page { size: A4; margin: 0; }
+    .inv-table th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .inv-table td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .total-row { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
 </style>
