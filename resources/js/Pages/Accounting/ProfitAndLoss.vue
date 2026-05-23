@@ -12,6 +12,7 @@
                     <label class="text-sm font-medium">إلى:</label>
                     <input type="date" v-model="filterTo" @change="applyFilter" class="px-3 py-2 rounded-xl border text-sm" />
                 </div>
+                <a :href="`/accounting/profit-loss/print?from=${filterFrom}&to=${filterTo}`" target="_blank" class="px-4 py-2 rounded-xl text-sm text-purple-600 border border-purple-200 hover:bg-purple-50">🖨️ طباعة</a>
             </div>
 
             <div class="rounded-xl border overflow-hidden shadow-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">

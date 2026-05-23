@@ -2,40 +2,49 @@
     <div class="print-wrapper" dir="rtl">
         <div class="no-print toolbar">
             <button @click="doPrint" class="print-btn">🖨️ طباعة</button>
-            <a href="/accounting/chart-of-accounts" class="back-btn">← العودة</a>
+            <a href="/accounting/profit-loss" class="back-btn">← العودة</a>
         </div>
         <div class="a4-landscape">
             <canvas v-if="templateUrl" ref="pdfCanvas" class="pdf-bg"></canvas>
             <div v-else class="fallback-bg"></div>
             <div class="overlay">
-                <div v-if="!isHidden('title')" class="field" :style="elPos('title')"><span :style="elFont('title')">دليل الحسابات (شجرة الحسابات)</span></div>
-                <div v-if="!isHidden('report_date')" class="field" :style="elPos('report_date')"><span class="label">التاريخ:</span><span class="value" :style="elFont('report_date')">{{ today }}</span></div>
-                <div v-if="!isHidden('accounts_count')" class="field" :style="elPos('accounts_count')"><span class="label">عدد الحسابات:</span><span class="value" :style="elFont('accounts_count')">{{ totalAccounts }}</span></div>
+                <div v-if="!isHidden('title')" class="field" :style="elPos('title')"><span :style="elFont('title')">قائمة الدخل</span></div>
+                <div v-if="!isHidden('period')" class="field" :style="elPos('period')"><span class="label">الفترة:</span><span class="value" :style="elFont('period')">{{ filters.from }} → {{ filters.to }}</span></div>
 
-                <div v-if="!isHidden('data_table')" :style="elPos('data_table')">
-                    <table class="print-tbl" :style="{ fontSize: (el('data_table').fontSize||8)+'pt', width: el('data_table').w?el('data_table').w+'mm':'100%' }">
-                        <thead><tr>
-                            <th style="width:60px">الكود</th><th>اسم الحساب</th><th style="width:60px">النوع</th><th style="width:45px">العملة</th><th style="width:80px">الرصيد</th><th style="width:45px">الحالة</th>
-                        </tr></thead>
+                <!-- جدول الإيرادات -->
+                <div v-if="!isHidden('revenue_table')" :style="elPos('revenue_table')">
+                    <h4 class="section-title green-bg">📈 الإيرادات</h4>
+                    <table class="print-tbl" :style="{ fontSize: (el('revenue_table').fontSize||9)+'pt', width: el('revenue_table').w?el('revenue_table').w+'mm':'100%' }">
+                        <thead><tr><th>الكود</th><th>الحساب</th><th>المبلغ</th></tr></thead>
                         <tbody>
-                            <tr v-for="row in flatRows" :key="row.id" :class="row.isParent ? 'parent-row' : ''">
-                                <td class="mono gold center bold" style="font-size:8pt">{{ row.code }}</td>
-                                <td :style="{ paddingRight: (8 + row.depth * 14) + 'px' }">
-                                    <span v-if="row.isParent" class="bold">{{ row.depth===0?'📂':row.depth===1?'├─':'│ ├─' }} {{ row.name }}</span>
-                                    <span v-else style="color:#444">{{ row.depth>0 ? '│ ' : '' }}└─ {{ row.name }}</span>
-                                </td>
-                                <td class="center"><span class="type-badge" :style="{color:typeColor(row.type)}">{{ typeLabel(row.type) }}</span></td>
-                                <td class="mono center" style="font-size:8pt">{{ row.currency }}</td>
-                                <td class="mono right bold" :class="row.isParent?'':(parseFloat(row.balance)>=0?'green':'red')">{{ row.isParent ? '—' : fmt(row.balance) }}</td>
-                                <td class="center" style="font-size:7pt"><span v-if="row.is_active" class="green">● نشط</span><span v-else class="red">○ معطل</span></td>
-                            </tr>
+                            <tr v-for="r in revenues" :key="r.code"><td class="mono gold center bold">{{ r.code }}</td><td>{{ r.name }}</td><td class="mono right green bold">{{ fmt(r.amount) }}</td></tr>
                         </tbody>
+                        <tfoot><tr class="total-row"><td colspan="2" class="right bold">إجمالي الإيرادات</td><td class="mono right green bold">{{ fmt(totalRevenue) }}</td></tr></tfoot>
                     </table>
+                </div>
+
+                <!-- جدول المصروفات -->
+                <div v-if="!isHidden('expense_table')" :style="elPos('expense_table')">
+                    <h4 class="section-title red-bg">📉 المصروفات</h4>
+                    <table class="print-tbl" :style="{ fontSize: (el('expense_table').fontSize||9)+'pt', width: el('expense_table').w?el('expense_table').w+'mm':'100%' }">
+                        <thead><tr><th>الكود</th><th>الحساب</th><th>المبلغ</th></tr></thead>
+                        <tbody>
+                            <tr v-for="e in expenses" :key="e.code"><td class="mono gold center bold">{{ e.code }}</td><td>{{ e.name }}</td><td class="mono right red bold">{{ fmt(e.amount) }}</td></tr>
+                        </tbody>
+                        <tfoot><tr class="total-row"><td colspan="2" class="right bold">إجمالي المصروفات</td><td class="mono right red bold">{{ fmt(totalExpenses) }}</td></tr></tfoot>
+                    </table>
+                </div>
+
+                <!-- صافي الدخل -->
+                <div v-if="!isHidden('net_income')" class="field" :style="elPos('net_income')">
+                    <div class="net-box" :class="netIncome >= 0 ? 'profit' : 'loss'">
+                        <span class="net-label">{{ netIncome >= 0 ? '✅ صافي الربح' : '⚠️ صافي الخسارة' }}</span>
+                        <span class="net-val mono">{{ fmt(Math.abs(netIncome)) }} JOD</span>
+                    </div>
                 </div>
 
                 <div v-if="!isHidden('signatures')" class="signatures" :style="elPos('signatures')">
                     <div class="sig-box"><div class="sig-label">المحاسب</div><div class="sig-line"></div></div>
-                    <div class="sig-box"><div class="sig-label">المدقق الداخلي</div><div class="sig-line"></div></div>
                     <div class="sig-box"><div class="sig-label">المدير المالي</div><div class="sig-line"></div></div>
                 </div>
                 <template v-for="(pos, id) in customFields" :key="id"><div v-if="!pos.hidden" class="field" :style="elPos(id)"><span :style="elFont(id)" style="white-space:pre-wrap">{{ pos.text }}</span></div></template>
@@ -45,23 +54,9 @@
 </template>
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-const props = defineProps({ accounts: Array, templateUrl: String, layout: Object });
-const today = new Date().toISOString().split('T')[0];
-const fmt = (v) => Number(v||0).toLocaleString('en',{minimumFractionDigits:3,maximumFractionDigits:3});
-const typeLabel = (t) => ({asset:'أصول',liability:'التزامات',equity:'ملكية',revenue:'إيرادات',expense:'مصروفات'}[t]||t);
-const typeColor = (t) => ({asset:'#2563eb',liability:'#ea580c',equity:'#7c3aed',revenue:'#16a34a',expense:'#dc2626'}[t]||'#333');
-
-const flattenTree = (accounts, depth=0, result=[]) => {
-    (accounts||[]).forEach(a => {
-        const hasChildren = a.children_recursive?.length > 0;
-        result.push({ id:a.id, code:a.code, name:a.name, type:a.type, currency:a.currency, balance:a.balance, is_active:a.is_active, depth, isParent:hasChildren });
-        if (hasChildren) flattenTree(a.children_recursive, depth+1, result);
-    }); return result;
-};
-const flatRows = computed(() => flattenTree(props.accounts));
-const totalAccounts = computed(() => flatRows.value.length);
-
-const defaults = { title:{x:10,y:15,fontSize:14}, report_date:{x:200,y:15,fontSize:10}, accounts_count:{x:120,y:15,fontSize:10}, data_table:{x:10,y:32,fontSize:8,w:277}, signatures:{x:10,y:180,fontSize:9,w:277} };
+const props = defineProps({ revenues: Array, expenses: Array, totalRevenue: Number, totalExpenses: Number, netIncome: Number, filters: Object, templateUrl: String, layout: Object });
+const fmt = (v) => Number(v||0).toLocaleString('en',{minimumFractionDigits:3});
+const defaults = { title:{x:10,y:15,fontSize:14}, period:{x:200,y:15,fontSize:10}, revenue_table:{x:10,y:32,fontSize:9,w:130}, expense_table:{x:150,y:32,fontSize:9,w:130}, net_income:{x:10,y:160,fontSize:13}, signatures:{x:10,y:180,fontSize:9,w:277} };
 const el = (id) => props.layout?.elements?.[id] || defaults[id] || {x:10,y:10,fontSize:10};
 const isHidden = (id) => !!(props.layout?.elements?.[id]?.hidden);
 const elPos = (id) => { const p=el(id); return {position:'absolute',right:p.x+'mm',top:p.y+'mm',width:p.w?p.w+'mm':'auto'}; };
@@ -81,16 +76,21 @@ const doPrint = () => window.print();
 .overlay{position:absolute;inset:0;z-index:1;direction:rtl}.field{font-family:'Cairo',sans-serif}
 .label{color:#8b8680;font-size:8pt;font-weight:600;margin-left:3px}.value{font-weight:700;color:#1a1715}
 .gold{color:#96722a}.mono{font-family:'JetBrains Mono',monospace}.red{color:#dc2626}.green{color:#16a34a}.bold{font-weight:700}
+.section-title{font-size:9pt;font-weight:700;margin:0 0 4px;padding:3px 8px;border-radius:4px;font-family:'Cairo'}
+.green-bg{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}.red-bg{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
 .print-tbl{width:100%;border-collapse:collapse;font-family:'Cairo',sans-serif}
 .print-tbl th{background:#2c2417;color:#dbb84d;padding:3px 5px;text-align:center;font-size:7pt;font-weight:700}
-.print-tbl td{padding:2px 5px;border-bottom:.5px solid #e8e4de;font-size:7pt}.print-tbl .center{text-align:center}
-.print-tbl .right{text-align:left;direction:ltr}.parent-row td{background:#f9f9f9!important}
-.type-badge{font-size:7pt;font-weight:700}
+.print-tbl td{padding:2px 5px;border-bottom:.5px solid #e8e4de;font-size:7.5pt}.print-tbl .center{text-align:center}
+.print-tbl .right{text-align:right}.print-tbl .total-row td{border-top:2px solid #2c2417;background:#f8f6f3}
+.net-box{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-radius:8px;font-family:'Cairo'}
+.net-box.profit{background:#f0fdf4;border:1.5px solid #86efac}.net-box.loss{background:#fef2f2;border:1.5px solid #fca5a5}
+.net-label{font-size:12pt;font-weight:900}.net-val{font-size:14pt;font-weight:900}
+.net-box.profit .net-val{color:#16a34a}.net-box.loss .net-val{color:#dc2626}
 .signatures{display:flex;justify-content:space-around}.sig-box{text-align:center;width:25%}
 .sig-label{font-size:7.5pt;color:#8b8680;font-weight:600;margin-bottom:24px}.sig-line{border-top:1.5px solid #2c2417;padding-top:3px;font-size:6pt;color:#b0a89e}.sig-line::after{content:'التوقيع والختم'}
 .toolbar{display:flex;gap:12px;justify-content:center;padding:12px;background:#f8f6f3;border-bottom:1px solid #e0dbd3}
 .print-btn{padding:8px 24px;background:linear-gradient(135deg,#2c2417,#4a3c2e);color:#dbb84d;font-weight:700;border:none;border-radius:10px;cursor:pointer;font-family:'Cairo'}
 .back-btn{padding:8px 20px;color:#5a5046;text-decoration:none;border:1.5px solid #d4cec4;border-radius:10px;font-family:'Cairo'}
 @media screen{body{background:#e8e4de;margin:0}.a4-landscape{box-shadow:0 8px 30px rgba(0,0,0,.12);margin:20px auto;border-radius:4px}}
-@media print{.no-print{display:none!important}body{margin:0;padding:0}.a4-landscape{margin:0;box-shadow:none}@page{size:A4 landscape;margin:0}.parent-row td{background:#f5f5f5!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+@media print{.no-print{display:none!important}body{margin:0;padding:0}.a4-landscape{margin:0;box-shadow:none}@page{size:A4 landscape;margin:0}}
 </style>

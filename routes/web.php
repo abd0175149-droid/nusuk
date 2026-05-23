@@ -134,6 +134,10 @@ Route::middleware('auth')->group(function () {
     Route::get('clients/{client}/print-statement', [ClientController::class, 'printStatement'])->name('clients.print-statement');
     Route::get('receipts/{receipt}/print', [ReceiptController::class, 'print'])->name('receipts.print');
     Route::get('expenses/{expense}/print', [ExpenseController::class, 'print'])->name('expenses.print');
+    Route::get('accounting/accounts/{account}/print', [\App\Http\Controllers\AccountingController::class, 'printAccountDetails'])->name('accounting.accounts.print');
+    Route::get('accounting/trial-balance/print', [\App\Http\Controllers\AccountingController::class, 'printTrialBalance'])->name('accounting.trial-balance.print');
+    Route::get('accounting/profit-loss/print', [\App\Http\Controllers\AccountingController::class, 'printProfitLoss'])->name('accounting.profit-loss.print');
+    Route::get('accounting/balance-sheet/print', [\App\Http\Controllers\AccountingController::class, 'printBalanceSheet'])->name('accounting.balance-sheet.print');
 
     // Users & Roles
     Route::resource('users', \App\Http\Controllers\UserController::class)->except(['create', 'show', 'edit']);

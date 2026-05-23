@@ -103,19 +103,24 @@ class SettingController extends Controller
      */
     public function printLayout()
     {
-        $template = Setting::where('key', 'print_template_financial')->first();
-        $templateUrl = $template?->value ? Storage::url($template->value) : null;
+        $financialTemplate = Setting::where('key', 'print_template_financial')->first();
+        $financialUrl = $financialTemplate?->value ? Storage::url($financialTemplate->value) : null;
+
+        $accountingTemplate = Setting::where('key', 'print_template_accounting')->first();
+        $accountingUrl = $accountingTemplate?->value ? Storage::url($accountingTemplate->value) : null;
 
         // تحميل التخطيطات المحفوظة
         $layouts = [];
-        foreach (['invoice', 'transfer', 'receipt'] as $type) {
+        $allTypes = ['invoice', 'transfer', 'receipt', 'statement', 'chart', 'trial_balance', 'profit_loss', 'balance_sheet'];
+        foreach ($allTypes as $type) {
             $setting = Setting::where('key', "print_layout_{$type}")->first();
             $layouts[$type] = $setting?->value ? json_decode($setting->value, true) : null;
         }
 
         return Inertia::render('Settings/PrintLayout', [
             'title' => 'محرر تخطيط الطباعة',
-            'templateUrl' => $templateUrl,
+            'templateUrl' => $financialUrl,
+            'accountingTemplateUrl' => $accountingUrl,
             'layouts' => $layouts,
         ]);
     }
@@ -126,7 +131,7 @@ class SettingController extends Controller
     public function savePrintLayout(Request $request)
     {
         $request->validate([
-            'type' => 'required|in:invoice,transfer,receipt',
+            'type' => 'required|in:invoice,transfer,receipt,statement,chart,trial_balance,profit_loss,balance_sheet',
             'layout' => 'required|array',
         ]);
 

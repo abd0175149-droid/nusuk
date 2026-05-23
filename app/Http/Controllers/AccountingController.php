@@ -41,8 +41,15 @@ class AccountingController extends Controller
             ->orderBy('code')
             ->get();
 
+        $template = \App\Models\Setting::where('key', 'print_template_accounting')->first();
+        $templateUrl = $template?->value ? \Illuminate\Support\Facades\Storage::url($template->value) : null;
+        $layoutSetting = \App\Models\Setting::where('key', 'print_layout_chart')->first();
+        $layout = $layoutSetting?->value ? json_decode($layoutSetting->value, true) : null;
+
         return Inertia::render('Accounting/PrintChart', [
             'accounts' => $accounts,
+            'templateUrl' => $templateUrl,
+            'layout' => $layout,
         ]);
     }
 
@@ -616,6 +623,148 @@ class AccountingController extends Controller
                 'credit' => round($lines->sum('credit'), 3),
             ],
             'filters' => ['from' => $from, 'to' => $to],
+        ]);
+    }
+
+    /**
+     * طباعة كشف حساب محاسبي
+     */
+    public function printAccountDetails(Request $request, Account $account)
+    {
+        $from = $request->from ?? now()->startOfMonth()->toDateString();
+        $to = $request->to ?? now()->toDateString();
+
+        $lines = JournalEntryLine::where('account_id', $account->id)
+            ->whereHas('journalEntry', fn ($q) => $q->whereBetween('entry_date', [$from, $to . ' 23:59:59']))
+            ->with('journalEntry')
+            ->get()
+            ->map(fn ($l) => [
+                'entry_date' => $l->journalEntry->entry_date,
+                'entry_number' => $l->journalEntry->entry_number,
+                'description' => $l->description ?: $l->journalEntry->description,
+                'reference_type' => $l->journalEntry->reference_type,
+                'debit' => $l->debit,
+                'credit' => $l->credit,
+            ])
+            ->sortBy('entry_date')->values();
+
+        $openingBalance = JournalEntryLine::where('account_id', $account->id)
+            ->whereHas('journalEntry', fn ($q) => $q->where('entry_date', '<', $from))
+            ->sum(DB::raw('debit - credit'));
+
+        $template = \App\Models\Setting::where('key', 'print_template_accounting')->first();
+        $templateUrl = $template?->value ? \Illuminate\Support\Facades\Storage::url($template->value) : null;
+        $layoutSetting = \App\Models\Setting::where('key', 'print_layout_statement')->first();
+        $layout = $layoutSetting?->value ? json_decode($layoutSetting->value, true) : null;
+
+        return Inertia::render('Accounting/PrintStatement', [
+            'account' => $account,
+            'entries' => $lines,
+            'openingBalance' => round($openingBalance, 3),
+            'filters' => ['from' => $from, 'to' => $to],
+            'templateUrl' => $templateUrl,
+            'layout' => $layout,
+        ]);
+    }
+
+    /**
+     * طباعة ميزان المراجعة
+     */
+    public function printTrialBalance(Request $request)
+    {
+        $from = $request->from ?? now()->startOfYear()->toDateString();
+        $to = $request->to ?? now()->toDateString();
+
+        $accounts = Account::whereDoesntHave('childrenRecursive')->orderBy('code')->get();
+        $result = $accounts->map(function ($a) use ($from, $to) {
+            $openingLines = $a->journalLines()->whereHas('journalEntry', fn ($q) => $q->where('entry_date', '<', $from))->get();
+            $periodLines = $a->journalLines()->whereHas('journalEntry', fn ($q) => $q->whereBetween('entry_date', [$from, $to . ' 23:59:59']))->get();
+            $od = $openingLines->sum('debit'); $oc = $openingLines->sum('credit');
+            $pd = $periodLines->sum('debit'); $pc = $periodLines->sum('credit');
+            return [
+                'id' => $a->id, 'code' => $a->code, 'name' => $a->name,
+                'opening_debit' => max(0, $od - $oc), 'opening_credit' => max(0, $oc - $od),
+                'period_debit' => $pd, 'period_credit' => $pc,
+                'closing_debit' => max(0, ($od + $pd) - ($oc + $pc)),
+                'closing_credit' => max(0, ($oc + $pc) - ($od + $pd)),
+            ];
+        })->filter(fn ($a) => $a['opening_debit'] > 0 || $a['opening_credit'] > 0 || $a['period_debit'] > 0 || $a['period_credit'] > 0);
+
+        $template = \App\Models\Setting::where('key', 'print_template_accounting')->first();
+        $templateUrl = $template?->value ? \Illuminate\Support\Facades\Storage::url($template->value) : null;
+        $layoutSetting = \App\Models\Setting::where('key', 'print_layout_trial_balance')->first();
+        $layout = $layoutSetting?->value ? json_decode($layoutSetting->value, true) : null;
+
+        return Inertia::render('Accounting/PrintTrialBalance', [
+            'accounts' => $result->values(),
+            'filters' => ['from' => $from, 'to' => $to],
+            'templateUrl' => $templateUrl,
+            'layout' => $layout,
+        ]);
+    }
+
+    /**
+     * طباعة الأرباح والخسائر
+     */
+    public function printProfitLoss(Request $request)
+    {
+        $from = $request->from ?? now()->startOfYear()->toDateString();
+        $to = $request->to ?? now()->toDateString();
+
+        $revenues = Account::where('type', 'revenue')->whereDoesntHave('childrenRecursive')->orderBy('code')->get()
+            ->map(fn ($a) => ['code' => $a->code, 'name' => $a->name, 'amount' => $a->journalLines()->whereHas('journalEntry', fn ($q) => $q->whereBetween('entry_date', [$from, $to . ' 23:59:59']))->sum(DB::raw('credit - debit'))])
+            ->filter(fn ($a) => abs($a['amount']) > 0.001);
+        $expenses = Account::where('type', 'expense')->whereDoesntHave('childrenRecursive')->orderBy('code')->get()
+            ->map(fn ($a) => ['code' => $a->code, 'name' => $a->name, 'amount' => $a->journalLines()->whereHas('journalEntry', fn ($q) => $q->whereBetween('entry_date', [$from, $to . ' 23:59:59']))->sum(DB::raw('debit - credit'))])
+            ->filter(fn ($a) => abs($a['amount']) > 0.001);
+
+        $template = \App\Models\Setting::where('key', 'print_template_accounting')->first();
+        $templateUrl = $template?->value ? \Illuminate\Support\Facades\Storage::url($template->value) : null;
+        $layoutSetting = \App\Models\Setting::where('key', 'print_layout_profit_loss')->first();
+        $layout = $layoutSetting?->value ? json_decode($layoutSetting->value, true) : null;
+
+        return Inertia::render('Accounting/PrintProfitLoss', [
+            'revenues' => $revenues->values(),
+            'expenses' => $expenses->values(),
+            'totalRevenue' => $revenues->sum('amount'),
+            'totalExpenses' => $expenses->sum('amount'),
+            'netIncome' => $revenues->sum('amount') - $expenses->sum('amount'),
+            'filters' => ['from' => $from, 'to' => $to],
+            'templateUrl' => $templateUrl,
+            'layout' => $layout,
+        ]);
+    }
+
+    /**
+     * طباعة الميزانية العمومية
+     */
+    public function printBalanceSheet(Request $request)
+    {
+        $asOf = $request->as_of ?? now()->toDateString();
+
+        $getAccounts = fn ($type) => Account::where('type', $type)->whereDoesntHave('childrenRecursive')->orderBy('code')->get()
+            ->map(fn ($a) => ['code' => $a->code, 'name' => $a->name, 'balance' => $a->journalLines()->whereHas('journalEntry', fn ($q) => $q->where('entry_date', '<=', $asOf . ' 23:59:59'))->sum(DB::raw($type === 'asset' || $type === 'expense' ? 'debit - credit' : 'credit - debit'))])
+            ->filter(fn ($a) => abs($a['balance']) > 0.001);
+
+        $assets = $getAccounts('asset');
+        $liabilities = $getAccounts('liability');
+        $equity = $getAccounts('equity');
+
+        $template = \App\Models\Setting::where('key', 'print_template_accounting')->first();
+        $templateUrl = $template?->value ? \Illuminate\Support\Facades\Storage::url($template->value) : null;
+        $layoutSetting = \App\Models\Setting::where('key', 'print_layout_balance_sheet')->first();
+        $layout = $layoutSetting?->value ? json_decode($layoutSetting->value, true) : null;
+
+        return Inertia::render('Accounting/PrintBalanceSheet', [
+            'assets' => $assets->values(),
+            'liabilities' => $liabilities->values(),
+            'equity' => $equity->values(),
+            'totalAssets' => $assets->sum('balance'),
+            'totalLiabilities' => $liabilities->sum('balance'),
+            'totalEquity' => $equity->sum('balance'),
+            'filters' => ['as_of' => $asOf],
+            'templateUrl' => $templateUrl,
+            'layout' => $layout,
         ]);
     }
 }

@@ -9,9 +9,18 @@
                 <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1">نوع المطبوع</label>
                     <select v-model="docType" class="px-4 py-2 rounded-xl border text-sm font-bold" @change="loadLayout">
-                        <option value="invoice">🧾 فاتورة</option>
-                        <option value="transfer">💸 حوالة</option>
-                        <option value="receipt">📄 سند قبض</option>
+                        <optgroup label="مالي (Portrait)">
+                            <option value="invoice">🧾 فاتورة</option>
+                            <option value="transfer">💸 حوالة</option>
+                            <option value="receipt">📄 سند قبض</option>
+                        </optgroup>
+                        <optgroup label="محاسبي (Landscape)">
+                            <option value="statement">📊 كشف حساب</option>
+                            <option value="chart">🌳 شجرة الحسابات</option>
+                            <option value="trial_balance">⚖️ ميزان المراجعة</option>
+                            <option value="profit_loss">📈 أرباح وخسائر</option>
+                            <option value="balance_sheet">🏦 ميزانية عمومية</option>
+                        </optgroup>
                     </select>
                 </div>
                 <div>
@@ -182,7 +191,11 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import AppLayout from '@/Components/Layout/AppLayout.vue';
 
-const props = defineProps({ title: String, templateUrl: String, layouts: Object });
+const props = defineProps({ title: String, templateUrl: String, accountingTemplateUrl: String, layouts: Object });
+
+const accountingTypes = ['statement', 'chart', 'trial_balance', 'profit_loss', 'balance_sheet'];
+const isAccounting = computed(() => accountingTypes.includes(docType.value));
+const activeTemplateUrl = computed(() => isAccounting.value ? props.accountingTemplateUrl : props.templateUrl);
 
 const docType = ref('invoice');
 const rowsPerPage = ref(10);
@@ -193,8 +206,8 @@ const pdfCanvas = ref(null);
 
 // أبعاد A4 بالبكسل (عرض ثابت 595px ≈ 210mm)
 const SCALE = 595 / 210; // px per mm
-const pageW = 595;
-const pageH = 842;
+const pageW = computed(() => isAccounting.value ? 842 : 595);
+const pageH = computed(() => isAccounting.value ? 595 : 842);
 
 // تعريف العناصر لكل نوع مطبوع
 const elementsByType = {
@@ -230,6 +243,47 @@ const elementsByType = {
         { id: 'payment_method', label: 'طريقة الدفع', icon: '💳', preview: 'نقدي / بنكي / شيك', defaultFontSize: 10 },
         { id: 'commission', label: 'العمولة', icon: '🏦', preview: 'عمولة البنك: 0.000', defaultFontSize: 10 },
         { id: 'signatures', label: 'التوقيعات', icon: '✍️', preview: 'المحاسب | المدير | العميل', defaultFontSize: 9, hasWidth: true },
+    ],
+    // === الأنواع المحاسبية (Landscape) ===
+    statement: [
+        { id: 'title', label: 'عنوان الكشف', icon: '📌', preview: 'كشف حساب', defaultFontSize: 14 },
+        { id: 'entity_name', label: 'اسم الحساب/العميل/الوكيل', icon: '👤', preview: 'اسم الحساب', defaultFontSize: 12 },
+        { id: 'entity_code', label: 'الكود', icon: '#️⃣', preview: 'ACC-001', defaultFontSize: 10 },
+        { id: 'period', label: 'الفترة', icon: '📅', preview: '2026/01/01 → 2026/05/23', defaultFontSize: 10 },
+        { id: 'currency', label: 'العملة', icon: '💱', preview: 'JOD', defaultFontSize: 10 },
+        { id: 'summary_box', label: 'ملخص الأرصدة', icon: '📊', preview: 'افتتاحي | مدين | دائن | ختامي', defaultFontSize: 9, hasWidth: true },
+        { id: 'data_table', label: 'جدول الحركات', icon: '📝', preview: '# | التاريخ | الوصف | مدين | دائن | الرصيد', defaultFontSize: 8, hasWidth: true },
+        { id: 'signatures', label: 'التوقيعات', icon: '✍️', preview: 'المحاسب | المدير المالي', defaultFontSize: 9, hasWidth: true },
+    ],
+    chart: [
+        { id: 'title', label: 'عنوان التقرير', icon: '📌', preview: 'دليل الحسابات', defaultFontSize: 14 },
+        { id: 'report_date', label: 'تاريخ التقرير', icon: '📅', preview: '2026/05/23', defaultFontSize: 10 },
+        { id: 'accounts_count', label: 'عدد الحسابات', icon: '📊', preview: 'عدد الحسابات: 45', defaultFontSize: 10 },
+        { id: 'data_table', label: 'جدول الحسابات', icon: '🌳', preview: 'الكود | الاسم | النوع | العملة | الرصيد', defaultFontSize: 8, hasWidth: true },
+        { id: 'signatures', label: 'التوقيعات', icon: '✍️', preview: 'المحاسب | المدقق | المدير', defaultFontSize: 9, hasWidth: true },
+    ],
+    trial_balance: [
+        { id: 'title', label: 'عنوان التقرير', icon: '📌', preview: 'ميزان المراجعة', defaultFontSize: 14 },
+        { id: 'period', label: 'الفترة', icon: '📅', preview: '2026/01/01 → 2026/05/23', defaultFontSize: 10 },
+        { id: 'balance_status', label: 'حالة التوازن', icon: '⚖️', preview: '✅ الميزان متوازن', defaultFontSize: 10 },
+        { id: 'data_table', label: 'جدول الميزان', icon: '📝', preview: 'الكود | الاسم | رصيد أول | حركات | رصيد آخر', defaultFontSize: 8, hasWidth: true },
+        { id: 'signatures', label: 'التوقيعات', icon: '✍️', preview: 'المحاسب | المدير', defaultFontSize: 9, hasWidth: true },
+    ],
+    profit_loss: [
+        { id: 'title', label: 'عنوان التقرير', icon: '📌', preview: 'قائمة الدخل', defaultFontSize: 14 },
+        { id: 'period', label: 'الفترة', icon: '📅', preview: '2026/01/01 → 2026/05/23', defaultFontSize: 10 },
+        { id: 'revenue_table', label: 'جدول الإيرادات', icon: '📈', preview: 'الكود | الإيراد | المبلغ', defaultFontSize: 9, hasWidth: true },
+        { id: 'expense_table', label: 'جدول المصروفات', icon: '📉', preview: 'الكود | المصروف | المبلغ', defaultFontSize: 9, hasWidth: true },
+        { id: 'net_income', label: 'صافي الدخل', icon: '💰', preview: 'صافي الربح: 000.000 JOD', defaultFontSize: 13 },
+        { id: 'signatures', label: 'التوقيعات', icon: '✍️', preview: 'المحاسب | المدير', defaultFontSize: 9, hasWidth: true },
+    ],
+    balance_sheet: [
+        { id: 'title', label: 'عنوان التقرير', icon: '📌', preview: 'الميزانية العمومية', defaultFontSize: 14 },
+        { id: 'as_of_date', label: 'كما في تاريخ', icon: '📅', preview: 'كما في: 2026/05/23', defaultFontSize: 10 },
+        { id: 'balance_status', label: 'حالة التوازن', icon: '⚖️', preview: '✅ متوازنة', defaultFontSize: 10 },
+        { id: 'assets_table', label: 'جدول الأصول', icon: '📊', preview: 'الكود | الأصل | الرصيد', defaultFontSize: 9, hasWidth: true },
+        { id: 'liabilities_table', label: 'جدول الالتزامات + ملكية', icon: '📋', preview: 'الكود | الالتزام | الرصيد', defaultFontSize: 9, hasWidth: true },
+        { id: 'signatures', label: 'التوقيعات', icon: '✍️', preview: 'المحاسب | المدير', defaultFontSize: 9, hasWidth: true },
     ],
 };
 
@@ -267,6 +321,47 @@ const defaultPositions = {
         payment_method: { x: 10, y: 88, fontSize: 10 },
         commission: { x: 80, y: 88, fontSize: 10 },
         signatures: { x: 10, y: 250, fontSize: 9, w: 190 },
+    },
+    // === محاسبي Landscape (297×210mm) ===
+    statement: {
+        title: { x: 10, y: 15, fontSize: 14 },
+        entity_name: { x: 10, y: 28, fontSize: 12 },
+        entity_code: { x: 120, y: 28, fontSize: 10 },
+        period: { x: 200, y: 28, fontSize: 10 },
+        currency: { x: 200, y: 15, fontSize: 10 },
+        summary_box: { x: 10, y: 40, fontSize: 9, w: 277 },
+        data_table: { x: 10, y: 58, fontSize: 8, w: 277 },
+        signatures: { x: 10, y: 180, fontSize: 9, w: 277 },
+    },
+    chart: {
+        title: { x: 10, y: 15, fontSize: 14 },
+        report_date: { x: 200, y: 15, fontSize: 10 },
+        accounts_count: { x: 120, y: 15, fontSize: 10 },
+        data_table: { x: 10, y: 32, fontSize: 8, w: 277 },
+        signatures: { x: 10, y: 180, fontSize: 9, w: 277 },
+    },
+    trial_balance: {
+        title: { x: 10, y: 15, fontSize: 14 },
+        period: { x: 120, y: 15, fontSize: 10 },
+        balance_status: { x: 200, y: 15, fontSize: 10 },
+        data_table: { x: 10, y: 32, fontSize: 8, w: 277 },
+        signatures: { x: 10, y: 180, fontSize: 9, w: 277 },
+    },
+    profit_loss: {
+        title: { x: 10, y: 15, fontSize: 14 },
+        period: { x: 200, y: 15, fontSize: 10 },
+        revenue_table: { x: 10, y: 32, fontSize: 9, w: 130 },
+        expense_table: { x: 150, y: 32, fontSize: 9, w: 130 },
+        net_income: { x: 10, y: 160, fontSize: 13 },
+        signatures: { x: 10, y: 180, fontSize: 9, w: 277 },
+    },
+    balance_sheet: {
+        title: { x: 10, y: 15, fontSize: 14 },
+        as_of_date: { x: 200, y: 15, fontSize: 10 },
+        balance_status: { x: 120, y: 15, fontSize: 10 },
+        assets_table: { x: 10, y: 32, fontSize: 9, w: 130 },
+        liabilities_table: { x: 150, y: 32, fontSize: 9, w: 130 },
+        signatures: { x: 10, y: 180, fontSize: 9, w: 277 },
     },
 };
 
@@ -307,6 +402,23 @@ const varsByType = {
         { key: '{{المبلغ}}', label: 'المبلغ JOD', desc: 'المبلغ بالدينار' },
         { key: '{{طريقة_الدفع}}', label: 'طريقة الدفع', desc: 'نقد/بنك/شيك' },
         { key: '{{الحالة}}', label: 'الحالة', desc: 'حالة السند' },
+    ],
+    statement: [
+        { key: '{{اسم_الحساب}}', label: 'اسم الحساب/العميل/الوكيل', desc: 'الاسم' },
+        { key: '{{كود_الحساب}}', label: 'الكود', desc: 'كود الحساب' },
+        { key: '{{الفترة}}', label: 'الفترة', desc: 'فترة الكشف' },
+    ],
+    chart: [
+        { key: '{{التاريخ}}', label: 'تاريخ التقرير', desc: 'تاريخ الطباعة' },
+    ],
+    trial_balance: [
+        { key: '{{الفترة}}', label: 'الفترة', desc: 'فترة التقرير' },
+    ],
+    profit_loss: [
+        { key: '{{الفترة}}', label: 'الفترة', desc: 'فترة التقرير' },
+    ],
+    balance_sheet: [
+        { key: '{{التاريخ}}', label: 'كما في تاريخ', desc: 'تاريخ الميزانية' },
     ],
 };
 
@@ -444,22 +556,25 @@ const onKeyDown = (e) => {
     if (!selectedEl.value || !positions[selectedEl.value]) return;
     const step = e.shiftKey ? 5 : 0.5;
     const p = positions[selectedEl.value];
+    const maxX = isAccounting.value ? 290 : 200;
+    const maxY = isAccounting.value ? 200 : 290;
     switch(e.key) {
         case 'ArrowRight': p.x = Math.max(0, p.x - step); e.preventDefault(); break;
-        case 'ArrowLeft': p.x = Math.min(200, p.x + step); e.preventDefault(); break;
+        case 'ArrowLeft': p.x = Math.min(maxX, p.x + step); e.preventDefault(); break;
         case 'ArrowUp': p.y = Math.max(0, p.y - step); e.preventDefault(); break;
-        case 'ArrowDown': p.y = Math.min(290, p.y + step); e.preventDefault(); break;
+        case 'ArrowDown': p.y = Math.min(maxY, p.y + step); e.preventDefault(); break;
     }
 };
 
 // تحميل PDF كخلفية
 const renderPdf = async () => {
-    if (!props.templateUrl || !pdfCanvas.value) return;
+    const url = activeTemplateUrl.value;
+    if (!url || !pdfCanvas.value) return;
     try {
         const pdfjsLib = await loadPdfJs();
-        const pdf = await pdfjsLib.getDocument(props.templateUrl).promise;
+        const pdf = await pdfjsLib.getDocument(url).promise;
         const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: pageW / page.getViewport({ scale: 1 }).width });
+        const viewport = page.getViewport({ scale: pageW.value / page.getViewport({ scale: 1 }).width });
         const canvas = pdfCanvas.value;
         canvas.width = viewport.width;
         canvas.height = viewport.height;
@@ -485,6 +600,10 @@ onMounted(() => {
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
     document.addEventListener('keydown', onKeyDown);
+});
+
+watch(docType, () => {
+    setTimeout(renderPdf, 200);
 });
 
 onUnmounted(() => {

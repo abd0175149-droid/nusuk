@@ -22,6 +22,7 @@
                 <div><label class="block text-xs font-medium text-gray-600 mb-1">من</label><input v-model="fromDate" type="date" class="px-4 py-2 rounded-xl border text-sm" dir="ltr"/></div>
                 <div><label class="block text-xs font-medium text-gray-600 mb-1">إلى</label><input v-model="toDate" type="date" class="px-4 py-2 rounded-xl border text-sm" dir="ltr"/></div>
                 <button @click="applyFilter" class="px-5 py-2 rounded-xl text-sm font-bold text-black bg-gradient-to-r from-gold-500 to-gold-400">🔍 عرض</button>
+                <a :href="`/accounting/accounts/${account.id}/print?from=${fromDate}&to=${toDate}`" target="_blank" class="px-4 py-2 rounded-xl text-sm text-purple-600 border border-purple-200 hover:bg-purple-50">🖨️ طباعة</a>
             </div>
 
             <!-- جدول الحركات -->

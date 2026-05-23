@@ -6,6 +6,7 @@
             <div class="flex items-center gap-4">
                 <label class="text-sm font-medium">كما في تاريخ:</label>
                 <input type="date" v-model="filterDate" @change="applyFilter" class="px-3 py-2 rounded-xl border text-sm" />
+                <a :href="`/accounting/balance-sheet/print?as_of=${filterDate}`" target="_blank" class="px-4 py-2 rounded-xl text-sm text-purple-600 border border-purple-200 hover:bg-purple-50">🖨️ طباعة</a>
             </div>
 
             <!-- مؤشر التوازن -->

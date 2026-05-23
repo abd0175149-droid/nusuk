@@ -13,7 +13,7 @@
                     <input v-model="to" type="date" class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm dark:text-white" />
                 </div>
                 <button @click="applyFilter" class="px-5 py-2 rounded-lg font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md">🔍 عرض</button>
-                <button @click="printPage" class="px-4 py-2 rounded-lg text-sm text-purple-600 border border-purple-200 hover:bg-purple-50">🖨️ طباعة</button>
+                <a :href="`/accounting/trial-balance/print?from=${from}&to=${to}`" target="_blank" class="px-4 py-2 rounded-lg text-sm text-purple-600 border border-purple-200 hover:bg-purple-50">🖨️ طباعة</a>
             </div>
 
             <!-- ملخص النقدية -->
@@ -120,5 +120,4 @@ const applyFilter = () => {
     router.get('/accounting/trial-balance', { from: from.value, to: to.value }, { preserveState: true, replace: true });
 };
 
-const printPage = () => window.print();
 </script>
