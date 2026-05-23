@@ -179,12 +179,12 @@ const form = useForm({
     expense_category_id:'', revenue_account_id:'',
 });
 
-// حساب الفرق بالدينار: cost_jod - (amount_sar / 0.19)
+// حساب الفرق بالدينار: cost_jod - (amount_sar * 0.19)
 const difference = computed(() => {
     const sar = parseFloat(form.amount_sar) || 0;
     const jod = parseFloat(form.cost_jod) || 0;
     if (sar <= 0 || jod <= 0) return 0;
-    const sarInJod = sar / EXCHANGE_RATE;  // تحويل الريال إلى دينار
+    const sarInJod = sar * EXCHANGE_RATE;  // تحويل الريال إلى دينار
     return Math.round((jod - sarInJod) * 1000) / 1000;
 });
 

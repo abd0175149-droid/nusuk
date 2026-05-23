@@ -66,8 +66,8 @@ class TransferController extends Controller
         $validated['status'] = 'pending';
         $validated['created_by'] = auth()->id();
 
-        // حساب الفرق بالدينار: cost_jod - (amount_sar / 0.19)
-        $amountInJod = round((float)$validated['amount_sar'] / self::EXCHANGE_RATE, 3);
+        // حساب الفرق بالدينار: cost_jod - (amount_sar * 0.19)
+        $amountInJod = round((float)$validated['amount_sar'] * self::EXCHANGE_RATE, 3);
         $difference = round((float)$validated['cost_jod'] - $amountInJod, 3);
 
         $validated['difference_amount'] = $difference;
@@ -175,7 +175,7 @@ class TransferController extends Controller
         ]);
 
         // إعادة حساب الفرق
-        $amountInJod = round((float)$validated['amount_sar'] / self::EXCHANGE_RATE, 3);
+        $amountInJod = round((float)$validated['amount_sar'] * self::EXCHANGE_RATE, 3);
         $difference = round((float)$validated['cost_jod'] - $amountInJod, 3);
         $validated['difference_amount'] = $difference;
         $validated['difference_type'] = $difference > 0 ? 'expense' : ($difference < 0 ? 'revenue' : null);
