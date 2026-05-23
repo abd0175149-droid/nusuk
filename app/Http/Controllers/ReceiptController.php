@@ -37,11 +37,19 @@ class ReceiptController extends Controller
             'client_id' => 'required|exists:clients,id',
             'amount_jod' => 'required|numeric|min:0.001',
             'payment_method' => 'required|in:cash,bank,check',
+            'bank_commission' => 'nullable|numeric|min:0',
             'check_number' => 'nullable|string|max:50',
             'check_date' => 'nullable|date',
             'check_bank' => 'nullable|string|max:100',
             'notes' => 'nullable|string|max:1000',
         ]);
+
+        // العمولة فقط عند الدفع البنكي
+        if ($validated['payment_method'] !== 'bank') {
+            $validated['bank_commission'] = 0;
+        } else {
+            $validated['bank_commission'] = $validated['bank_commission'] ?? 0;
+        }
 
         $validated['receipt_number'] = NumberingService::generate('REC');
         $validated['receipt_date'] = now()->toDateString();
@@ -129,11 +137,18 @@ class ReceiptController extends Controller
             'client_id' => 'required|exists:clients,id',
             'amount_jod' => 'required|numeric|min:0.001',
             'payment_method' => 'required|in:cash,bank,check',
+            'bank_commission' => 'nullable|numeric|min:0',
             'check_number' => 'nullable|string|max:50',
             'check_date' => 'nullable|date',
             'check_bank' => 'nullable|string|max:100',
             'notes' => 'nullable|string|max:1000',
         ]);
+
+        if ($validated['payment_method'] !== 'bank') {
+            $validated['bank_commission'] = 0;
+        } else {
+            $validated['bank_commission'] = $validated['bank_commission'] ?? 0;
+        }
 
         $receipt->update($validated);
         $receipt->resubmitForApproval();

@@ -197,34 +197,70 @@ class AccountingService
 
     /**
      * قيد اعتماد سند قبض
-     * مدين: الصندوق/البنك/شيكات
-     * دائن: حساب العميل الفرعي
+     * الحالة العادية (نقد/شيك):
+     *   مدين: الصندوق/شيكات = المبلغ الكامل
+     *   دائن: حساب العميل = المبلغ الكامل
+     * 
+     * حالة البنك مع عمولة:
+     *   مدين: البنك = (المبلغ - العمولة)  ← اللي فعلاً وصل
+     *   مدين: مصاريف عمولات بنكية = العمولة
+     *   دائن: حساب العميل = المبلغ الكامل
      */
     public static function recordReceipt(Receipt $receipt): JournalEntry
     {
-        $paymentAccount = self::paymentAccount($receipt->payment_method);
         $clientAccount = $receipt->client->account_id
             ? Account::find($receipt->client->account_id)
             : self::account('1200');
+
+        $commission = (float) ($receipt->bank_commission ?? 0);
+        $totalAmount = (float) $receipt->amount_jod;
+
+        $lines = [];
+
+        if ($commission > 0 && $receipt->payment_method === 'bank') {
+            // حالة البنك مع عمولة
+            $bankAccount = self::account('1102');
+            $commissionAccount = self::account('5500'); // عمولات بنكية
+
+            // مدين: البنك = المبلغ الصافي (بعد خصم العمولة)
+            $lines[] = [
+                'account_id' => $bankAccount->id,
+                'debit' => round($totalAmount - $commission, 3),
+                'credit' => 0,
+                'description' => "تحصيل بنكي من {$receipt->client->name} (صافي بعد العمولة)",
+            ];
+
+            // مدين: مصاريف عمولات بنكية
+            $lines[] = [
+                'account_id' => $commissionAccount->id,
+                'debit' => $commission,
+                'credit' => 0,
+                'description' => "عمولة بنكية على سند {$receipt->receipt_number}",
+            ];
+        } else {
+            // حالة عادية (نقد/شيك/بنك بدون عمولة)
+            $paymentAccount = self::paymentAccount($receipt->payment_method);
+            $lines[] = [
+                'account_id' => $paymentAccount->id,
+                'debit' => $totalAmount,
+                'credit' => 0,
+                'description' => "تحصيل من {$receipt->client->name}",
+            ];
+        }
+
+        // دائن: حساب العميل = المبلغ الكامل (كل المبلغ يخصم من ذمته)
+        $lines[] = [
+            'account_id' => $clientAccount->id,
+            'debit' => 0,
+            'credit' => $totalAmount,
+            'description' => "تسديد ذمة {$receipt->client->name}",
+        ];
 
         return self::createEntry(
             "سند قبض {$receipt->receipt_number} — {$receipt->client->name}",
             'receipt',
             $receipt->id,
-            [
-                [
-                    'account_id' => $paymentAccount->id,
-                    'debit' => $receipt->amount_jod,
-                    'credit' => 0,
-                    'description' => "تحصيل من {$receipt->client->name}",
-                ],
-                [
-                    'account_id' => $clientAccount->id,
-                    'debit' => 0,
-                    'credit' => $receipt->amount_jod,
-                    'description' => "تسديد ذمة {$receipt->client->name}",
-                ],
-            ]
+            $lines
         );
     }
 

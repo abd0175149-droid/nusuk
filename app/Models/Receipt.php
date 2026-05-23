@@ -12,15 +12,16 @@ class Receipt extends Model
     use SoftDeletes, HasApproval;
 
     protected $fillable = [
-        'receipt_number', 'client_id', 'amount_jod', 'payment_method',
-        'reference_number', 'receipt_date', 'bank_name', 'check_date',
-        'notes', 'status', 'rejection_reason',
+        'receipt_number', 'client_id', 'amount_jod', 'bank_commission',
+        'payment_method', 'reference_number', 'receipt_date', 'bank_name',
+        'check_date', 'notes', 'status', 'rejection_reason',
         'created_by', 'approved_by', 'approved_at',
         'modified_by', 'modified_at', 'original_values',
     ];
 
     protected $casts = [
         'amount_jod' => 'decimal:3',
+        'bank_commission' => 'decimal:3',
         'receipt_date' => 'date',
         'check_date' => 'date',
         'approved_at' => 'datetime',

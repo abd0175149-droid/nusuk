@@ -9,13 +9,17 @@
                 <button v-if="can('receipts.create')" @click="openForm()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md">+ سند قبض</button>
             </div>
             <div class="rounded-xl border overflow-hidden shadow-sm bg-white"><table class="w-full text-sm">
-                <thead><tr class="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400"><th class="px-5 py-3 text-right font-bold">الرقم</th><th class="px-5 py-3 text-right font-bold">العميل</th><th class="px-5 py-3 text-right font-bold">المبلغ (JOD)</th><th class="px-5 py-3 text-right font-bold">الدفع</th><th class="px-5 py-3 text-right font-bold">الحالة</th><th class="px-5 py-3 text-right font-bold">بواسطة</th><th class="px-5 py-3 text-center font-bold">إجراءات</th></tr></thead>
+                <thead><tr class="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400"><th class="px-5 py-3 text-right font-bold">الرقم</th><th class="px-5 py-3 text-right font-bold">العميل</th><th class="px-5 py-3 text-right font-bold">المبلغ (JOD)</th><th class="px-5 py-3 text-right font-bold">العمولة</th><th class="px-5 py-3 text-right font-bold">الدفع</th><th class="px-5 py-3 text-right font-bold">الحالة</th><th class="px-5 py-3 text-right font-bold">بواسطة</th><th class="px-5 py-3 text-center font-bold">إجراءات</th></tr></thead>
                 <tbody><tr v-for="r in receipts.data" :key="r.id" :data-row-id="r.id"
                             class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30"
                             :class="{ 'row-glow': isHighlighted(r.id) }">
                     <td class="px-5 py-3 text-right font-mono text-xs text-gold-700">{{ r.receipt_number }}</td>
                     <td class="px-5 py-3 text-right font-medium">{{ r.client?.name }}</td>
                     <td class="px-5 py-3 text-right font-bold font-mono text-xs text-green-600" dir="ltr">{{ Number(r.amount_jod).toLocaleString('en',{minimumFractionDigits:3}) }}</td>
+                    <td class="px-5 py-3 text-right font-mono text-xs" dir="ltr">
+                        <span v-if="Number(r.bank_commission) > 0" class="text-red-500 font-bold">{{ Number(r.bank_commission).toLocaleString('en',{minimumFractionDigits:3}) }}</span>
+                        <span v-else class="text-gray-300">—</span>
+                    </td>
                     <td class="px-5 py-3 text-right text-xs">{{ {cash:'نقدي',bank:'بنكي',check:'شيك'}[r.payment_method] }}</td>
                     <td class="px-5 py-3 text-right"><span class="px-2.5 py-1 rounded-full text-xs font-bold" :class="{pending:'bg-yellow-100 text-yellow-700',approved:'bg-green-100 text-green-700',rejected:'bg-red-100 text-red-700',editing:'bg-blue-100 text-blue-700'}[r.status]">{{ {pending:'معلقة',approved:'معتمدة',rejected:'مرفوضة',editing:'تحت التعديل'}[r.status] }}</span></td>
                     <td class="px-5 py-3 text-right text-xs text-gray-500"><div>📝 {{ r.creator?.name || '—' }}</div><div v-if="r.status !== 'pending'" class="mt-0.5">{{ r.status === 'approved' ? '✅' : '❌' }} {{ r.approver?.name || '—' }}</div></td>
@@ -25,7 +29,7 @@
                         <template v-if="r.status==='approved'"><button v-if="can('receipts.edit_approved')" @click="startEdit(r)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg">✏️ تعديل</button></template>
                         <template v-if="r.status==='editing'"><button @click="openEditForm(r)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg font-bold">📝 تعديل البيانات</button></template>
                     </td>
-                </tr><tr v-if="!receipts.data?.length"><td colspan="7" class="px-5 py-12 text-center text-gray-400">لا يوجد سندات</td></tr></tbody>
+                </tr><tr v-if="!receipts.data?.length"><td colspan="8" class="px-5 py-12 text-center text-gray-400">لا يوجد سندات</td></tr></tbody>
             </table></div>
         </div>
 
@@ -38,6 +42,16 @@
                         <div><label class="block text-sm font-medium mb-1">العميل *</label><SearchableSelect v-model="form.client_id" :options="clientOptions" placeholder="اختر العميل" search-placeholder="ابحث عن عميل..." /></div>
                         <div><label class="block text-sm font-medium mb-1">المبلغ (JOD) *</label><input v-model="form.amount_jod" type="number" step="0.001" required dir="ltr" class="w-full px-4 py-2.5 rounded-xl border text-sm"/></div>
                         <div><label class="block text-sm font-medium mb-1">طريقة الدفع *</label><select v-model="form.payment_method" class="w-full px-4 py-2.5 rounded-xl border text-sm"><option value="cash">نقدي</option><option value="bank">بنكي</option><option value="check">شيك</option></select></div>
+                        <div v-if="form.payment_method === 'bank'">
+                            <label class="block text-sm font-medium mb-1">عمولة البنك (JOD)</label>
+                            <input v-model="form.bank_commission" type="number" step="0.001" min="0" dir="ltr" class="w-full px-4 py-2.5 rounded-xl border text-sm border-orange-300 focus:ring-orange-500"/>
+                        </div>
+                    </div>
+                    <!-- ملخص عند وجود عمولة -->
+                    <div v-if="form.payment_method === 'bank' && Number(form.bank_commission) > 0" class="p-3 bg-orange-50 rounded-xl text-xs space-y-1">
+                        <div class="flex justify-between"><span class="text-gray-600">المبلغ الكامل (يخصم من العميل):</span><span class="font-bold text-green-700">{{ Number(form.amount_jod).toLocaleString('en',{minimumFractionDigits:3}) }} JOD</span></div>
+                        <div class="flex justify-between"><span class="text-gray-600">عمولة البنك (مصروف):</span><span class="font-bold text-red-600">- {{ Number(form.bank_commission).toLocaleString('en',{minimumFractionDigits:3}) }} JOD</span></div>
+                        <div class="flex justify-between border-t pt-1"><span class="text-gray-600">صافي الإيراد:</span><span class="font-bold text-blue-700">{{ (Number(form.amount_jod) - Number(form.bank_commission)).toLocaleString('en',{minimumFractionDigits:3}) }} JOD</span></div>
                     </div>
                     <div><label class="block text-sm font-medium mb-1">ملاحظات</label><textarea v-model="form.notes" rows="2" class="w-full px-4 py-2.5 rounded-xl border text-sm resize-none"></textarea></div>
                     <div class="flex gap-3"><button type="submit" :disabled="form.processing" class="px-6 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 disabled:opacity-50">✅ إنشاء</button><button type="button" @click="showForm=false" class="px-6 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-100">إلغاء</button></div>
@@ -54,6 +68,15 @@
                         <div><label class="block text-sm font-medium mb-1">العميل *</label><SearchableSelect v-model="editForm.client_id" :options="clientOptions" placeholder="اختر العميل" search-placeholder="ابحث عن عميل..." /></div>
                         <div><label class="block text-sm font-medium mb-1">المبلغ (JOD) *</label><input v-model="editForm.amount_jod" type="number" step="0.001" required dir="ltr" class="w-full px-4 py-2.5 rounded-xl border text-sm"/></div>
                         <div><label class="block text-sm font-medium mb-1">طريقة الدفع *</label><select v-model="editForm.payment_method" class="w-full px-4 py-2.5 rounded-xl border text-sm"><option value="cash">نقدي</option><option value="bank">بنكي</option><option value="check">شيك</option></select></div>
+                        <div v-if="editForm.payment_method === 'bank'">
+                            <label class="block text-sm font-medium mb-1">عمولة البنك (JOD)</label>
+                            <input v-model="editForm.bank_commission" type="number" step="0.001" min="0" dir="ltr" class="w-full px-4 py-2.5 rounded-xl border text-sm border-orange-300 focus:ring-orange-500"/>
+                        </div>
+                    </div>
+                    <div v-if="editForm.payment_method === 'bank' && Number(editForm.bank_commission) > 0" class="p-3 bg-orange-50 rounded-xl text-xs space-y-1">
+                        <div class="flex justify-between"><span class="text-gray-600">المبلغ الكامل (يخصم من العميل):</span><span class="font-bold text-green-700">{{ Number(editForm.amount_jod).toLocaleString('en',{minimumFractionDigits:3}) }} JOD</span></div>
+                        <div class="flex justify-between"><span class="text-gray-600">عمولة البنك (مصروف):</span><span class="font-bold text-red-600">- {{ Number(editForm.bank_commission).toLocaleString('en',{minimumFractionDigits:3}) }} JOD</span></div>
+                        <div class="flex justify-between border-t pt-1"><span class="text-gray-600">صافي الإيراد:</span><span class="font-bold text-blue-700">{{ (Number(editForm.amount_jod) - Number(editForm.bank_commission)).toLocaleString('en',{minimumFractionDigits:3}) }} JOD</span></div>
                     </div>
                     <div><label class="block text-sm font-medium mb-1">ملاحظات</label><textarea v-model="editForm.notes" rows="2" class="w-full px-4 py-2.5 rounded-xl border text-sm resize-none"></textarea></div>
                     <div class="p-3 bg-blue-50 rounded-xl text-xs text-blue-700">⚠️ بعد التعديل سيتم إرسال السند للاعتماد مرة أخرى</div>
@@ -75,8 +98,8 @@ const { isHighlighted } = useHighlight();
 const props = defineProps({ receipts: Object, filters: Object, clients: Array });
 const clientOptions = computed(() => props.clients.map(c => ({ value: c.id, label: c.name })));
 const search = ref(''); const showForm = ref(false); const showEditForm = ref(false); let t=null;
-const form = useForm({ client_id:'', amount_jod:'', payment_method:'cash', notes:'' });
-const editForm = useForm({ _editId: null, receipt_number:'', client_id:'', amount_jod:'', payment_method:'cash', notes:'' });
+const form = useForm({ client_id:'', amount_jod:'', payment_method:'cash', bank_commission:'', notes:'' });
+const editForm = useForm({ _editId: null, receipt_number:'', client_id:'', amount_jod:'', payment_method:'cash', bank_commission:'', notes:'' });
 
 const openForm=()=>{form.reset();showForm.value=true;};
 
@@ -92,6 +115,7 @@ const openEditForm = (r) => {
     editForm.client_id = r.client_id;
     editForm.amount_jod = r.amount_jod;
     editForm.payment_method = r.payment_method;
+    editForm.bank_commission = r.bank_commission || '';
     editForm.notes = r.notes || '';
     showEditForm.value = true;
 };
