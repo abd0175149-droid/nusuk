@@ -64,7 +64,7 @@
         <div v-if="showPOS" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showPOS=false">
             <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl mx-4 p-6 max-h-[95vh] overflow-y-auto">
                 <div class="flex items-center justify-between mb-5">
-                    <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">🧾 فاتورة مبيعات جديدة</h3>
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ editingInvoiceId ? '✏️ تعديل فاتورة' : '🧾 فاتورة مبيعات جديدة' }}</h3>
                     <button @click="showPOS=false" class="text-gray-400 dark:text-gray-500 hover:text-red-500 text-xl">&times;</button>
                 </div>
                 <div class="space-y-5">
@@ -144,7 +144,7 @@
                     <!-- Notes + Submit -->
                     <div><label class="block text-sm font-medium text-gray-700 mb-1">ملاحظات</label><textarea v-model="pos.notes" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none resize-none"></textarea></div>
                     <div class="flex gap-3">
-                        <button @click="submitPOS" :disabled="submitting||!pos.agent_id||!pos.client_id||!pos.items.length" class="px-6 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md disabled:opacity-50">🧾 إرسال للاعتماد</button>
+                        <button @click="submitPOS" :disabled="submitting||!pos.agent_id||!pos.client_id||!pos.items.length" class="px-6 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md disabled:opacity-50">{{ editingInvoiceId ? '📤 حفظ التعديلات' : '🧾 إرسال للاعتماد' }}</button>
                         <button @click="showPOS=false" class="px-6 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-100">إلغاء</button>
                     </div>
                 </div>
@@ -228,14 +228,51 @@ const clientTotalJod = computed(() => pos.items.reduce((s, i) => s + i.quantity 
 // الربح = إجمالي العميل - تكلفة الوكيل
 const profitJod = computed(() => clientTotalJod.value - agentCostJod.value);
 
-const openPOS = () => {
-    pos.agent_id = '';
-    pos.client_id = '';
-    pos.exchange_rate = props.exchangeRate || 0.078;
-    pos.discount = 0;
-    pos.notes = '';
-    pos.items = [];
-    unbilledViolations.value = [];
+const editingInvoiceId = ref(null);
+
+const openPOS = async (inv = null) => {
+    // إذا فيه فاتورة للتعديل — نحمل بياناتها
+    if (inv && inv.id) {
+        editingInvoiceId.value = inv.id;
+        try {
+            const res = await fetch('/api/invoices/' + inv.id + '/details');
+            const data = await res.json();
+            pos.agent_id = data.agent_id;
+            pos.client_id = data.client_id;
+            pos.exchange_rate = parseFloat(data.exchange_rate_snapshot) || props.exchangeRate || 0.078;
+            pos.discount = parseFloat(data.discount_sar) || 0;
+            pos.notes = data.notes || '';
+            pos.items = (data.items || []).map(item => ({
+                item_type: item.item_type,
+                service_id: item.service_id || '',
+                violation_id: item.violation_id || '',
+                description: item.description,
+                quantity: item.quantity,
+                unit_price_sar: parseFloat(item.unit_price_sar),
+                sell_price_jod: parseFloat(item.sell_price_jod),
+            }));
+            // تحميل المخالفات غير المفوترة للعميل
+            if (pos.client_id) await loadUnbilled();
+        } catch (e) {
+            console.error('Error loading invoice:', e);
+            pos.agent_id = inv.agent_id || '';
+            pos.client_id = inv.client_id || '';
+            pos.exchange_rate = props.exchangeRate || 0.078;
+            pos.discount = 0;
+            pos.notes = '';
+            pos.items = [];
+        }
+    } else {
+        // فاتورة جديدة
+        editingInvoiceId.value = null;
+        pos.agent_id = '';
+        pos.client_id = '';
+        pos.exchange_rate = props.exchangeRate || 0.078;
+        pos.discount = 0;
+        pos.notes = '';
+        pos.items = [];
+        unbilledViolations.value = [];
+    }
     showPOS.value = true;
 };
 
@@ -292,11 +329,22 @@ const submitPOS = () => {
             violation_id: i.violation_id || null,
         })),
     };
-    router.post('/invoices', payload, {
-        preserveScroll: true,
-        onSuccess: () => { showPOS.value = false; },
-        onFinish: () => { submitting.value = false; },
-    });
+
+    if (editingInvoiceId.value) {
+        // تعديل فاتورة موجودة
+        router.put('/invoices/' + editingInvoiceId.value, payload, {
+            preserveScroll: true,
+            onSuccess: () => { showPOS.value = false; editingInvoiceId.value = null; },
+            onFinish: () => { submitting.value = false; },
+        });
+    } else {
+        // فاتورة جديدة
+        router.post('/invoices', payload, {
+            preserveScroll: true,
+            onSuccess: () => { showPOS.value = false; },
+            onFinish: () => { submitting.value = false; },
+        });
+    }
 };
 
 const viewInv = (inv) => { viewTarget.value = inv; };

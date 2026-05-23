@@ -266,6 +266,101 @@ class InvoiceController extends Controller
         return back()->with('success', "تم فتح الفاتورة {$invoice->invoice_number} للتعديل");
     }
 
+    /**
+     * تحديث فاتورة في حالة التعديل
+     */
+    public function update(Request $request, Invoice $invoice)
+    {
+        if ($invoice->status !== 'editing' && $invoice->status !== 'pending') {
+            return back()->with('error', 'لا يمكن تعديل هذه الفاتورة');
+        }
+
+        $validated = $request->validate([
+            'agent_id' => 'required|exists:agents,id',
+            'client_id' => 'required|exists:clients,id',
+            'exchange_rate_snapshot' => 'required|numeric|min:0.001',
+            'discount_sar' => 'nullable|numeric|min:0',
+            'notes' => 'nullable|string|max:1000',
+            'items' => 'required|array|min:1',
+            'items.*.item_type' => 'required|in:service,violation',
+            'items.*.description' => 'required|string',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.unit_price_sar' => 'required|numeric|min:0',
+            'items.*.sell_price_jod' => 'required|numeric|min:0',
+            'items.*.service_id' => 'nullable|integer',
+            'items.*.violation_id' => 'nullable|integer',
+        ]);
+
+        DB::transaction(function () use ($invoice, $validated) {
+            $rate = $validated['exchange_rate_snapshot'];
+            $discount = $validated['discount_sar'] ?? 0;
+
+            $servicesCost = 0;
+            $violationsCost = 0;
+            $subtotal = 0;
+            $totalSellJod = 0;
+
+            foreach ($validated['items'] as $item) {
+                $lineTotal = $item['quantity'] * $item['unit_price_sar'];
+                $lineSellJod = $item['quantity'] * $item['sell_price_jod'];
+                $subtotal += $lineTotal;
+                $totalSellJod += $lineSellJod;
+                if ($item['item_type'] === 'service') {
+                    $servicesCost += $lineTotal;
+                } else {
+                    $violationsCost += $lineTotal;
+                }
+            }
+
+            $totalSar = $subtotal - $discount;
+            $totalJod = round($totalSellJod, 3);
+            $agentCostJod = round($totalSar * $rate, 3);
+            $profitJod = round($totalJod - $agentCostJod, 3);
+            $profitSar = $rate > 0 ? round($profitJod / $rate, 2) : 0;
+
+            // تحديث بيانات الفاتورة
+            $invoice->update([
+                'agent_id' => $validated['agent_id'],
+                'client_id' => $validated['client_id'],
+                'exchange_rate_snapshot' => $rate,
+                'subtotal_sar' => $subtotal,
+                'discount_sar' => $discount,
+                'total_sar' => $totalSar,
+                'total_jod' => $totalJod,
+                'services_cost_sar' => $servicesCost,
+                'violations_cost_sar' => $violationsCost,
+                'profit_sar' => $profitSar,
+                'profit_jod' => $profitJod,
+                'notes' => $validated['notes'] ?? null,
+                'status' => 'pending',
+                'approved_by' => null,
+                'approved_at' => null,
+            ]);
+
+            // حذف البنود القديمة وإعادة إنشائها
+            $invoice->items()->delete();
+            foreach ($validated['items'] as $i => $item) {
+                InvoiceItem::create([
+                    'invoice_id' => $invoice->id,
+                    'item_type' => $item['item_type'],
+                    'service_id' => $item['service_id'] ?? null,
+                    'violation_id' => $item['violation_id'] ?? null,
+                    'description' => $item['description'],
+                    'quantity' => $item['quantity'],
+                    'unit_price_sar' => $item['unit_price_sar'],
+                    'sell_price_jod' => $item['sell_price_jod'],
+                    'total_cost_sar' => $item['quantity'] * $item['unit_price_sar'],
+                    'total_sell_jod' => $item['quantity'] * $item['sell_price_jod'],
+                    'sort_order' => $i + 1,
+                ]);
+            }
+
+            AuditLog::log('update', 'invoice', $invoice->id, $invoice->invoice_number);
+        });
+
+        return redirect()->back()->with('success', "تم تعديل الفاتورة {$invoice->invoice_number} وإرسالها للاعتماد");
+    }
+
     public function destroy(Invoice $invoice)
     {
         if ($invoice->isApproved()) {

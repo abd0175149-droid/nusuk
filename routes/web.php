@@ -75,13 +75,17 @@ Route::middleware('auth')->group(function () {
     Route::put('violations/{violation}/update-approved', [\App\Http\Controllers\ViolationController::class, 'updateApproved'])->name('violations.update-approved');
 
     // Invoices
-    Route::resource('invoices', \App\Http\Controllers\InvoiceController::class)->only(['index', 'store', 'destroy']);
+    Route::resource('invoices', \App\Http\Controllers\InvoiceController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::post('invoices/{invoice}/approve', [\App\Http\Controllers\InvoiceController::class, 'approve'])->name('invoices.approve');
     Route::post('invoices/{invoice}/reject', [\App\Http\Controllers\InvoiceController::class, 'reject'])->name('invoices.reject');
     Route::post('invoices/{invoice}/start-edit', [\App\Http\Controllers\InvoiceController::class, 'startEdit'])->name('invoices.start-edit');
 
     // API: Unbilled violations for client
     Route::get('api/clients/{client}/violations/unbilled', [\App\Http\Controllers\InvoiceController::class, 'unbilledViolations']);
+    Route::get('api/invoices/{invoice}/details', function(\App\Models\Invoice $invoice) {
+        $invoice->load('items');
+        return response()->json($invoice);
+    });
 
     // API: FCM Tokens
     Route::post('api/fcm-token', [\App\Http\Controllers\FcmTokenController::class, 'store']);
