@@ -42,6 +42,12 @@
                         <span class="text-[10px] font-mono text-gray-400" v-if="positions[el.id] && !positions[el.id]?.hidden">{{ Math.round(positions[el.id].x) }},{{ Math.round(positions[el.id].y) }}</span>
                         <span v-if="positions[el.id]?.hidden" class="text-[9px] text-red-400">مخفي</span>
                     </div>
+
+                    <!-- زر إضافة حقل نص مخصص -->
+                    <button @click="addCustomText" class="w-full mt-1 px-3 py-2 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-all">
+                        ✏️ + إضافة حقل نص
+                    </button>
+
                     <div class="border-t pt-2 mt-2">
                         <p class="text-[10px] text-gray-400">اسحب العناصر على المعاينة</p>
                         <p class="text-[10px] text-gray-400">أو انقر + استخدم الأسهم</p>
@@ -50,10 +56,28 @@
                     <div v-if="selectedEl && positions[selectedEl]" class="border-t pt-3 space-y-2">
                         <div class="flex items-center justify-between">
                             <h5 class="text-xs font-bold text-gray-600">📐 الموقع</h5>
-                            <button @click="toggleHidden(selectedEl)" class="text-[10px] px-2 py-0.5 rounded-full border" :class="positions[selectedEl]?.hidden ? 'bg-red-50 text-red-600 border-red-200' : 'bg-green-50 text-green-600 border-green-200'">
-                                {{ positions[selectedEl]?.hidden ? '🚫 مخفي — انقر للإظهار' : '✅ ظاهر — انقر للإخفاء' }}
-                            </button>
+                            <div class="flex items-center gap-1">
+                                <button @click="toggleHidden(selectedEl)" class="text-[10px] px-2 py-0.5 rounded-full border" :class="positions[selectedEl]?.hidden ? 'bg-red-50 text-red-600 border-red-200' : 'bg-green-50 text-green-600 border-green-200'">
+                                    {{ positions[selectedEl]?.hidden ? '🚫 مخفي' : '✅ ظاهر' }}
+                                </button>
+                                <button v-if="selectedEl.startsWith('custom_')" @click="removeCustomText(selectedEl)" class="text-[10px] px-2 py-0.5 rounded-full border bg-red-50 text-red-600 border-red-200 hover:bg-red-100">🗑️</button>
+                            </div>
                         </div>
+
+                        <!-- حقل النص المخصص -->
+                        <div v-if="selectedEl.startsWith('custom_')" class="space-y-1.5">
+                            <h5 class="text-xs font-bold text-indigo-600">✏️ محتوى النص</h5>
+                            <textarea v-model="positions[selectedEl].text" rows="3" placeholder="اكتب النص هنا... استخدم {{اسم_العميل}} للمتغيرات" class="w-full px-2 py-1.5 rounded border text-xs resize-none" dir="rtl"></textarea>
+                            <div class="space-y-1">
+                                <p class="text-[9px] font-bold text-gray-500">📎 المتغيرات المتاحة:</p>
+                                <div class="flex flex-wrap gap-1">
+                                    <button v-for="v in availableVars" :key="v.key" @click="insertVar(v.key)" class="text-[9px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200" :title="v.desc">
+                                        {{ v.label }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="grid grid-cols-2 gap-2">
                             <div><label class="text-[10px] text-gray-500">X (mm)</label><input v-model.number="positions[selectedEl].x" type="number" step="0.5" class="w-full px-2 py-1 rounded border text-xs font-mono text-center" dir="ltr"/></div>
                             <div><label class="text-[10px] text-gray-500">Y (mm)</label><input v-model.number="positions[selectedEl].y" type="number" step="0.5" class="w-full px-2 py-1 rounded border text-xs font-mono text-center" dir="ltr"/></div>
@@ -137,11 +161,13 @@
                             :class="selectedEl === el.id ? 'ring-2 ring-gold-500 shadow-lg z-20' : 'hover:ring-1 hover:ring-blue-300 z-10'"
                             :style="getElStyle(el)"
                             @mousedown.stop="startDrag($event, el.id)">
-                            <div class="px-2 py-1 rounded text-xs whitespace-nowrap"
-                                :style="{ fontSize: (positions[el.id]?.fontSize || el.defaultFontSize || 10) + 'pt' }"
-                                :class="selectedEl === el.id ? 'bg-gold-100/90 border border-gold-400' : 'bg-white/80 border border-dashed border-gray-400'">
+                            <div class="px-2 py-1 rounded text-xs"
+                                :style="{ fontSize: (positions[el.id]?.fontSize || el.defaultFontSize || 10) + 'pt', maxWidth: positions[el.id]?.w ? mmToPx(positions[el.id].w) + 'px' : '200px', overflow: 'hidden' }"
+                                :class="[
+                                    selectedEl === el.id ? 'bg-gold-100/90 border border-gold-400' : el.isCustom ? 'bg-indigo-50/90 border border-dashed border-indigo-400' : 'bg-white/80 border border-dashed border-gray-400'
+                                ]">
                                 <span class="opacity-60 mr-1">{{ el.icon }}</span>
-                                {{ el.preview }}
+                                {{ el.isCustom ? (positions[el.id]?.text || 'نص مخصص...') : el.preview }}
                             </div>
                         </div>
                     </div>
@@ -245,7 +271,75 @@ const defaultPositions = {
 };
 
 const positions = reactive({});
-const currentElements = computed(() => elementsByType[docType.value] || []);
+const customTexts = ref([]);
+let customCounter = 0;
+
+// المتغيرات المتاحة حسب نوع المطبوع
+const varsByType = {
+    invoice: [
+        { key: '{{اسم_العميل}}', label: 'اسم العميل', desc: 'اسم العميل المرتبط بالفاتورة' },
+        { key: '{{كود_العميل}}', label: 'كود العميل', desc: 'كود العميل' },
+        { key: '{{هاتف_العميل}}', label: 'هاتف العميل', desc: 'رقم الهاتف' },
+        { key: '{{رقم_الفاتورة}}', label: 'رقم الفاتورة', desc: 'رقم الفاتورة' },
+        { key: '{{التاريخ}}', label: 'التاريخ', desc: 'تاريخ الفاتورة' },
+        { key: '{{الاجمالي}}', label: 'الإجمالي', desc: 'إجمالي الفاتورة JOD' },
+        { key: '{{الحالة}}', label: 'الحالة', desc: 'حالة الفاتورة' },
+    ],
+    transfer: [
+        { key: '{{اسم_العميل}}', label: 'اسم العميل', desc: 'اسم العميل' },
+        { key: '{{كود_العميل}}', label: 'كود العميل', desc: 'كود العميل' },
+        { key: '{{هاتف_العميل}}', label: 'هاتف العميل', desc: 'رقم هاتف العميل' },
+        { key: '{{اسم_الوكيل}}', label: 'اسم الوكيل', desc: 'اسم الوكيل' },
+        { key: '{{كود_الوكيل}}', label: 'كود الوكيل', desc: 'كود الوكيل' },
+        { key: '{{هاتف_الوكيل}}', label: 'هاتف الوكيل', desc: 'رقم هاتف الوكيل' },
+        { key: '{{رقم_الحوالة}}', label: 'رقم الحوالة', desc: 'رقم الحوالة' },
+        { key: '{{التاريخ}}', label: 'التاريخ', desc: 'تاريخ الحوالة' },
+        { key: '{{المبلغ}}', label: 'المبلغ SAR', desc: 'المبلغ بالريال' },
+        { key: '{{التكلفة}}', label: 'التكلفة JOD', desc: 'التكلفة بالدينار' },
+        { key: '{{الحالة}}', label: 'الحالة', desc: 'حالة الحوالة' },
+    ],
+    receipt: [
+        { key: '{{اسم_العميل}}', label: 'اسم العميل', desc: 'اسم العميل' },
+        { key: '{{كود_العميل}}', label: 'كود العميل', desc: 'كود العميل' },
+        { key: '{{هاتف_العميل}}', label: 'هاتف العميل', desc: 'رقم هاتف العميل' },
+        { key: '{{رقم_السند}}', label: 'رقم السند', desc: 'رقم سند القبض' },
+        { key: '{{التاريخ}}', label: 'التاريخ', desc: 'تاريخ السند' },
+        { key: '{{المبلغ}}', label: 'المبلغ JOD', desc: 'المبلغ بالدينار' },
+        { key: '{{طريقة_الدفع}}', label: 'طريقة الدفع', desc: 'نقد/بنك/شيك' },
+        { key: '{{الحالة}}', label: 'الحالة', desc: 'حالة السند' },
+    ],
+};
+
+const availableVars = computed(() => varsByType[docType.value] || []);
+
+const currentElements = computed(() => {
+    const base = elementsByType[docType.value] || [];
+    const customs = customTexts.value
+        .filter(c => c.docType === docType.value)
+        .map(c => ({ id: c.id, label: c.label, icon: '✏️', preview: c.previewText || 'نص مخصص', defaultFontSize: 10, isCustom: true }));
+    return [...base, ...customs];
+});
+
+const addCustomText = () => {
+    customCounter++;
+    const id = 'custom_' + Date.now() + '_' + customCounter;
+    const label = 'نص مخصص ' + customCounter;
+    customTexts.value.push({ id, label, docType: docType.value, previewText: 'نص مخصص' });
+    positions[id] = { x: 30, y: 130, fontSize: 10, text: '', w: 80 };
+    selectedEl.value = id;
+};
+
+const removeCustomText = (id) => {
+    customTexts.value = customTexts.value.filter(c => c.id !== id);
+    delete positions[id];
+    selectedEl.value = null;
+};
+
+const insertVar = (varKey) => {
+    if (!selectedEl.value || !positions[selectedEl.value]) return;
+    const current = positions[selectedEl.value].text || '';
+    positions[selectedEl.value].text = current + varKey;
+};
 
 // تحميل التخطيط المحفوظ أو الافتراضي
 const loadLayout = () => {
@@ -253,8 +347,19 @@ const loadLayout = () => {
     const defaults = defaultPositions[docType.value];
     const src = saved?.elements || defaults;
     Object.keys(positions).forEach(k => delete positions[k]);
+    // تحميل الحقول المخصصة من البيانات المحفوظة
+    customTexts.value = customTexts.value.filter(c => c.docType !== docType.value);
     for (const [id, pos] of Object.entries(src)) {
         positions[id] = { ...pos };
+        if (id.startsWith('custom_')) {
+            customCounter++;
+            customTexts.value.push({
+                id,
+                label: pos.customLabel || 'نص مخصص',
+                docType: docType.value,
+                previewText: (pos.text || 'نص مخصص').substring(0, 30),
+            });
+        }
     }
     rowsPerPage.value = saved?.rowsPerPage || 10;
     selectedEl.value = null;
@@ -271,6 +376,10 @@ const resetLayout = () => {
 
 const saveLayout = () => {
     saving.value = true;
+    // حفظ label الحقول المخصصة داخل positions
+    customTexts.value.forEach(c => {
+        if (positions[c.id]) positions[c.id].customLabel = c.label;
+    });
     router.post('/settings/print-layout', {
         type: docType.value,
         layout: { elements: { ...positions }, rowsPerPage: rowsPerPage.value },

@@ -59,6 +59,13 @@
                     <div class="sig-box"><div class="sig-label">المدير المالي</div><div class="sig-line"></div></div>
                     <div class="sig-box"><div class="sig-label">العميل</div><div class="sig-line"></div></div>
                 </div>
+
+                <!-- الحقول المخصصة -->
+                <template v-for="(pos, id) in customFields" :key="id">
+                    <div v-if="!pos.hidden" class="field" :style="elPos(id)">
+                        <span :style="elFont(id)" style="white-space: pre-wrap;">{{ replaceVars(pos.text || '') }}</span>
+                    </div>
+                </template>
             </div>
         </div>
     </div>
@@ -89,6 +96,35 @@ const defaults = {
 
 const el = (id) => props.layout?.elements?.[id] || defaults[id] || { x: 10, y: 10, fontSize: 10 };
 const isHidden = (id) => !!(props.layout?.elements?.[id]?.hidden);
+
+const customFields = computed(() => {
+    if (!props.layout?.elements) return {};
+    const result = {};
+    for (const [id, pos] of Object.entries(props.layout.elements)) {
+        if (id.startsWith('custom_')) result[id] = pos;
+    }
+    return result;
+});
+
+const replaceVars = (text) => {
+    const t = props.transfer;
+    const map = {
+        '{{اسم_العميل}}': t.client_name || '',
+        '{{كود_العميل}}': t.client_code || '',
+        '{{هاتف_العميل}}': t.client_phone || '',
+        '{{اسم_الوكيل}}': t.agent?.name || '',
+        '{{كود_الوكيل}}': t.agent?.code || '',
+        '{{هاتف_الوكيل}}': t.agent?.phone || '',
+        '{{رقم_الحوالة}}': t.transfer_number || '',
+        '{{التاريخ}}': formatDate(t.transfer_date),
+        '{{المبلغ}}': fmtSar(t.amount_sar) + ' SAR',
+        '{{التكلفة}}': fmt(t.cost_jod) + ' JOD',
+        '{{الحالة}}': statusLabels[t.status] || t.status,
+    };
+    let result = text;
+    for (const [key, val] of Object.entries(map)) result = result.replaceAll(key, val);
+    return result;
+};
 
 const elPos = (id) => {
     const p = el(id);

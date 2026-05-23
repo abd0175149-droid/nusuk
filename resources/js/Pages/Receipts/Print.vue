@@ -54,6 +54,13 @@
                     <div class="sig-box"><div class="sig-label">المدير المالي</div><div class="sig-line"></div></div>
                     <div class="sig-box"><div class="sig-label">العميل</div><div class="sig-line"></div></div>
                 </div>
+
+                <!-- الحقول المخصصة -->
+                <template v-for="(pos, id) in customFields" :key="id">
+                    <div v-if="!pos.hidden" class="field" :style="elPos(id)">
+                        <span :style="elFont(id)" style="white-space: pre-wrap;">{{ replaceVars(pos.text || '') }}</span>
+                    </div>
+                </template>
             </div>
         </div>
     </div>
@@ -83,6 +90,32 @@ const defaults = {
 
 const el = (id) => props.layout?.elements?.[id] || defaults[id] || { x: 10, y: 10, fontSize: 10 };
 const isHidden = (id) => !!(props.layout?.elements?.[id]?.hidden);
+
+const customFields = computed(() => {
+    if (!props.layout?.elements) return {};
+    const result = {};
+    for (const [id, pos] of Object.entries(props.layout.elements)) {
+        if (id.startsWith('custom_')) result[id] = pos;
+    }
+    return result;
+});
+
+const replaceVars = (text) => {
+    const r = props.receipt;
+    const map = {
+        '{{اسم_العميل}}': r.client?.name || '',
+        '{{كود_العميل}}': r.client?.code || '',
+        '{{هاتف_العميل}}': r.client?.phone || '',
+        '{{رقم_السند}}': r.receipt_number || '',
+        '{{التاريخ}}': formatDate(r.receipt_date),
+        '{{المبلغ}}': fmt(r.amount_jod) + ' JOD',
+        '{{طريقة_الدفع}}': paymentLabel(r.payment_method),
+        '{{الحالة}}': statusLabels[r.status] || r.status,
+    };
+    let result = text;
+    for (const [key, val] of Object.entries(map)) result = result.replaceAll(key, val);
+    return result;
+};
 
 const elPos = (id) => {
     const p = el(id);

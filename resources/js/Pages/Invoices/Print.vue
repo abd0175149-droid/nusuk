@@ -86,6 +86,13 @@
                         <div class="sig-box"><div class="sig-label">العميل</div><div class="sig-line"></div></div>
                     </div>
                 </template>
+
+                <!-- الحقول المخصصة (custom text) -->
+                <template v-for="(pos, id) in customFields" :key="id">
+                    <div v-if="!pos.hidden" class="field" :style="elPos(id)">
+                        <span :style="elFont(id)" style="white-space: pre-wrap;">{{ replaceVars(pos.text || '') }}</span>
+                    </div>
+                </template>
             </div>
         </div>
     </div>
@@ -115,6 +122,34 @@ const defaults = {
 const el = (id) => props.layout?.elements?.[id] || defaults[id] || { x: 10, y: 10, fontSize: 10 };
 const isHidden = (id) => !!(props.layout?.elements?.[id]?.hidden);
 const rowsPerPage = computed(() => props.layout?.rowsPerPage || 10);
+
+// الحقول المخصصة
+const customFields = computed(() => {
+    if (!props.layout?.elements) return {};
+    const result = {};
+    for (const [id, pos] of Object.entries(props.layout.elements)) {
+        if (id.startsWith('custom_')) result[id] = pos;
+    }
+    return result;
+});
+
+const replaceVars = (text) => {
+    const inv = props.invoice;
+    const map = {
+        '{{اسم_العميل}}': inv.client?.name || '',
+        '{{كود_العميل}}': inv.client?.code || '',
+        '{{هاتف_العميل}}': inv.client?.phone || '',
+        '{{رقم_الفاتورة}}': inv.invoice_number || '',
+        '{{التاريخ}}': formatDate(inv.invoice_date),
+        '{{الاجمالي}}': fmt(inv.total_jod) + ' JOD',
+        '{{الحالة}}': statusLabels[inv.status] || inv.status,
+    };
+    let result = text;
+    for (const [key, val] of Object.entries(map)) {
+        result = result.replaceAll(key, val);
+    }
+    return result;
+};
 
 const elPos = (id) => {
     const p = el(id);
