@@ -44,7 +44,8 @@
                             <button v-if="v.status==='pending' && can('violations.approve')" @click="approveVio(v)" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg">✅</button>
                             <button v-if="v.status==='pending' && can('violations.reject')" @click="rejectVio(v)" class="px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 rounded-lg">❌</button>
                             <button v-if="v.status==='pending' && can('violations.delete')" @click="del(v)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button>
-                            <button v-if="v.status==='approved' && can('violations.edit_approved')" @click="router.post('/violations/'+v.id+'/start-edit')" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg">✏️ تعديل</button>
+                            <button v-if="v.status==='approved' && can('violations.edit_approved')" @click="startEditVio(v)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg">✏️ تعديل</button>
+                            <button v-if="v.status==='editing'" @click="openEditForm(v)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg font-bold">📝 تعديل البيانات</button>
                         </td>
                     </tr>
                     <tr v-if="!violations.data?.length"><td colspan="10" class="px-5 py-12 text-center text-gray-400">لا يوجد مخالفات</td></tr>
@@ -87,6 +88,28 @@
                 </div>
             </div>
         </div>
+
+        <!-- فورم تعديل مخالفة معتمدة -->
+        <div v-if="showEditForm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showEditForm=false">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 p-6 max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between mb-5"><h3 class="text-lg font-bold text-blue-600">✏️ تعديل مخالفة {{ editForm.violation_number }}</h3><button @click="showEditForm=false" class="text-gray-400 hover:text-red-500 text-xl">&times;</button></div>
+                <form @submit.prevent="submitEditVio" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">الوكيل *</label><SearchableSelect v-model="editForm.agent_id" :options="agentOptions" placeholder="اختر الوكيل" search-placeholder="ابحث عن وكيل..." /></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">العميل *</label><SearchableSelect v-model="editForm.client_id" :options="clientOptions" placeholder="اختر العميل" search-placeholder="ابحث عن عميل..." /></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">نوع المخالفة *</label><SearchableSelect v-model="editForm.violation_type_id" :options="vtOptions" placeholder="اختر النوع" search-placeholder="ابحث..." /></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">التكلفة (SAR) *</label><input v-model="editForm.cost_sar" type="number" step="0.01" required dir="ltr" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm"/></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">تاريخ المخالفة *</label><input v-model="editForm.violation_date" type="date" required dir="ltr" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm"/></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">رقم الجواز</label><input v-model="editForm.passport_number" dir="ltr" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm"/></div>
+                        <div class="md:col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">اسم صاحب الجواز</label><input v-model="editForm.passport_name" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm"/></div>
+                    </div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">الوصف</label><textarea v-model="editForm.description" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm resize-none"></textarea></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">ملاحظات</label><textarea v-model="editForm.notes" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm resize-none"></textarea></div>
+                    <div class="p-3 bg-blue-50 rounded-xl text-xs text-blue-700">⚠️ بعد التعديل سيتم إرسال المخالفة للاعتماد مرة أخرى</div>
+                    <div class="flex gap-3"><button type="submit" :disabled="editForm.processing" class="px-6 py-2.5 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">📤 حفظ وإرسال للاعتماد</button><button type="button" @click="showEditForm=false" class="px-6 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-100">إلغاء</button></div>
+                </form>
+            </div>
+        </div>
     </AppLayout>
 </template>
 
@@ -108,11 +131,13 @@ const search = ref(props.filters?.search||'');
 const statusFilter = ref(props.filters?.status||'');
 const billingFilter = ref(props.filters?.billing||'');
 const showForm = ref(false);
+const showEditForm = ref(false);
 const deleteTarget = ref(null);
 let t = null;
 
 const today = new Date().toISOString().split('T')[0];
 const form = useForm({ agent_id:'', client_id:'', violation_type_id:'', cost_sar:'', violation_date:today, passport_number:'', passport_name:'', description:'', notes:'' });
+const editForm = useForm({ _editId:null, violation_number:'', agent_id:'', client_id:'', violation_type_id:'', cost_sar:'', violation_date:'', passport_number:'', passport_name:'', description:'', notes:'' });
 
 const openModal = () => { form.reset(); form.violation_date = today; form.clearErrors(); showForm.value = true; };
 
@@ -127,6 +152,34 @@ const approveVio = (v) => { if (confirm('اعتماد المخالفة وخصم 
 const rejectVio = (v) => { const r = prompt('سبب الرفض:'); if (r !== null) router.post('/violations/' + v.id + '/reject', { reason: r }, { preserveScroll: true }); };
 const del = (v) => { deleteTarget.value = v; };
 const confirmDel = () => { router.delete('/violations/' + deleteTarget.value.id, { preserveScroll: true, onSuccess: () => { deleteTarget.value = null; } }); };
+
+const startEditVio = (v) => {
+    if(confirm('تعديل المخالفة المعتمدة؟ سيتم عكس الأثر المالي.')) {
+        router.post('/violations/'+v.id+'/start-edit',{},{preserveScroll:true});
+    }
+};
+
+const openEditForm = (v) => {
+    editForm._editId = v.id;
+    editForm.violation_number = v.violation_number;
+    editForm.agent_id = v.agent_id;
+    editForm.client_id = v.client_id;
+    editForm.violation_type_id = v.violation_type_id;
+    editForm.cost_sar = v.cost_sar;
+    editForm.violation_date = v.violation_date?.split('T')[0] || '';
+    editForm.passport_number = v.passport_number || '';
+    editForm.passport_name = v.passport_name || '';
+    editForm.description = v.description || '';
+    editForm.notes = v.notes || '';
+    showEditForm.value = true;
+};
+
+const submitEditVio = () => {
+    editForm.post('/violations/'+editForm._editId+'/update-approved', {
+        onSuccess: () => { showEditForm.value = false; editForm.reset(); },
+        preserveScroll: true,
+    });
+};
 
 const debounceSearch = () => { clearTimeout(t); t = setTimeout(() => applyFilter(), 400); };
 const applyFilter = () => { router.get('/violations', { search: search.value, status: statusFilter.value, billing: billingFilter.value }, { preserveState: true, replace: true }); };
