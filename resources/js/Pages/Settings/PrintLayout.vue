@@ -61,19 +61,19 @@
                         </div>
 
                         <h5 class="text-xs font-bold text-gray-600 mt-2">🎨 الألوان</h5>
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="space-y-2">
                             <div>
                                 <label class="text-[10px] text-gray-500">لون النص</label>
-                                <div class="flex items-center gap-1">
-                                    <input type="color" :value="positions[selectedEl].color || '#1a1715'" @input="positions[selectedEl].color = $event.target.value" class="w-7 h-7 rounded border cursor-pointer"/>
-                                    <input v-model="positions[selectedEl].color" placeholder="#1a1715" class="flex-1 px-1 py-1 rounded border text-[10px] font-mono" dir="ltr"/>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" :value="positions[selectedEl].color || '#1a1715'" @input="positions[selectedEl].color = $event.target.value" class="w-7 h-7 rounded border cursor-pointer shrink-0"/>
+                                    <input v-model="positions[selectedEl].color" placeholder="#1a1715" class="flex-1 px-2 py-1 rounded border text-[10px] font-mono" dir="ltr"/>
                                 </div>
                             </div>
                             <div>
                                 <label class="text-[10px] text-gray-500">لون الخلفية</label>
-                                <div class="flex items-center gap-1">
-                                    <input type="color" :value="positions[selectedEl].bgColor || '#ffffff'" @input="positions[selectedEl].bgColor = $event.target.value" class="w-7 h-7 rounded border cursor-pointer"/>
-                                    <input v-model="positions[selectedEl].bgColor" placeholder="شفاف" class="flex-1 px-1 py-1 rounded border text-[10px] font-mono" dir="ltr"/>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" :value="positions[selectedEl].bgColor || '#ffffff'" @input="positions[selectedEl].bgColor = $event.target.value" class="w-7 h-7 rounded border cursor-pointer shrink-0"/>
+                                    <input v-model="positions[selectedEl].bgColor" placeholder="شفاف" class="flex-1 px-2 py-1 rounded border text-[10px] font-mono" dir="ltr"/>
                                 </div>
                             </div>
                         </div>

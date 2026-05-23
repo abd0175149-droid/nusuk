@@ -291,7 +291,7 @@ const doPrint = () => window.print();
 /* Cell types */
 .inv-table .center { text-align: center; }
 .inv-table .mono { font-family: 'JetBrains Mono', monospace; font-size: 7.5pt; letter-spacing: 0.3px; }
-.inv-table .ltr { direction: ltr; text-align: left; }
+.inv-table .ltr { direction: ltr; }
 .inv-table .bold { font-weight: 700; color: #1a1715; }
 
 /* Column widths */
