@@ -5,29 +5,29 @@
             <div v-if="$page.props.flash?.success" class="p-4 rounded-xl border text-sm bg-green-50 border-green-200 text-green-700">✅ {{ $page.props.flash.success }}</div>
             <div v-if="$page.props.flash?.error" class="p-4 rounded-xl border text-sm bg-red-50 border-red-200 text-red-700">❌ {{ $page.props.flash.error }}</div>
 
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <input v-model="search" type="text" placeholder="بحث بالاسم أو الكود أو الهاتف..." class="w-72 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500" @input="debounceSearch" />
-                <button v-if="can('agents.create')" @click="openModal(null)" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md hover:shadow-gold-500/25">+ إضافة وكيل</button>
+            <div class="flex flex-wrap items-center justify-between gap-4 filter-bar">
+                <input v-model="search" type="text" placeholder="بحث بالاسم أو الكود أو الهاتف..." class="w-72 max-w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500" @input="debounceSearch" />
+                <button v-if="can('agents.create')" @click="openModal(null)" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md hover:shadow-gold-500/25 w-full sm:w-auto">+ إضافة وكيل</button>
             </div>
 
             <div class="rounded-xl border overflow-hidden shadow-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-                <table class="w-full text-sm">
+                <table class="w-full text-sm responsive-table">
                     <thead><tr class="bg-gray-50 text-gray-600">
                         <th class="px-5 py-3 text-right font-bold">الاسم</th>
                         <th class="px-5 py-3 text-right font-bold">الرصيد (SAR)</th>
-                        <th class="px-5 py-3 text-right font-bold">الرصيد (JOD)</th>
+                        <th class="px-5 py-3 text-right font-bold hide-mobile">الرصيد (JOD)</th>
                         <th class="px-5 py-3 text-center font-bold">إجراءات</th>
                     </tr></thead>
                     <tbody>
                         <tr v-for="a in agents.data" :key="a.id" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
-                            <td class="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">{{ a.name }}</td>
-                            <td class="px-5 py-3 font-bold font-mono" :class="parseFloat(a.balance_sar)>=0?'text-green-600':'text-red-600'">{{ Number(a.balance_sar).toLocaleString('en',{minimumFractionDigits:2}) }} SAR</td>
-                            <td class="px-5 py-3 font-bold font-mono" :class="parseFloat(a.balance_sar)>=0?'text-green-600':'text-red-600'">{{ (Number(a.balance_sar) * 0.19).toLocaleString('en',{minimumFractionDigits:3}) }} JOD</td>
-                            <td class="px-5 py-3 text-center whitespace-nowrap">
-                                <a :href="'/agents/'+a.id" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg">📊 كشف</a>
-                                <button @click="openView(a)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg">👁️ عرض</button>
-                                <button v-if="can('agents.update')" @click="openModal(a)" class="px-2 py-1 text-xs text-gold-700 hover:bg-gold-50 rounded-lg">✏️ تعديل</button>
-                                <button v-if="can('agents.delete')" @click="del(a)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️ حذف</button>
+                            <td data-label="الاسم" class="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">{{ a.name }}</td>
+                            <td data-label="الرصيد SAR" class="px-5 py-3 font-bold font-mono" :class="parseFloat(a.balance_sar)>=0?'text-green-600':'text-red-600'">{{ Number(a.balance_sar).toLocaleString('en',{minimumFractionDigits:2}) }} SAR</td>
+                            <td data-label="الرصيد JOD" class="px-5 py-3 font-bold font-mono hide-mobile" :class="parseFloat(a.balance_sar)>=0?'text-green-600':'text-red-600'">{{ (Number(a.balance_sar) * 0.19).toLocaleString('en',{minimumFractionDigits:3}) }} JOD</td>
+                            <td data-label="" class="px-5 py-3 text-center whitespace-nowrap actions-cell">
+                                <a :href="'/agents/'+a.id" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg btn-mobile-sm">📊 كشف</a>
+                                <button @click="openView(a)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg btn-mobile-sm">👁️ عرض</button>
+                                <button v-if="can('agents.update')" @click="openModal(a)" class="px-2 py-1 text-xs text-gold-700 hover:bg-gold-50 rounded-lg btn-mobile-sm">✏️ تعديل</button>
+                                <button v-if="can('agents.delete')" @click="del(a)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg btn-mobile-sm">🗑️ حذف</button>
                             </td>
                         </tr>
                         <tr v-if="!agents.data?.length"><td colspan="4" class="px-5 py-12 text-center text-gray-400">لا يوجد وكلاء</td></tr>

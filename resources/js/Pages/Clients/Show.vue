@@ -4,7 +4,7 @@
         <div class="space-y-6">
             <!-- Client Info Card -->
             <div class="dash-card p-5">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mobile-form-grid">
                     <div><span class="text-gray-400 text-xs">الكود</span><p class="font-mono text-gold-500">{{ client.code }}</p></div>
                     <div><span class="text-gray-400 text-xs">الدولة</span><p>{{ {JO:'🇯🇴 الأردن',SA:'🇸🇦 السعودية'}[client.country] }}</p></div>
                     <div><span class="text-gray-400 text-xs">الهاتف</span><p dir="ltr">{{ client.phone||'—' }}</p></div>
@@ -13,12 +13,12 @@
             </div>
 
             <!-- Date Filter -->
-            <form @submit.prevent="applyFilter" class="flex flex-wrap items-end gap-4">
-                <div><label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">من</label><input v-model="from" type="date" dir="ltr" class="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
-                <div><label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">إلى</label><input v-model="to" type="date" dir="ltr" class="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
-                <button type="submit" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400">🔍 عرض</button>
-                <a :href="'/clients/'+client.id+'/print-statement?from='+from+'&to='+to" target="_blank" class="px-5 py-2.5 rounded-xl font-bold text-sm text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">🖨️ طباعة</a>
-                <a href="/clients" class="px-5 py-2.5 rounded-xl text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">← الرجوع</a>
+            <form @submit.prevent="applyFilter" class="flex flex-wrap items-end gap-4 filter-bar">
+                <div><label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">من</label><input v-model="from" type="date" dir="ltr" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
+                <div><label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">إلى</label><input v-model="to" type="date" dir="ltr" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
+                <button type="submit" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 w-full sm:w-auto">🔍 عرض</button>
+                <a :href="'/clients/'+client.id+'/print-statement?from='+from+'&to='+to" target="_blank" class="px-5 py-2.5 rounded-xl font-bold text-sm text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-center w-full sm:w-auto">🖨️ طباعة</a>
+                <a href="/clients" class="px-5 py-2.5 rounded-xl text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 text-center w-full sm:w-auto">← الرجوع</a>
             </form>
 
             <!-- Summary -->
@@ -32,26 +32,26 @@
             <!-- Ledger Table -->
             <div class="dash-card overflow-hidden">
                 <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+                <table class="w-full text-sm responsive-table">
                     <thead><tr class="bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400">
                         <th class="px-4 py-3 text-right font-bold">التاريخ</th>
                         <th class="px-4 py-3 text-right font-bold">الوصف</th>
-                        <th class="px-4 py-3 text-right font-bold">النوع</th>
+                        <th class="px-4 py-3 text-right font-bold hide-mobile">النوع</th>
                         <th class="px-4 py-3 text-right font-bold">مدين (ذمة)</th>
                         <th class="px-4 py-3 text-right font-bold">دائن (تسديد)</th>
                         <th class="px-4 py-3 text-right font-bold">الرصيد</th>
-                        <th class="px-4 py-3 text-center font-bold">إجراءات</th>
+                        <th class="px-4 py-3 text-center font-bold hide-mobile">إجراءات</th>
                     </tr></thead>
                     <tbody>
                         <tr v-for="e in entries" :key="e.id" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
-                            <td class="px-4 py-3 text-right font-mono text-xs text-gray-500 dark:text-gray-400" dir="ltr">{{ e.entry_date?.split('T')[0] }}</td>
-                            <td class="px-4 py-3 text-right text-xs text-gray-700 dark:text-gray-300">{{ e.description }}</td>
-                            <td class="px-4 py-3 text-right"><span class="px-2 py-0.5 rounded text-xs font-bold" :class="typeClass(e.transaction_type)">{{ typeLabel(e.transaction_type) }}</span></td>
-                            <td class="px-4 py-3 text-right font-mono text-xs" dir="ltr" :class="parseFloat(e.debit)>0?'text-red-500 font-bold':'text-gray-300 dark:text-gray-600'">{{ parseFloat(e.debit)>0?Number(e.debit).toFixed(3):'—' }}</td>
-                            <td class="px-4 py-3 text-right font-mono text-xs" dir="ltr" :class="parseFloat(e.credit)>0?'text-green-500 font-bold':'text-gray-300 dark:text-gray-600'">{{ parseFloat(e.credit)>0?Number(e.credit).toFixed(3):'—' }}</td>
-                            <td class="px-4 py-3 text-right font-mono text-xs font-bold" dir="ltr" :class="parseFloat(e.balance_after)>0?'text-red-500':'text-green-500'">{{ Number(e.balance_after).toFixed(3) }}</td>
-                            <td class="px-4 py-3 text-center whitespace-nowrap">
-                                <a v-if="printUrl(e)" :href="printUrl(e)" target="_blank" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg">🖨️</a>
+                            <td data-label="التاريخ" class="px-4 py-3 text-right font-mono text-xs text-gray-500 dark:text-gray-400" dir="ltr">{{ e.entry_date?.split('T')[0] }}</td>
+                            <td data-label="الوصف" class="px-4 py-3 text-right text-xs text-gray-700 dark:text-gray-300">{{ e.description }}</td>
+                            <td data-label="النوع" class="px-4 py-3 text-right hide-mobile"><span class="px-2 py-0.5 rounded text-xs font-bold" :class="typeClass(e.transaction_type)">{{ typeLabel(e.transaction_type) }}</span></td>
+                            <td data-label="مدين" class="px-4 py-3 text-right font-mono text-xs" dir="ltr" :class="parseFloat(e.debit)>0?'text-red-500 font-bold':'text-gray-300 dark:text-gray-600'">{{ parseFloat(e.debit)>0?Number(e.debit).toFixed(3):'—' }}</td>
+                            <td data-label="دائن" class="px-4 py-3 text-right font-mono text-xs" dir="ltr" :class="parseFloat(e.credit)>0?'text-green-500 font-bold':'text-gray-300 dark:text-gray-600'">{{ parseFloat(e.credit)>0?Number(e.credit).toFixed(3):'—' }}</td>
+                            <td data-label="الرصيد" class="px-4 py-3 text-right font-mono text-xs font-bold" dir="ltr" :class="parseFloat(e.balance_after)>0?'text-red-500':'text-green-500'">{{ Number(e.balance_after).toFixed(3) }}</td>
+                            <td data-label="" class="px-4 py-3 text-center whitespace-nowrap hide-mobile actions-cell">
+                                <a v-if="printUrl(e)" :href="printUrl(e)" target="_blank" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg btn-mobile-sm">🖨️</a>
                                 <span v-else class="text-xs text-gray-300">—</span>
                             </td>
                         </tr>

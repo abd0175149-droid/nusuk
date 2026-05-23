@@ -6,8 +6,8 @@
             <div v-if="$page.props.flash?.error" class="p-4 rounded-xl border text-sm bg-red-50 border-red-200 text-red-700">❌ {{ $page.props.flash.error }}</div>
 
             <!-- Controls -->
-            <div class="flex justify-end">
-                <button @click="openModal()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md">
+            <div class="flex justify-end filter-bar">
+                <button @click="openModal()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md w-full sm:w-auto">
                     + دور جديد
                 </button>
             </div>
@@ -35,7 +35,7 @@
 
             <!-- Modal for Create/Edit -->
             <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showModal=false">
-                <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl mx-4 max-h-[90vh] flex flex-col">
+                <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl mx-4 max-h-[90vh] flex flex-col modal-responsive">
                     <div class="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800">
                         <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ form.id ? 'تعديل الصلاحية' : 'إضافة صلاحية جديدة' }}</h3>
                         <button @click="showModal=false" class="text-gray-400 dark:text-gray-500 hover:text-red-500 text-xl">&times;</button>

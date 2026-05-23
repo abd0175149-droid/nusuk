@@ -4,30 +4,30 @@
         <div class="space-y-6">
             <div v-if="$page.props.flash?.success" class="p-4 rounded-xl border text-sm bg-green-50 border-green-200 text-green-700">✅ {{ $page.props.flash.success }}</div>
             <div v-if="$page.props.flash?.error" class="p-4 rounded-xl border text-sm bg-red-50 border-red-200 text-red-700">❌ {{ $page.props.flash.error }}</div>
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <input v-model="search" type="text" placeholder="بحث..." class="w-64 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500" @input="debounceSearch"/>
-                <button v-if="can('receipts.create')" @click="openForm()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md">+ سند قبض</button>
+            <div class="flex flex-wrap items-center justify-between gap-4 filter-bar">
+                <input v-model="search" type="text" placeholder="بحث..." class="w-64 max-w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500" @input="debounceSearch"/>
+                <button v-if="can('receipts.create')" @click="openForm()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md w-full sm:w-auto">+ سند قبض</button>
             </div>
-            <div class="rounded-xl border overflow-hidden shadow-sm bg-white"><table class="w-full text-sm">
-                <thead><tr class="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400"><th class="px-5 py-3 text-right font-bold">الرقم</th><th class="px-5 py-3 text-right font-bold">العميل</th><th class="px-5 py-3 text-right font-bold">المبلغ (JOD)</th><th class="px-5 py-3 text-right font-bold">العمولة</th><th class="px-5 py-3 text-right font-bold">الدفع</th><th class="px-5 py-3 text-right font-bold">الحالة</th><th class="px-5 py-3 text-right font-bold">بواسطة</th><th class="px-5 py-3 text-center font-bold">إجراءات</th></tr></thead>
+            <div class="rounded-xl border overflow-hidden shadow-sm bg-white"><table class="w-full text-sm responsive-table">
+                <thead><tr class="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400"><th class="px-5 py-3 text-right font-bold">الرقم</th><th class="px-5 py-3 text-right font-bold">العميل</th><th class="px-5 py-3 text-right font-bold">المبلغ (JOD)</th><th class="px-5 py-3 text-right font-bold hide-mobile">العمولة</th><th class="px-5 py-3 text-right font-bold hide-mobile">الدفع</th><th class="px-5 py-3 text-right font-bold">الحالة</th><th class="px-5 py-3 text-right font-bold hide-mobile">بواسطة</th><th class="px-5 py-3 text-center font-bold">إجراءات</th></tr></thead>
                 <tbody><tr v-for="r in receipts.data" :key="r.id" :data-row-id="r.id"
                             class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30"
                             :class="{ 'row-glow': isHighlighted(r.id) }">
-                    <td class="px-5 py-3 text-right font-mono text-xs text-gold-700">{{ r.receipt_number }}</td>
-                    <td class="px-5 py-3 text-right font-medium">{{ r.client?.name }}</td>
-                    <td class="px-5 py-3 text-right font-bold font-mono text-xs text-green-600" dir="ltr">{{ Number(r.amount_jod).toLocaleString('en',{minimumFractionDigits:3}) }}</td>
-                    <td class="px-5 py-3 text-right font-mono text-xs" dir="ltr">
+                    <td data-label="الرقم" class="px-5 py-3 text-right font-mono text-xs text-gold-700">{{ r.receipt_number }}</td>
+                    <td data-label="العميل" class="px-5 py-3 text-right font-medium">{{ r.client?.name }}</td>
+                    <td data-label="المبلغ JOD" class="px-5 py-3 text-right font-bold font-mono text-xs text-green-600" dir="ltr">{{ Number(r.amount_jod).toLocaleString('en',{minimumFractionDigits:3}) }}</td>
+                    <td data-label="العمولة" class="px-5 py-3 text-right font-mono text-xs hide-mobile" dir="ltr">
                         <span v-if="Number(r.bank_commission) > 0" class="text-red-500 font-bold">{{ Number(r.bank_commission).toLocaleString('en',{minimumFractionDigits:3}) }}</span>
                         <span v-else class="text-gray-300">—</span>
                     </td>
-                    <td class="px-5 py-3 text-right text-xs">{{ {cash:'نقدي',bank:'بنكي',check:'شيك'}[r.payment_method] }}</td>
-                    <td class="px-5 py-3 text-right"><span class="px-2.5 py-1 rounded-full text-xs font-bold" :class="{pending:'bg-yellow-100 text-yellow-700',approved:'bg-green-100 text-green-700',rejected:'bg-red-100 text-red-700',editing:'bg-blue-100 text-blue-700'}[r.status]">{{ {pending:'معلقة',approved:'معتمدة',rejected:'مرفوضة',editing:'تحت التعديل'}[r.status] }}</span></td>
-                    <td class="px-5 py-3 text-right text-xs text-gray-500"><div>📝 {{ r.creator?.name || '—' }}</div><div v-if="r.status !== 'pending'" class="mt-0.5">{{ r.status === 'approved' ? '✅' : '❌' }} {{ r.approver?.name || '—' }}</div></td>
-                    <td class="px-5 py-3 text-center whitespace-nowrap">
-                        <a :href="'/receipts/'+r.id+'/print'" target="_blank" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg">🖨️</a>
-                        <template v-if="r.status==='pending'"><button v-if="can('receipts.approve')" @click="router.post('/receipts/'+r.id+'/approve')" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg">✅</button><button v-if="can('receipts.delete')" @click="router.delete('/receipts/'+r.id)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button></template>
-                        <template v-if="r.status==='approved'"><button v-if="can('receipts.edit_approved')" @click="startEdit(r)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg">✏️ تعديل</button></template>
-                        <template v-if="r.status==='editing'"><button @click="openEditForm(r)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg font-bold">📝 تعديل البيانات</button></template>
+                    <td data-label="الدفع" class="px-5 py-3 text-right text-xs hide-mobile">{{ {cash:'نقدي',bank:'بنكي',check:'شيك'}[r.payment_method] }}</td>
+                    <td data-label="الحالة" class="px-5 py-3 text-right"><span class="px-2.5 py-1 rounded-full text-xs font-bold" :class="{pending:'bg-yellow-100 text-yellow-700',approved:'bg-green-100 text-green-700',rejected:'bg-red-100 text-red-700',editing:'bg-blue-100 text-blue-700'}[r.status]">{{ {pending:'معلقة',approved:'معتمدة',rejected:'مرفوضة',editing:'تحت التعديل'}[r.status] }}</span></td>
+                    <td data-label="بواسطة" class="px-5 py-3 text-right text-xs text-gray-500 hide-mobile"><div>📝 {{ r.creator?.name || '—' }}</div><div v-if="r.status !== 'pending'" class="mt-0.5">{{ r.status === 'approved' ? '✅' : '❌' }} {{ r.approver?.name || '—' }}</div></td>
+                    <td data-label="" class="px-5 py-3 text-center whitespace-nowrap actions-cell">
+                        <a :href="'/receipts/'+r.id+'/print'" target="_blank" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg btn-mobile-sm">🖨️</a>
+                        <template v-if="r.status==='pending'"><button v-if="can('receipts.approve')" @click="router.post('/receipts/'+r.id+'/approve')" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg btn-mobile-sm">✅</button><button v-if="can('receipts.delete')" @click="router.delete('/receipts/'+r.id)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg btn-mobile-sm">🗑️</button></template>
+                        <template v-if="r.status==='approved'"><button v-if="can('receipts.edit_approved')" @click="startEdit(r)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg btn-mobile-sm">✏️ تعديل</button></template>
+                        <template v-if="r.status==='editing'"><button @click="openEditForm(r)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg font-bold btn-mobile-sm">📝 تعديل البيانات</button></template>
                     </td>
                 </tr><tr v-if="!receipts.data?.length"><td colspan="8" class="px-5 py-12 text-center text-gray-400">لا يوجد سندات</td></tr></tbody>
             </table></div>
@@ -35,10 +35,10 @@
 
         <!-- فورم إنشاء سند جديد -->
         <div v-if="showForm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showForm=false">
-            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-xl mx-4 p-6">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-xl mx-4 p-6 modal-responsive">
                 <div class="flex items-center justify-between mb-5"><h3 class="text-lg font-bold">سند قبض جديد</h3><button @click="showForm=false" class="text-gray-400 dark:text-gray-500 hover:text-red-500 text-xl">&times;</button></div>
                 <form @submit.prevent="form.post('/receipts',{onSuccess:()=>{showForm=false; form.reset(); form.clearErrors();},preserveState:false})" class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-2 gap-4 mobile-form-grid">
                         <div><label class="block text-sm font-medium mb-1">العميل *</label><SearchableSelect v-model="form.client_id" :options="clientOptions" placeholder="اختر العميل" search-placeholder="ابحث عن عميل..." /></div>
                         <div><label class="block text-sm font-medium mb-1">المبلغ (JOD) *</label><input v-model="form.amount_jod" type="number" step="0.001" required dir="ltr" class="w-full px-4 py-2.5 rounded-xl border text-sm"/></div>
                         <div><label class="block text-sm font-medium mb-1">طريقة الدفع *</label><select v-model="form.payment_method" class="w-full px-4 py-2.5 rounded-xl border text-sm"><option value="cash">نقدي</option><option value="bank">بنكي</option><option value="check">شيك</option></select></div>

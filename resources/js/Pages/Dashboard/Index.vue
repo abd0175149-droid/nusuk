@@ -42,7 +42,7 @@
             <!-- Monthly Summary -->
             <div class="dash-card p-5">
                 <h4 class="font-bold text-sm text-gray-700 dark:text-gray-200 mb-4">📊 ملخص الشهر الحالي</h4>
-                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 text-sm">
                     <div class="text-center p-3 rounded-xl bg-green-500/10 border border-green-500/20"><p class="text-xs text-gray-500 dark:text-gray-400">الحوالات</p><p class="font-bold font-mono text-green-500 mt-1" dir="ltr">{{ fmt(monthly.transfers_sar, 2) }}</p><p class="text-xs text-gray-400">SAR</p></div>
                     <div class="text-center p-3 rounded-xl bg-blue-500/10 border border-blue-500/20"><p class="text-xs text-gray-500 dark:text-gray-400">سندات القبض</p><p class="font-bold font-mono text-blue-400 mt-1" dir="ltr">{{ fmt(monthly.receipts_jod, 3) }}</p><p class="text-xs text-gray-400">JOD</p></div>
                     <div class="text-center p-3 rounded-xl bg-purple-500/10 border border-purple-500/20"><p class="text-xs text-gray-500 dark:text-gray-400">الفواتير</p><p class="font-bold font-mono text-purple-400 mt-1" dir="ltr">{{ fmt(monthly.invoices_jod, 3) }}</p><p class="text-xs text-gray-400">JOD</p></div>
@@ -71,22 +71,7 @@
                 </div>
             </div>
 
-            <!-- HR KPIs -->
-            <div v-if="hr" class="dash-card p-5">
-                <h4 class="font-bold text-sm text-gray-700 dark:text-gray-200 mb-4">👥 الموارد البشرية</h4>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div class="text-center p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20"><p class="text-xs text-gray-500 dark:text-gray-400">الموظفين</p><p class="font-bold text-lg text-indigo-400 mt-1">{{ hr.total_employees }}</p></div>
-                    <div class="text-center p-3 rounded-xl bg-green-500/10 border border-green-500/20"><p class="text-xs text-gray-500 dark:text-gray-400">حاضرين اليوم</p><p class="font-bold text-lg text-green-400 mt-1">{{ hr.present_today }}</p></div>
-                    <div class="text-center p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20"><p class="text-xs text-gray-500 dark:text-gray-400">متأخرين اليوم</p><p class="font-bold text-lg text-yellow-400 mt-1">{{ hr.late_today }}</p></div>
-                    <div class="text-center p-3 rounded-xl bg-red-500/10 border border-red-500/20"><p class="text-xs text-gray-500 dark:text-gray-400">غائبين اليوم</p><p class="font-bold text-lg text-red-400 mt-1">{{ hr.absent_today }}</p></div>
-                </div>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mt-3">
-                    <a href="/leaves" class="text-center p-3 rounded-xl bg-orange-500/10 border border-orange-500/20 hover:border-orange-400 transition-colors"><p class="text-xs text-gray-500 dark:text-gray-400">إجازات معلقة</p><p class="font-bold text-lg text-orange-400 mt-1">{{ hr.pending_leaves }}</p></a>
-                    <a href="/advances" class="text-center p-3 rounded-xl bg-teal-500/10 border border-teal-500/20 hover:border-teal-400 transition-colors"><p class="text-xs text-gray-500 dark:text-gray-400">سلف معلقة</p><p class="font-bold text-lg text-teal-400 mt-1">{{ hr.pending_advances }}</p></a>
-                    <div class="text-center p-3 rounded-xl bg-gold-500/10 border border-gold-500/20"><p class="text-xs text-gray-500 dark:text-gray-400">رواتب الشهر SAR</p><p class="font-bold font-mono text-sm text-gold-500 mt-1" dir="ltr">{{ fmt(hr.total_payroll_sar, 2) }}</p></div>
-                    <div class="text-center p-3 rounded-xl bg-blue-500/10 border border-blue-500/20"><p class="text-xs text-gray-500 dark:text-gray-400">رواتب الشهر JOD</p><p class="font-bold font-mono text-sm text-blue-400 mt-1" dir="ltr">{{ fmt(hr.total_payroll_jod, 3) }}</p></div>
-                </div>
-            </div>
+
 
             <!-- Recent Tables -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -131,7 +116,7 @@
 import { ref, computed } from 'vue';
 import AppLayout from '@/Components/Layout/AppLayout.vue';
 
-const props = defineProps({ stats: Object, pending: Object, recentTransfers: Array, recentInvoices: Array, monthly: Object, chartData: Array, exchangeRate: Number, hr: Object });
+const props = defineProps({ stats: Object, pending: Object, recentTransfers: Array, recentInvoices: Array, monthly: Object, chartData: Array, exchangeRate: Number });
 const showPending = ref(props.pending?.total > 0);
 
 const fmt = (v, d) => Number(v || 0).toLocaleString('en', { minimumFractionDigits: d, maximumFractionDigits: d });

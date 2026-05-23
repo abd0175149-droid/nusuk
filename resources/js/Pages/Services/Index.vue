@@ -4,25 +4,25 @@
         <div class="space-y-6">
             <div v-if="$page.props.flash?.success" class="p-4 rounded-xl border text-sm bg-green-50 border-green-200 text-green-700">✅ {{ $page.props.flash.success }}</div>
             <div v-if="$page.props.flash?.error" class="p-4 rounded-xl border text-sm bg-red-50 border-red-200 text-red-700">❌ {{ $page.props.flash.error }}</div>
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <input v-model="search" type="text" placeholder="بحث..." class="w-64 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500" @input="debounceSearch"/>
-                <button @click="openModal(null)" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md">+ خدمة جديدة</button>
+            <div class="flex flex-wrap items-center justify-between gap-4 filter-bar">
+                <input v-model="search" type="text" placeholder="بحث..." class="w-64 max-w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500" @input="debounceSearch"/>
+                <button @click="openModal(null)" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md w-full sm:w-auto">+ خدمة جديدة</button>
             </div>
-            <div class="rounded-xl border overflow-hidden shadow-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"><table class="w-full text-sm">
+            <div class="rounded-xl border overflow-hidden shadow-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"><table class="w-full text-sm responsive-table">
                 <thead><tr class="bg-gray-50 text-gray-600">
                     <th class="px-5 py-3 text-right font-bold">الاسم</th>
-                    <th class="px-5 py-3 text-right font-bold">الكود</th>
+                    <th class="px-5 py-3 text-right font-bold hide-mobile">الكود</th>
                     <th class="px-5 py-3 text-right font-bold">الحالة</th>
                     <th class="px-5 py-3 text-center font-bold">إجراءات</th>
                 </tr></thead>
                 <tbody>
                     <tr v-for="s in services.data" :key="s.id" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
-                        <td class="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">{{ s.name }}</td>
-                        <td class="px-5 py-3 font-mono text-xs text-gold-700">{{ s.code }}</td>
-                        <td class="px-5 py-3"><span class="px-2.5 py-1 rounded-full text-xs font-bold" :class="s.is_active?'bg-green-100 text-green-700':'bg-red-100 text-red-700'">{{ s.is_active?'نشط':'معطل' }}</span></td>
-                        <td class="px-5 py-3 text-center">
-                            <button @click="openModal(s)" class="px-2 py-1 text-xs text-gold-700 hover:bg-gold-50 rounded-lg">✏️</button>
-                            <button v-if="can('services.delete')" @click="del(s)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button>
+                        <td data-label="الاسم" class="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">{{ s.name }}</td>
+                        <td data-label="الكود" class="px-5 py-3 font-mono text-xs text-gold-700 hide-mobile">{{ s.code }}</td>
+                        <td data-label="الحالة" class="px-5 py-3"><span class="px-2.5 py-1 rounded-full text-xs font-bold" :class="s.is_active?'bg-green-100 text-green-700':'bg-red-100 text-red-700'">{{ s.is_active?'نشط':'معطل' }}</span></td>
+                        <td data-label="" class="px-5 py-3 text-center actions-cell">
+                            <button @click="openModal(s)" class="px-2 py-1 text-xs text-gold-700 hover:bg-gold-50 rounded-lg btn-mobile-sm">✏️</button>
+                            <button v-if="can('services.delete')" @click="del(s)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg btn-mobile-sm">🗑️</button>
                         </td>
                     </tr>
                     <tr v-if="!services.data?.length"><td colspan="4" class="px-5 py-12 text-center text-gray-400">لا يوجد خدمات</td></tr>
@@ -31,7 +31,7 @@
         </div>
         <!-- Form Modal -->
         <div v-if="showForm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showForm=false">
-            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-6">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-6 modal-responsive">
                 <div class="flex items-center justify-between mb-5"><h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ editItem?'تعديل الخدمة':'خدمة جديدة' }}</h3><button @click="showForm=false" class="text-gray-400 dark:text-gray-500 hover:text-red-500 text-xl">&times;</button></div>
                 <form @submit.prevent="submit" class="space-y-4">
                     <div><label class="block text-sm font-medium text-gray-700 mb-1">اسم الخدمة *</label><input v-model="form.name" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>

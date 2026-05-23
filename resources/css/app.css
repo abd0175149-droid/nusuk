@@ -129,11 +129,100 @@
 
     /* ---------- الجداول Responsive ---------- */
     .rounded-xl { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    @media (max-width: 640px) {
+
+    /* ===== Mobile Card System ===== */
+    @media (max-width: 768px) {
+        /* جداول عادية — تصغير فقط */
         table th, table td { padding: 8px 10px !important; font-size: 0.75rem !important; }
         table th { white-space: nowrap; }
         .max-w-xl, .max-w-2xl, .max-w-lg, .max-w-sm {
             max-width: calc(100vw - 1rem) !important;
+        }
+
+        /* ===== نظام الكاردات: responsive-table ===== */
+        .responsive-table { border: none !important; }
+        .responsive-table thead { display: none !important; }
+        .responsive-table tbody { display: flex; flex-direction: column; gap: 10px; }
+        .responsive-table tbody tr {
+            display: flex; flex-direction: column;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 12px 14px;
+            background: white;
+            box-shadow: 0 1px 4px rgba(0,0,0,.06);
+            position: relative;
+        }
+        .dark .responsive-table tbody tr {
+            background: #1e293b;
+            border-color: #334155;
+            box-shadow: 0 1px 4px rgba(0,0,0,.3);
+        }
+        .responsive-table tbody tr:hover { transform: none !important; }
+        .responsive-table tbody td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0 !important;
+            border: none !important;
+            font-size: 0.8rem !important;
+            line-height: 1.6;
+        }
+        .responsive-table tbody td::before {
+            content: attr(data-label);
+            font-weight: 700;
+            font-size: 0.7rem;
+            color: #6b7280;
+            flex-shrink: 0;
+            margin-left: 12px;
+        }
+        .dark .responsive-table tbody td::before { color: #9ca3af; }
+        .responsive-table tbody td:first-child {
+            padding-bottom: 6px !important;
+            border-bottom: 1px solid #f3f4f6 !important;
+            margin-bottom: 4px;
+        }
+        .dark .responsive-table tbody td:first-child { border-bottom-color: #374151 !important; }
+
+        /* إخفاء الأعمدة الثانوية على الموبايل */
+        .responsive-table .hide-mobile { display: none !important; }
+
+        /* أزرار الإجراءات */
+        .responsive-table .actions-cell {
+            display: flex !important;
+            justify-content: flex-start !important;
+            gap: 6px;
+            padding-top: 8px !important;
+            border-top: 1px solid #f3f4f6 !important;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+        .dark .responsive-table .actions-cell { border-top-color: #374151 !important; }
+        .responsive-table .actions-cell::before { display: none !important; }
+
+        /* نماذج الإدخال */
+        .mobile-form-grid {
+            grid-template-columns: 1fr !important;
+        }
+
+        /* أزرار مضغوطة */
+        .btn-mobile-sm {
+            padding: 4px 10px !important;
+            font-size: 0.7rem !important;
+        }
+
+        /* فلاتر */
+        .filter-bar {
+            flex-direction: column !important;
+            gap: 8px !important;
+        }
+        .filter-bar > * { width: 100% !important; }
+
+        /* Modals */
+        .modal-responsive {
+            max-width: calc(100vw - 16px) !important;
+            margin: 8px !important;
+            max-height: calc(100vh - 16px) !important;
+            overflow-y: auto !important;
         }
     }
 

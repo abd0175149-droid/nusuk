@@ -4,38 +4,38 @@
         <div class="space-y-6">
             <div v-if="$page.props.flash?.success" class="p-4 rounded-xl border text-sm bg-green-50 border-green-200 text-green-700">✅ {{ $page.props.flash.success }}</div>
             <div v-if="$page.props.flash?.error" class="p-4 rounded-xl border text-sm bg-red-50 border-red-200 text-red-700">❌ {{ $page.props.flash.error }}</div>
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <input v-model="search" type="text" placeholder="بحث بالاسم أو الكود أو الهاتف..." class="w-72 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500" @input="debounceSearch"/>
-                <button v-if="can('clients.create')" @click="openModal(null)" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md hover:shadow-gold-500/25">+ إضافة عميل</button>
+            <div class="flex flex-wrap items-center justify-between gap-4 filter-bar">
+                <input v-model="search" type="text" placeholder="بحث بالاسم أو الكود أو الهاتف..." class="w-72 max-w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500" @input="debounceSearch"/>
+                <button v-if="can('clients.create')" @click="openModal(null)" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md hover:shadow-gold-500/25 w-full sm:w-auto">+ إضافة عميل</button>
             </div>
             <div class="rounded-xl border overflow-hidden shadow-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
                 <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+                <table class="w-full text-sm responsive-table">
                     <thead><tr class="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400">
                         <th class="px-5 py-3 text-right font-bold">الاسم</th>
-                        <th class="px-5 py-3 text-right font-bold">الكود</th>
+                        <th class="px-5 py-3 text-right font-bold hide-mobile">الكود</th>
                         <th class="px-5 py-3 text-right font-bold">الرصيد (الذمة)</th>
-                        <th class="px-5 py-3 text-right font-bold">الحد الائتماني</th>
-                        <th class="px-5 py-3 text-right font-bold">التجاوز</th>
+                        <th class="px-5 py-3 text-right font-bold hide-mobile">الحد الائتماني</th>
+                        <th class="px-5 py-3 text-right font-bold hide-mobile">التجاوز</th>
                         <th class="px-5 py-3 text-right font-bold">الحالة</th>
                         <th class="px-5 py-3 text-center font-bold">إجراءات</th>
                     </tr></thead>
                     <tbody>
                         <tr v-for="c in clients.data" :key="c.id" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
-                            <td class="px-5 py-3 text-right font-medium text-gray-800 dark:text-gray-100">{{ c.name }}</td>
-                            <td class="px-5 py-3 text-right font-mono text-xs text-gold-700">{{ c.code }}</td>
-                            <td class="px-5 py-3 text-right font-bold font-mono text-xs" :class="parseFloat(c.balance_jod)>=0?'text-green-600':'text-red-600'" dir="ltr">{{ Number(c.balance_jod).toLocaleString('en',{minimumFractionDigits: c.currency==='SAR'?2:3}) }} {{ c.currency||'JOD' }}</td>
-                            <td class="px-5 py-3 text-right font-mono text-xs text-gray-600 dark:text-gray-400" dir="ltr">{{ Number(c.credit_limit_jod||0).toLocaleString('en',{minimumFractionDigits:3}) }}</td>
-                            <td class="px-5 py-3 text-right">
+                            <td data-label="الاسم" class="px-5 py-3 text-right font-medium text-gray-800 dark:text-gray-100">{{ c.name }}</td>
+                            <td data-label="الكود" class="px-5 py-3 text-right font-mono text-xs text-gold-700 hide-mobile">{{ c.code }}</td>
+                            <td data-label="الرصيد" class="px-5 py-3 text-right font-bold font-mono text-xs" :class="parseFloat(c.balance_jod)>=0?'text-green-600':'text-red-600'" dir="ltr">{{ Number(c.balance_jod).toLocaleString('en',{minimumFractionDigits: c.currency==='SAR'?2:3}) }} {{ c.currency||'JOD' }}</td>
+                            <td data-label="الحد" class="px-5 py-3 text-right font-mono text-xs text-gray-600 dark:text-gray-400 hide-mobile" dir="ltr">{{ Number(c.credit_limit_jod||0).toLocaleString('en',{minimumFractionDigits:3}) }}</td>
+                            <td data-label="التجاوز" class="px-5 py-3 text-right hide-mobile">
                                 <span v-if="parseFloat(c.balance_jod) < 0 && Math.abs(parseFloat(c.balance_jod)) > parseFloat(c.credit_limit_jod||0)" class="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">⚠ متجاوز</span>
                                 <span v-else class="text-xs text-gray-400">—</span>
                             </td>
-                            <td class="px-5 py-3 text-right"><span class="px-2.5 py-1 rounded-full text-xs font-bold" :class="c.is_active?'bg-green-100 text-green-700':'bg-red-100 text-red-700'">{{ c.is_active?'نشط':'معطل' }}</span></td>
-                            <td class="px-5 py-3 text-center whitespace-nowrap">
-                                <a :href="'/clients/'+c.id" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg">📊 كشف</a>
-                                <button @click="openView(c)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg">👁️ عرض</button>
-                                <button v-if="can('clients.update')" @click="openModal(c)" class="px-2 py-1 text-xs text-gold-700 hover:bg-gold-50 rounded-lg">✏️ تعديل</button>
-                                <button v-if="can('clients.delete')" @click="del(c)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️ حذف</button>
+                            <td data-label="الحالة" class="px-5 py-3 text-right"><span class="px-2.5 py-1 rounded-full text-xs font-bold" :class="c.is_active?'bg-green-100 text-green-700':'bg-red-100 text-red-700'">{{ c.is_active?'نشط':'معطل' }}</span></td>
+                            <td data-label="" class="px-5 py-3 text-center whitespace-nowrap actions-cell">
+                                <a :href="'/clients/'+c.id" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg btn-mobile-sm">📊 كشف</a>
+                                <button @click="openView(c)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg btn-mobile-sm">👁️ عرض</button>
+                                <button v-if="can('clients.update')" @click="openModal(c)" class="px-2 py-1 text-xs text-gold-700 hover:bg-gold-50 rounded-lg btn-mobile-sm">✏️ تعديل</button>
+                                <button v-if="can('clients.delete')" @click="del(c)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg btn-mobile-sm">🗑️ حذف</button>
                             </td>
                         </tr>
                         <tr v-if="!clients.data?.length"><td colspan="7" class="px-5 py-12 text-center text-gray-400">لا يوجد عملاء</td></tr>
@@ -47,9 +47,9 @@
 
         <!-- View Modal -->
         <div v-if="viewClient" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="viewClient=null">
-            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-6">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-6 modal-responsive">
                 <div class="flex items-center justify-between mb-4"><h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">بيانات العميل</h3><button @click="viewClient=null" class="text-gray-400 dark:text-gray-500 hover:text-red-500 text-xl">&times;</button></div>
-                <div class="grid grid-cols-2 gap-4 text-sm">
+                <div class="grid grid-cols-2 gap-4 text-sm mobile-form-grid">
                     <div><span class="text-gray-400">الاسم:</span><p class="font-bold">{{ viewClient.name }}</p></div>
                     <div><span class="text-gray-400">الكود:</span><p class="font-mono text-gold-700">{{ viewClient.code }}</p></div>
                     <div><span class="text-gray-400">الدولة:</span><p>{{ {JO:'🇯🇴 الأردن',SA:'🇸🇦 السعودية'}[viewClient.country]||'—' }}</p></div>
@@ -68,10 +68,10 @@
 
         <!-- Form Modal -->
         <div v-if="showForm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showForm=false">
-            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 p-6 max-h-[90vh] overflow-y-auto">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 p-6 max-h-[90vh] overflow-y-auto modal-responsive">
                 <div class="flex items-center justify-between mb-5"><h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ editItem?'تعديل العميل':'إضافة عميل جديد' }}</h3><button @click="showForm=false" class="text-gray-400 dark:text-gray-500 hover:text-red-500 text-xl">&times;</button></div>
                 <form @submit.prevent="submit" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mobile-form-grid">
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">اسم الشركة *</label><input v-model="form.name" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/><p v-if="form.errors.name" class="mt-1 text-xs text-red-500">{{ form.errors.name }}</p></div>
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">جهة الاتصال</label><input v-model="form.contact_person" placeholder="اسم المسؤول" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">الدولة *</label><select v-model="form.country" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500"><option value="">اختر الدولة</option><option value="SA">🇸🇦 السعودية</option><option value="JO">🇯🇴 الأردن</option></select><p class="mt-1 text-xs text-gray-400">العملة: {{ form.country==='JO'?'JOD دينار':'SAR ريال' }}</p></div>

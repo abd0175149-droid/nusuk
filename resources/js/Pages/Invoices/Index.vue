@@ -6,51 +6,51 @@
             <div v-if="$page.props.flash?.error" class="p-4 rounded-xl border text-sm bg-red-50 border-red-200 text-red-700">❌ {{ $page.props.flash.error }}</div>
 
             <!-- Controls -->
-            <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center justify-between gap-4 filter-bar">
                 <div class="flex items-center gap-3 flex-wrap">
-                    <input v-model="search" type="text" placeholder="بحث بالرقم أو الوكيل أو العميل..." class="w-64 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500" @input="debounceSearch"/>
+                    <input v-model="search" type="text" placeholder="بحث بالرقم أو الوكيل أو العميل..." class="w-64 max-w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500" @input="debounceSearch"/>
                     <select v-model="statusFilter" class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm" @change="applyFilter">
                         <option value="">كل الحالات</option><option value="pending">معلقة</option><option value="approved">معتمدة</option><option value="rejected">مرفوضة</option><option value="editing">تحت التعديل</option>
                     </select>
                 </div>
-                <button v-if="can('invoices.create')" @click="openPOS()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md hover:shadow-gold-500/25">🧾 فاتورة جديدة</button>
+                <button v-if="can('invoices.create')" @click="openPOS()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md hover:shadow-gold-500/25 w-full sm:w-auto">🧾 فاتورة جديدة</button>
             </div>
 
             <!-- Table -->
             <div class="rounded-xl border overflow-hidden shadow-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
                 <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+                <table class="w-full text-sm responsive-table">
                     <thead><tr class="bg-gray-50 text-gray-600">
                         <th class="px-4 py-3 text-right font-bold">الرقم</th>
-                        <th class="px-4 py-3 text-right font-bold">الوكيل</th>
+                        <th class="px-4 py-3 text-right font-bold hide-mobile">الوكيل</th>
                         <th class="px-4 py-3 text-right font-bold">العميل</th>
-                        <th class="px-4 py-3 text-right font-bold">الإجمالي SAR</th>
+                        <th class="px-4 py-3 text-right font-bold hide-mobile">الإجمالي SAR</th>
                         <th class="px-4 py-3 text-right font-bold">الإجمالي JOD</th>
                         <th class="px-4 py-3 text-right font-bold">الحالة</th>
-                        <th class="px-4 py-3 text-right font-bold">بواسطة</th>
-                        <th class="px-4 py-3 text-right font-bold">التاريخ</th>
+                        <th class="px-4 py-3 text-right font-bold hide-mobile">بواسطة</th>
+                        <th class="px-4 py-3 text-right font-bold hide-mobile">التاريخ</th>
                         <th class="px-4 py-3 text-center font-bold">إجراءات</th>
                     </tr></thead>
                     <tbody>
                         <tr v-for="inv in invoices.data" :key="inv.id" :data-row-id="inv.id"
                             class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30"
                             :class="{ 'row-glow': isHighlighted(inv.id) }">
-                            <td class="px-4 py-3 text-right font-mono text-xs text-gold-700">{{ inv.invoice_number }}</td>
-                            <td class="px-4 py-3 text-right text-xs">{{ inv.agent?.name||'—' }}</td>
-                            <td class="px-4 py-3 text-right text-xs">{{ inv.client?.name||'—' }}</td>
-                            <td class="px-4 py-3 text-right font-bold font-mono text-xs" dir="ltr">{{ Number(inv.total_sar).toLocaleString('en',{minimumFractionDigits:2}) }}</td>
-                            <td class="px-4 py-3 text-right font-bold font-mono text-xs text-blue-600" dir="ltr">{{ Number(inv.total_jod).toLocaleString('en',{minimumFractionDigits:3}) }}</td>
-                            <td class="px-4 py-3 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="{'bg-yellow-100 text-yellow-700':inv.status==='pending','bg-green-100 text-green-700':inv.status==='approved','bg-red-100 text-red-700':inv.status==='rejected','bg-blue-100 text-blue-700':inv.status==='editing'}">{{ {pending:'معلقة',approved:'معتمدة',rejected:'مرفوضة',editing:'تحت التعديل'}[inv.status] }}</span></td>
-                            <td class="px-4 py-3 text-right text-xs text-gray-500"><div>📝 {{ inv.creator?.name || '—' }}</div><div v-if="inv.status !== 'pending'" class="mt-0.5">{{ inv.status === 'approved' ? '✅' : '❌' }} {{ inv.approver?.name || '—' }}</div></td>
-                            <td class="px-4 py-3 text-right font-mono text-xs text-gray-500" dir="ltr">{{ inv.invoice_date?.split('T')[0] }}</td>
-                            <td class="px-4 py-3 text-center whitespace-nowrap">
-                                <a :href="'/invoices/'+inv.id+'/print'" target="_blank" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg">🖨️</a>
-                                <button @click="viewInv(inv)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg">👁️</button>
-                                <button v-if="inv.status==='pending' && can('invoices.approve')" @click="approveInv(inv)" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg">✅</button>
-                                <button v-if="inv.status==='pending' && can('invoices.reject')" @click="rejectInv(inv)" class="px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 rounded-lg">❌</button>
-                                <button v-if="inv.status!=='approved' && can('invoices.delete')" @click="delInv(inv)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button>
-                                <button v-if="inv.status==='approved' && can('invoices.edit_approved')" @click="startEditInv(inv)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg">✏️ تعديل</button>
-                                <button v-if="inv.status==='editing'" @click="openPOS(inv)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg font-bold">📝 تعديل الفاتورة</button>
+                            <td data-label="الرقم" class="px-4 py-3 text-right font-mono text-xs text-gold-700">{{ inv.invoice_number }}</td>
+                            <td data-label="الوكيل" class="px-4 py-3 text-right text-xs hide-mobile">{{ inv.agent?.name||'—' }}</td>
+                            <td data-label="العميل" class="px-4 py-3 text-right text-xs">{{ inv.client?.name||'—' }}</td>
+                            <td data-label="SAR" class="px-4 py-3 text-right font-bold font-mono text-xs hide-mobile" dir="ltr">{{ Number(inv.total_sar).toLocaleString('en',{minimumFractionDigits:2}) }}</td>
+                            <td data-label="JOD" class="px-4 py-3 text-right font-bold font-mono text-xs text-blue-600" dir="ltr">{{ Number(inv.total_jod).toLocaleString('en',{minimumFractionDigits:3}) }}</td>
+                            <td data-label="الحالة" class="px-4 py-3 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="{'bg-yellow-100 text-yellow-700':inv.status==='pending','bg-green-100 text-green-700':inv.status==='approved','bg-red-100 text-red-700':inv.status==='rejected','bg-blue-100 text-blue-700':inv.status==='editing'}">{{ {pending:'معلقة',approved:'معتمدة',rejected:'مرفوضة',editing:'تحت التعديل'}[inv.status] }}</span></td>
+                            <td data-label="بواسطة" class="px-4 py-3 text-right text-xs text-gray-500 hide-mobile"><div>📝 {{ inv.creator?.name || '—' }}</div><div v-if="inv.status !== 'pending'" class="mt-0.5">{{ inv.status === 'approved' ? '✅' : '❌' }} {{ inv.approver?.name || '—' }}</div></td>
+                            <td data-label="التاريخ" class="px-4 py-3 text-right font-mono text-xs text-gray-500 hide-mobile" dir="ltr">{{ inv.invoice_date?.split('T')[0] }}</td>
+                            <td data-label="" class="px-4 py-3 text-center whitespace-nowrap actions-cell">
+                                <a :href="'/invoices/'+inv.id+'/print'" target="_blank" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg btn-mobile-sm">🖨️</a>
+                                <button @click="viewInv(inv)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg btn-mobile-sm">👁️</button>
+                                <button v-if="inv.status==='pending' && can('invoices.approve')" @click="approveInv(inv)" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg btn-mobile-sm">✅</button>
+                                <button v-if="inv.status==='pending' && can('invoices.reject')" @click="rejectInv(inv)" class="px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 rounded-lg btn-mobile-sm">❌</button>
+                                <button v-if="inv.status!=='approved' && can('invoices.delete')" @click="delInv(inv)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg btn-mobile-sm">🗑️</button>
+                                <button v-if="inv.status==='approved' && can('invoices.edit_approved')" @click="startEditInv(inv)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg btn-mobile-sm">✏️ تعديل</button>
+                                <button v-if="inv.status==='editing'" @click="openPOS(inv)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg font-bold btn-mobile-sm">📝 تعديل الفاتورة</button>
                             </td>
                         </tr>
                         <tr v-if="!invoices.data?.length"><td colspan="9" class="px-5 py-12 text-center text-gray-400">لا يوجد فواتير</td></tr>
@@ -62,7 +62,7 @@
 
         <!-- POS Modal -->
         <div v-if="showPOS" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showPOS=false">
-            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl mx-4 p-6 max-h-[95vh] overflow-y-auto" style="overflow: visible auto;">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl mx-4 p-6 max-h-[95vh] overflow-y-auto modal-responsive" style="overflow: visible auto;">
                 <div class="flex items-center justify-between mb-5">
                     <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ editingInvoiceId ? '✏️ تعديل فاتورة' : '🧾 فاتورة مبيعات جديدة' }}</h3>
                     <button @click="showPOS=false" class="text-gray-400 dark:text-gray-500 hover:text-red-500 text-xl">&times;</button>

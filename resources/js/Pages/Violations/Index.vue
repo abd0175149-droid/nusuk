@@ -4,48 +4,48 @@
         <div class="space-y-6">
             <div v-if="$page.props.flash?.success" class="p-4 rounded-xl border text-sm bg-green-50 border-green-200 text-green-700">✅ {{ $page.props.flash.success }}</div>
             <div v-if="$page.props.flash?.error" class="p-4 rounded-xl border text-sm bg-red-50 border-red-200 text-red-700">❌ {{ $page.props.flash.error }}</div>
-            <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center justify-between gap-4 filter-bar">
                 <div class="flex items-center gap-3 flex-wrap">
-                    <input v-model="search" type="text" placeholder="بحث بالرقم أو الجواز..." class="w-64 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500" @input="debounceSearch"/>
+                    <input v-model="search" type="text" placeholder="بحث بالرقم أو الجواز..." class="w-64 max-w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500" @input="debounceSearch"/>
                     <select v-model="statusFilter" class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm" @change="applyFilter"><option value="">كل الحالات</option><option value="pending">معلقة</option><option value="approved">معتمدة</option><option value="rejected">مرفوضة</option></select>
                     <select v-model="billingFilter" class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm" @change="applyFilter"><option value="">كل الفوترة</option><option value="unbilled">غير مفوترة</option><option value="billed">مفوترة</option></select>
                 </div>
-                <button v-if="can('violations.create')" @click="openModal()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md">+ تسجيل مخالفة</button>
+                <button v-if="can('violations.create')" @click="openModal()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md w-full sm:w-auto">+ تسجيل مخالفة</button>
             </div>
             <div class="rounded-xl border overflow-hidden shadow-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
                 <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+                <table class="w-full text-sm responsive-table">
                 <thead><tr class="bg-gray-50 text-gray-600">
                     <th class="px-4 py-3 text-right font-bold">الرقم</th>
                     <th class="px-4 py-3 text-right font-bold">الوكيل</th>
-                    <th class="px-4 py-3 text-right font-bold">العميل</th>
+                    <th class="px-4 py-3 text-right font-bold hide-mobile">العميل</th>
                     <th class="px-4 py-3 text-right font-bold">النوع</th>
-                    <th class="px-4 py-3 text-right font-bold">الجواز</th>
+                    <th class="px-4 py-3 text-right font-bold hide-mobile">الجواز</th>
                     <th class="px-4 py-3 text-right font-bold">التكلفة</th>
                     <th class="px-4 py-3 text-right font-bold">الحالة</th>
-                    <th class="px-4 py-3 text-right font-bold">الفوترة</th>
-                    <th class="px-4 py-3 text-right font-bold">بواسطة</th>
+                    <th class="px-4 py-3 text-right font-bold hide-mobile">الفوترة</th>
+                    <th class="px-4 py-3 text-right font-bold hide-mobile">بواسطة</th>
                     <th class="px-4 py-3 text-center font-bold">إجراءات</th>
                 </tr></thead>
                 <tbody>
                     <tr v-for="v in violations.data" :key="v.id" :data-row-id="v.id"
                             class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30"
                             :class="{ 'row-glow': isHighlighted(v.id) }">
-                        <td class="px-4 py-3 text-right font-mono text-xs text-gold-700">{{ v.violation_number }}</td>
-                        <td class="px-4 py-3 text-right text-gray-800 dark:text-gray-200 text-xs">{{ v.agent?.name||'—' }}</td>
-                        <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400 text-xs">{{ v.client?.name||'—' }}</td>
-                        <td class="px-4 py-3 text-right text-xs">{{ v.violation_type?.name||'—' }}</td>
-                        <td class="px-4 py-3 text-right font-mono text-xs" dir="ltr">{{ v.passport_number||'—' }}</td>
-                        <td class="px-4 py-3 text-right font-bold font-mono text-xs text-red-600" dir="ltr">{{ Number(v.cost_sar).toLocaleString('en',{minimumFractionDigits:2}) }} SAR</td>
-                        <td class="px-4 py-3 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="{'bg-yellow-100 text-yellow-700':v.status==='pending','bg-green-100 text-green-700':v.status==='approved','bg-red-100 text-red-700':v.status==='rejected','bg-blue-100 text-blue-700':v.status==='editing'}">{{ {pending:'معلقة',approved:'معتمدة',rejected:'مرفوضة',editing:'تحت التعديل'}[v.status] }}</span></td>
-                        <td class="px-4 py-3 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="v.billing_status==='billed'?'bg-blue-100 text-blue-700':'bg-gray-100 text-gray-600'">{{ v.billing_status==='billed'?'مفوترة':'غير مفوترة' }}</span></td>
-                        <td class="px-4 py-3 text-right text-xs text-gray-500"><div>📝 {{ v.creator?.name || '—' }}</div><div v-if="v.status !== 'pending'" class="mt-0.5">{{ v.status === 'approved' ? '✅' : '❌' }} {{ v.approver?.name || '—' }}</div></td>
-                        <td class="px-4 py-3 text-center whitespace-nowrap">
-                            <button v-if="v.status==='pending' && can('violations.approve')" @click="approveVio(v)" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg">✅</button>
-                            <button v-if="v.status==='pending' && can('violations.reject')" @click="rejectVio(v)" class="px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 rounded-lg">❌</button>
-                            <button v-if="v.status==='pending' && can('violations.delete')" @click="del(v)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button>
-                            <button v-if="v.status==='approved' && can('violations.edit_approved')" @click="startEditVio(v)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg">✏️ تعديل</button>
-                            <button v-if="v.status==='editing'" @click="openEditForm(v)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg font-bold">📝 تعديل البيانات</button>
+                        <td data-label="الرقم" class="px-4 py-3 text-right font-mono text-xs text-gold-700">{{ v.violation_number }}</td>
+                        <td data-label="الوكيل" class="px-4 py-3 text-right text-gray-800 dark:text-gray-200 text-xs">{{ v.agent?.name||'—' }}</td>
+                        <td data-label="العميل" class="px-4 py-3 text-right text-gray-600 dark:text-gray-400 text-xs hide-mobile">{{ v.client?.name||'—' }}</td>
+                        <td data-label="النوع" class="px-4 py-3 text-right text-xs">{{ v.violation_type?.name||'—' }}</td>
+                        <td data-label="الجواز" class="px-4 py-3 text-right font-mono text-xs hide-mobile" dir="ltr">{{ v.passport_number||'—' }}</td>
+                        <td data-label="التكلفة" class="px-4 py-3 text-right font-bold font-mono text-xs text-red-600" dir="ltr">{{ Number(v.cost_sar).toLocaleString('en',{minimumFractionDigits:2}) }} SAR</td>
+                        <td data-label="الحالة" class="px-4 py-3 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="{'bg-yellow-100 text-yellow-700':v.status==='pending','bg-green-100 text-green-700':v.status==='approved','bg-red-100 text-red-700':v.status==='rejected','bg-blue-100 text-blue-700':v.status==='editing'}">{{ {pending:'معلقة',approved:'معتمدة',rejected:'مرفوضة',editing:'تحت التعديل'}[v.status] }}</span></td>
+                        <td data-label="الفوترة" class="px-4 py-3 text-right hide-mobile"><span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="v.billing_status==='billed'?'bg-blue-100 text-blue-700':'bg-gray-100 text-gray-600'">{{ v.billing_status==='billed'?'مفوترة':'غير مفوترة' }}</span></td>
+                        <td data-label="بواسطة" class="px-4 py-3 text-right text-xs text-gray-500 hide-mobile"><div>📝 {{ v.creator?.name || '—' }}</div><div v-if="v.status !== 'pending'" class="mt-0.5">{{ v.status === 'approved' ? '✅' : '❌' }} {{ v.approver?.name || '—' }}</div></td>
+                        <td data-label="" class="px-4 py-3 text-center whitespace-nowrap actions-cell">
+                            <button v-if="v.status==='pending' && can('violations.approve')" @click="approveVio(v)" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg btn-mobile-sm">✅</button>
+                            <button v-if="v.status==='pending' && can('violations.reject')" @click="rejectVio(v)" class="px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 rounded-lg btn-mobile-sm">❌</button>
+                            <button v-if="v.status==='pending' && can('violations.delete')" @click="del(v)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg btn-mobile-sm">🗑️</button>
+                            <button v-if="v.status==='approved' && can('violations.edit_approved')" @click="startEditVio(v)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg btn-mobile-sm">✏️ تعديل</button>
+                            <button v-if="v.status==='editing'" @click="openEditForm(v)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg font-bold btn-mobile-sm">📝 تعديل البيانات</button>
                         </td>
                     </tr>
                     <tr v-if="!violations.data?.length"><td colspan="10" class="px-5 py-12 text-center text-gray-400">لا يوجد مخالفات</td></tr>

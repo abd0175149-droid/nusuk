@@ -5,9 +5,9 @@
             <div v-if="$page.props.flash?.success" class="p-4 rounded-xl border text-sm bg-green-50 border-green-200 text-green-700">✅ {{ $page.props.flash.success }}</div>
             <div v-if="$page.props.flash?.error" class="p-4 rounded-xl border text-sm bg-red-50 border-red-200 text-red-700">❌ {{ $page.props.flash.error }}</div>
 
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <div class="flex items-center gap-3">
-                    <input v-model="search" type="text" placeholder="بحث بالرقم أو الوكيل..." class="w-64 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500" @input="debounceSearch"/>
+            <div class="flex flex-wrap items-center justify-between gap-4 filter-bar">
+                <div class="flex items-center gap-3 flex-wrap">
+                    <input v-model="search" type="text" placeholder="بحث بالرقم أو الوكيل..." class="w-64 max-w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500" @input="debounceSearch"/>
                     <select v-model="statusFilter" class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm" @change="applyFilter">
                         <option value="">كل الحالات</option>
                         <option value="pending">معلقة</option>
@@ -16,50 +16,50 @@
                         <option value="editing">تحت التعديل</option>
                     </select>
                 </div>
-                <button v-if="can('transfers.create')" @click="openForm()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md">+ حوالة جديدة</button>
+                <button v-if="can('transfers.create')" @click="openForm()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md w-full sm:w-auto">+ حوالة جديدة</button>
             </div>
 
             <div class="rounded-xl border overflow-hidden shadow-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-                <table class="w-full text-sm">
+                <table class="w-full text-sm responsive-table">
                     <thead><tr class="bg-gray-50 text-gray-600">
                         <th class="px-5 py-3 text-right font-bold">الرقم</th>
                         <th class="px-5 py-3 text-right font-bold">الوكيل</th>
                         <th class="px-5 py-3 text-right font-bold">المبلغ (SAR)</th>
                         <th class="px-5 py-3 text-right font-bold">التكلفة (JOD)</th>
-                        <th class="px-5 py-3 text-right font-bold">الفرق (JOD)</th>
-                        <th class="px-5 py-3 text-right font-bold">طريقة الدفع</th>
+                        <th class="px-5 py-3 text-right font-bold hide-mobile">الفرق (JOD)</th>
+                        <th class="px-5 py-3 text-right font-bold hide-mobile">طريقة الدفع</th>
                         <th class="px-5 py-3 text-right font-bold">الحالة</th>
-                        <th class="px-5 py-3 text-right font-bold">بواسطة</th>
+                        <th class="px-5 py-3 text-right font-bold hide-mobile">بواسطة</th>
                         <th class="px-5 py-3 text-center font-bold">إجراءات</th>
                     </tr></thead>
                     <tbody>
                         <tr v-for="t in transfers.data" :key="t.id" :data-row-id="t.id"
                             class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30"
                             :class="{ 'row-glow': isHighlighted(t.id) }">
-                            <td class="px-5 py-3 font-mono text-xs text-gold-700">{{ t.transfer_number }}</td>
-                            <td class="px-5 py-3 font-medium">{{ t.agent?.name }}</td>
-                            <td class="px-5 py-3 font-bold font-mono text-green-600">{{ Number(t.amount_sar).toLocaleString('en',{minimumFractionDigits:2}) }}</td>
-                            <td class="px-5 py-3 font-mono">{{ t.cost_jod ? Number(t.cost_jod).toLocaleString('en',{minimumFractionDigits:3}) : '—' }}</td>
-                            <td class="px-5 py-3 font-mono text-xs" :class="diffClass(t)">
+                            <td data-label="الرقم" class="px-5 py-3 font-mono text-xs text-gold-700">{{ t.transfer_number }}</td>
+                            <td data-label="الوكيل" class="px-5 py-3 font-medium">{{ t.agent?.name }}</td>
+                            <td data-label="المبلغ SAR" class="px-5 py-3 font-bold font-mono text-green-600">{{ Number(t.amount_sar).toLocaleString('en',{minimumFractionDigits:2}) }}</td>
+                            <td data-label="التكلفة JOD" class="px-5 py-3 font-mono">{{ t.cost_jod ? Number(t.cost_jod).toLocaleString('en',{minimumFractionDigits:3}) : '—' }}</td>
+                            <td data-label="الفرق" class="px-5 py-3 font-mono text-xs hide-mobile" :class="diffClass(t)">
                                 {{ t.difference_amount != 0 ? Number(Math.abs(t.difference_amount)).toLocaleString('en',{minimumFractionDigits:3}) : '—' }}
                                 <span v-if="t.difference_type==='expense'" class="text-red-500"> (مصروف)</span>
                                 <span v-if="t.difference_type==='revenue'" class="text-green-500"> (إيراد)</span>
                             </td>
-                            <td class="px-5 py-3">{{ payMethods[t.payment_method] }}</td>
-                            <td class="px-5 py-3"><span class="px-2.5 py-1 rounded-full text-xs font-bold" :class="statusClasses[t.status]">{{ statusLabels[t.status] }}</span></td>
-                            <td class="px-5 py-3 text-xs text-gray-500"><div>📝 {{ t.creator?.name || '—' }}</div><div v-if="t.status !== 'pending'" class="mt-0.5">{{ t.status === 'approved' ? '✅' : t.status === 'editing' ? '✏️' : '❌' }} {{ t.approver?.name || t.modifier_name || '—' }}</div></td>
-                            <td class="px-5 py-3 text-center space-x-1 space-x-reverse">
+                            <td data-label="الدفع" class="px-5 py-3 hide-mobile">{{ payMethods[t.payment_method] }}</td>
+                            <td data-label="الحالة" class="px-5 py-3"><span class="px-2.5 py-1 rounded-full text-xs font-bold" :class="statusClasses[t.status]">{{ statusLabels[t.status] }}</span></td>
+                            <td data-label="بواسطة" class="px-5 py-3 text-xs text-gray-500 hide-mobile"><div>📝 {{ t.creator?.name || '—' }}</div><div v-if="t.status !== 'pending'" class="mt-0.5">{{ t.status === 'approved' ? '✅' : t.status === 'editing' ? '✏️' : '❌' }} {{ t.approver?.name || t.modifier_name || '—' }}</div></td>
+                            <td data-label="" class="px-5 py-3 text-center space-x-1 space-x-reverse actions-cell">
                                 <template v-if="t.status==='pending'">
-                                    <button v-if="can('transfers.approve')" @click="approveItem(t)" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg">✅ اعتماد</button>
-                                    <button v-if="can('transfers.reject')" @click="rejectTarget=t" class="px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 rounded-lg">❌ رفض</button>
-                                    <button v-if="can('transfers.delete')" @click="deleteTarget=t" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button>
+                                    <button v-if="can('transfers.approve')" @click="approveItem(t)" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg btn-mobile-sm">✅ اعتماد</button>
+                                    <button v-if="can('transfers.reject')" @click="rejectTarget=t" class="px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 rounded-lg btn-mobile-sm">❌ رفض</button>
+                                    <button v-if="can('transfers.delete')" @click="deleteTarget=t" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg btn-mobile-sm">🗑️</button>
                                 </template>
                                 <template v-else-if="t.status==='approved'">
-                                    <button v-if="can('transfers.edit_approved')" @click="startEditApproved(t)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg">✏️ تعديل</button>
-                                    <a :href="'/transfers/'+t.id+'/print'" target="_blank" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg">🖨️</a>
+                                    <button v-if="can('transfers.edit_approved')" @click="startEditApproved(t)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg btn-mobile-sm">✏️ تعديل</button>
+                                    <a :href="'/transfers/'+t.id+'/print'" target="_blank" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg btn-mobile-sm">🖨️</a>
                                 </template>
                                 <template v-else-if="t.status==='editing'">
-                                    <button @click="openEditForm(t)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg">📝 تعديل وإرسال</button>
+                                    <button @click="openEditForm(t)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg btn-mobile-sm">📝 تعديل وإرسال</button>
                                 </template>
                                 <span v-else class="text-xs text-gray-400">—</span>
                             </td>
@@ -72,10 +72,10 @@
 
         <!-- Create/Edit Form Modal -->
         <div v-if="showForm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showForm=false">
-            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-xl mx-4 p-6 max-h-[90vh] overflow-y-auto">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-xl mx-4 p-6 max-h-[90vh] overflow-y-auto modal-responsive">
                 <div class="flex items-center justify-between mb-5"><h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ editingTransfer ? 'تعديل حوالة' : 'حوالة جديدة' }}</h3><button @click="showForm=false" class="text-gray-400 dark:text-gray-500 hover:text-red-500 text-xl">&times;</button></div>
                 <form @submit.prevent="submitForm" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mobile-form-grid">
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">الوكيل *</label><SearchableSelect v-model="form.agent_id" :options="agentOptions" placeholder="اختر الوكيل" search-placeholder="ابحث عن وكيل..." /><p v-if="form.errors.agent_id" class="mt-1 text-xs text-red-500">{{ form.errors.agent_id }}</p></div>
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">المبلغ (SAR) *</label><input v-model="form.amount_sar" type="number" step="0.01" min="0.01" required dir="ltr" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">التكلفة (JOD) *</label><input v-model="form.cost_jod" type="number" step="0.001" min="0.001" required dir="ltr" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>

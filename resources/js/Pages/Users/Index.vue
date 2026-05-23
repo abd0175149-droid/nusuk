@@ -6,15 +6,15 @@
             <div v-if="$page.props.flash?.error" class="p-4 rounded-xl border text-sm bg-red-50 border-red-200 text-red-700">❌ {{ $page.props.flash.error }}</div>
 
             <!-- Controls -->
-            <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center justify-between gap-4 filter-bar">
                 <div class="flex items-center gap-3 flex-wrap">
-                    <input v-model="search" type="text" placeholder="بحث بالاسم أو البريد..." class="w-64 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500 dark:text-white" @input="debounceSearch"/>
+                    <input v-model="search" type="text" placeholder="بحث بالاسم أو البريد..." class="w-64 max-w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500 dark:text-white" @input="debounceSearch"/>
                     <select v-model="roleFilter" class="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm dark:text-white" @change="applyFilter">
                         <option value="">كل الصلاحيات</option>
                         <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.name }}</option>
                     </select>
                 </div>
-                <button @click="openModal()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md hover:shadow-gold-500/25">
+                <button @click="openModal()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md hover:shadow-gold-500/25 w-full sm:w-auto">
                     + موظف جديد
                 </button>
             </div>
@@ -22,30 +22,30 @@
             <!-- Table -->
             <div class="rounded-xl border overflow-hidden shadow-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
                 <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+                <table class="w-full text-sm responsive-table">
                     <thead><tr class="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400">
                         <th class="px-4 py-3 text-right font-bold">الاسم</th>
-                        <th class="px-4 py-3 text-right font-bold">البريد الإلكتروني</th>
-                        <th class="px-4 py-3 text-right font-bold">رقم الهاتف</th>
+                        <th class="px-4 py-3 text-right font-bold hide-mobile">البريد الإلكتروني</th>
+                        <th class="px-4 py-3 text-right font-bold hide-mobile">رقم الهاتف</th>
                         <th class="px-4 py-3 text-right font-bold">الدور (الصلاحية)</th>
                         <th class="px-4 py-3 text-right font-bold">الحالة</th>
                         <th class="px-4 py-3 text-center font-bold">إجراءات</th>
                     </tr></thead>
                     <tbody>
                         <tr v-for="user in users.data" :key="user.id" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
-                            <td class="px-4 py-3 text-right font-bold text-gray-800 dark:text-gray-200">{{ user.name }}</td>
-                            <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400 font-mono text-xs">{{ user.email }}</td>
-                            <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400 font-mono text-xs" dir="ltr">{{ user.phone || '—' }}</td>
-                            <td class="px-4 py-3 text-right">
+                            <td data-label="الاسم" class="px-4 py-3 text-right font-bold text-gray-800 dark:text-gray-200">{{ user.name }}</td>
+                            <td data-label="البريد" class="px-4 py-3 text-right text-gray-600 dark:text-gray-400 font-mono text-xs hide-mobile">{{ user.email }}</td>
+                            <td data-label="الهاتف" class="px-4 py-3 text-right text-gray-600 dark:text-gray-400 font-mono text-xs hide-mobile" dir="ltr">{{ user.phone || '—' }}</td>
+                            <td data-label="الدور" class="px-4 py-3 text-right">
                                 <span class="px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">{{ user.role?.name || 'غير محدد' }}</span>
                             </td>
-                            <td class="px-4 py-3 text-right">
+                            <td data-label="الحالة" class="px-4 py-3 text-right">
                                 <span v-if="user.is_active" class="px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">نشط</span>
                                 <span v-else class="px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">موقوف</span>
                             </td>
-                            <td class="px-4 py-3 text-center whitespace-nowrap">
-                                <button @click="openModal(user)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg mr-1">✏️</button>
-                                <button v-if="$page.props.auth.user.id !== user.id" @click="delUser(user)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button>
+                            <td data-label="" class="px-4 py-3 text-center whitespace-nowrap actions-cell">
+                                <button @click="openModal(user)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg mr-1 btn-mobile-sm">✏️</button>
+                                <button v-if="$page.props.auth.user.id !== user.id" @click="delUser(user)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg btn-mobile-sm">🗑️</button>
                             </td>
                         </tr>
                         <tr v-if="!users.data?.length"><td colspan="6" class="px-5 py-12 text-center text-gray-400">لا يوجد موظفين</td></tr>
@@ -65,7 +65,7 @@
 
         <!-- Create / Edit Modal -->
         <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showModal=false">
-            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 modal-responsive">
                 <div class="flex items-center justify-between mb-5">
                     <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ form.id ? 'تعديل موظف' : 'موظف جديد' }}</h3>
                     <button @click="showModal=false" class="text-gray-400 dark:text-gray-500 hover:text-red-500 text-xl">&times;</button>

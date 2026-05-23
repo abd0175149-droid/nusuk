@@ -4,14 +4,14 @@
         <div class="space-y-6">
             <div v-if="$page.props.flash?.success" class="p-4 rounded-xl border text-sm bg-green-50 border-green-200 text-green-700">✅ {{ $page.props.flash.success }}</div>
             <div v-if="$page.props.flash?.error" class="p-4 rounded-xl border text-sm bg-red-50 border-red-200 text-red-700">❌ {{ $page.props.flash.error }}</div>
-            <div class="flex justify-end"><button @click="openModal(null)" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md">+ تصنيف جديد</button></div>
-            <div class="rounded-xl border overflow-hidden shadow-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"><table class="w-full text-sm">
-                <thead><tr class="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400"><th class="px-5 py-3 text-right font-bold">الاسم</th><th class="px-5 py-3 text-right font-bold">الكود</th><th class="px-5 py-3 text-right font-bold">الحساب المحاسبي</th><th class="px-5 py-3 text-right font-bold">الحالة</th><th class="px-5 py-3 text-center font-bold">إجراءات</th></tr></thead>
+            <div class="flex justify-end filter-bar"><button @click="openModal(null)" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md w-full sm:w-auto">+ تصنيف جديد</button></div>
+            <div class="rounded-xl border overflow-hidden shadow-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"><table class="w-full text-sm responsive-table">
+                <thead><tr class="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400"><th class="px-5 py-3 text-right font-bold">الاسم</th><th class="px-5 py-3 text-right font-bold hide-mobile">الكود</th><th class="px-5 py-3 text-right font-bold hide-mobile">الحساب المحاسبي</th><th class="px-5 py-3 text-right font-bold">الحالة</th><th class="px-5 py-3 text-center font-bold">إجراءات</th></tr></thead>
                 <tbody>
                     <tr v-for="c in categories" :key="c.id" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
-                        <td class="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">{{ c.name }}</td>
-                        <td class="px-5 py-3 font-mono text-xs text-gold-700">{{ c.code }}</td>
-                        <td class="px-5 py-3 text-sm">
+                        <td data-label="الاسم" class="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">{{ c.name }}</td>
+                        <td data-label="الكود" class="px-5 py-3 font-mono text-xs text-gold-700 hide-mobile">{{ c.code }}</td>
+                        <td data-label="الحساب" class="px-5 py-3 text-sm hide-mobile">
                             <span v-if="c.account" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold">
                                 <span class="font-mono">{{ c.account.code }}</span>
                                 <span class="text-blue-500">—</span>
@@ -19,8 +19,8 @@
                             </span>
                             <span v-else class="text-xs text-gray-400">غير مربوط ⚠️</span>
                         </td>
-                        <td class="px-5 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="c.is_active?'bg-green-100 text-green-700':'bg-red-100 text-red-700'">{{ c.is_active?'نشط':'معطل' }}</span></td>
-                        <td class="px-5 py-3 text-center"><button @click="openModal(c)" class="px-2 py-1 text-xs text-gold-700 hover:bg-gold-50 rounded-lg">✏️</button><button @click="del(c)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button></td>
+                        <td data-label="الحالة" class="px-5 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="c.is_active?'bg-green-100 text-green-700':'bg-red-100 text-red-700'">{{ c.is_active?'نشط':'معطل' }}</span></td>
+                        <td data-label="" class="px-5 py-3 text-center actions-cell"><button @click="openModal(c)" class="px-2 py-1 text-xs text-gold-700 hover:bg-gold-50 rounded-lg btn-mobile-sm">✏️</button><button @click="del(c)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg btn-mobile-sm">🗑️</button></td>
                     </tr>
                     <tr v-if="!categories.length"><td colspan="5" class="px-5 py-12 text-center text-gray-400">لا يوجد تصنيفات</td></tr>
                 </tbody>
@@ -29,7 +29,7 @@
 
         <!-- Modal إنشاء/تعديل -->
         <div v-if="showForm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showForm=false">
-            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 modal-responsive">
                 <div class="flex items-center justify-between mb-5"><h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ editItem?'تعديل':'إضافة' }} تصنيف</h3><button @click="showForm=false" class="text-gray-400 dark:text-gray-500 hover:text-red-500 text-xl">&times;</button></div>
                 <form @submit.prevent="submit" class="space-y-4">
                     <div><label class="block text-sm font-medium text-gray-700 mb-1">الاسم *</label><input v-model="form.name" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
