@@ -29,8 +29,9 @@
     >
       <div
         v-if="isOpen"
-        class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden"
-        :class="dropUp ? 'bottom-full mb-1' : 'top-full'"
+        class="absolute w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden"
+        :class="dropUp ? 'bottom-full mb-1' : 'top-full mt-1'"
+        :style="{ zIndex: 9999 }"
       >
         <!-- حقل البحث -->
         <div class="p-2 border-b border-gray-100">

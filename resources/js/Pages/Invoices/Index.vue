@@ -111,8 +111,8 @@
                                     <tr v-for="(item, idx) in pos.items" :key="idx" class="border-t border-gray-100">
                                         <td class="px-3 py-2"><span class="px-2 py-0.5 rounded text-xs" :class="item.item_type==='service'?'bg-blue-100 text-blue-700':'bg-red-100 text-red-700'">{{ item.item_type==='service'?'خدمة':'مخالفة' }}</span></td>
                                         <td class="px-3 py-2">
-                                            <SearchableSelect v-if="item.item_type==='service'" v-model="item.service_id" :options="serviceOptions" placeholder="اختر خدمة" search-placeholder="ابحث..." @change="onServiceSelect(idx)" />
-                                            <SearchableSelect v-else v-model="item.violation_id" :options="violationOptions" placeholder="اختر مخالفة" search-placeholder="ابحث..." @change="onViolationSelect(idx)" />
+                                            <SearchableSelect v-if="item.item_type==='service'" v-model="item.service_id" :options="serviceOptions" placeholder="اختر خدمة" search-placeholder="ابحث..." :drop-up="true" @change="onServiceSelect(idx)" />
+                                            <SearchableSelect v-else v-model="item.violation_id" :options="violationOptions" placeholder="اختر مخالفة" search-placeholder="ابحث..." :drop-up="true" @change="onViolationSelect(idx)" />
                                         </td>
                                         <td class="px-3 py-2"><input v-model.number="item.quantity" type="number" min="1" class="w-full px-2 py-1 rounded border border-gray-200 text-xs text-center" dir="ltr"/></td>
                                         <td class="px-3 py-2"><input v-model.number="item.unit_price_sar" type="number" step="0.01" class="w-full px-2 py-1 rounded border border-gray-200 text-xs font-mono" dir="ltr"/></td>
@@ -130,10 +130,14 @@
                     <!-- Totals -->
                     <div v-if="pos.items.length" class="bg-gray-50 rounded-xl p-4">
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div><span class="text-gray-500">الإجمالي الفرعي:</span><p class="font-bold font-mono" dir="ltr">{{ subtotalSar.toFixed(2) }} SAR</p></div>
+                            <div><span class="text-gray-500">الإجمالي الفرعي SAR:</span><p class="font-bold font-mono" dir="ltr">{{ subtotalSar.toFixed(2) }} SAR</p></div>
                             <div><label class="text-gray-500">الخصم SAR:</label><input v-model.number="pos.discount" type="number" step="0.01" min="0" dir="ltr" class="w-full px-2 py-1 rounded border border-gray-200 text-xs font-mono mt-1"/></div>
-                            <div><span class="text-gray-500">الصافي:</span><p class="font-bold font-mono text-lg" dir="ltr">{{ netSar.toFixed(2) }} SAR</p></div>
-                            <div><span class="text-gray-500">الإجمالي بالدينار:</span><p class="font-bold font-mono text-lg text-blue-600" dir="ltr">{{ agentCostJod.toFixed(3) }} JOD</p></div>
+                            <div><span class="text-gray-500">صافي التكلفة SAR:</span><p class="font-bold font-mono text-lg" dir="ltr">{{ netSar.toFixed(2) }} SAR</p></div>
+                            <div><span class="text-gray-500">إجمالي العميل JOD:</span><p class="font-bold font-mono text-lg text-blue-600" dir="ltr">{{ clientTotalJod.toFixed(3) }} JOD</p></div>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm mt-3 pt-3 border-t border-gray-200">
+                            <div><span class="text-gray-400 text-xs">تكلفة الوكيل JOD:</span><p class="font-mono text-xs text-gray-600" dir="ltr">{{ agentCostJod.toFixed(3) }} JOD</p></div>
+                            <div><span class="text-gray-400 text-xs">الربح JOD:</span><p class="font-mono text-xs font-bold" :class="profitJod >= 0 ? 'text-green-600' : 'text-red-600'" dir="ltr">{{ profitJod.toFixed(3) }} JOD</p></div>
                         </div>
                     </div>
 
