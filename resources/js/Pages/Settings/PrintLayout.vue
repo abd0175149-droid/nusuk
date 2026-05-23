@@ -29,12 +29,18 @@
                 <div class="w-56 bg-white rounded-2xl border shadow-sm p-4 space-y-2 shrink-0 self-start sticky top-4">
                     <h4 class="text-sm font-bold text-gray-700 mb-2">📦 العناصر</h4>
                     <div v-for="el in currentElements" :key="el.id"
-                        class="flex items-center gap-2 p-2 rounded-lg text-xs cursor-pointer transition-all"
-                        :class="selectedEl === el.id ? 'bg-gold-100 border border-gold-400 font-bold' : 'bg-gray-50 hover:bg-gray-100 border border-transparent'"
+                        class="flex items-center gap-1.5 p-2 rounded-lg text-xs cursor-pointer transition-all"
+                        :class="[
+                            selectedEl === el.id ? 'bg-gold-100 border border-gold-400 font-bold' : 'bg-gray-50 hover:bg-gray-100 border border-transparent',
+                            positions[el.id]?.hidden ? 'opacity-40' : ''
+                        ]"
                         @click="selectedEl = el.id">
-                        <span>{{ el.icon }}</span>
-                        <span class="flex-1">{{ el.label }}</span>
-                        <span class="text-[10px] font-mono text-gray-400" v-if="positions[el.id]">{{ Math.round(positions[el.id].x) }},{{ Math.round(positions[el.id].y) }}</span>
+                        <button @click.stop="toggleHidden(el.id)" class="shrink-0 w-5 h-5 flex items-center justify-center rounded hover:bg-gray-200" :title="positions[el.id]?.hidden ? 'إظهار' : 'إخفاء'">
+                            {{ positions[el.id]?.hidden ? '👁️‍🗨️' : '👁️' }}
+                        </button>
+                        <span class="flex-1" :class="positions[el.id]?.hidden ? 'line-through text-gray-400' : ''">{{ el.label }}</span>
+                        <span class="text-[10px] font-mono text-gray-400" v-if="positions[el.id] && !positions[el.id]?.hidden">{{ Math.round(positions[el.id].x) }},{{ Math.round(positions[el.id].y) }}</span>
+                        <span v-if="positions[el.id]?.hidden" class="text-[9px] text-red-400">مخفي</span>
                     </div>
                     <div class="border-t pt-2 mt-2">
                         <p class="text-[10px] text-gray-400">اسحب العناصر على المعاينة</p>
@@ -42,7 +48,12 @@
                     </div>
                     <!-- تحكم دقيق -->
                     <div v-if="selectedEl && positions[selectedEl]" class="border-t pt-3 space-y-2">
-                        <h5 class="text-xs font-bold text-gray-600">📐 الموقع</h5>
+                        <div class="flex items-center justify-between">
+                            <h5 class="text-xs font-bold text-gray-600">📐 الموقع</h5>
+                            <button @click="toggleHidden(selectedEl)" class="text-[10px] px-2 py-0.5 rounded-full border" :class="positions[selectedEl]?.hidden ? 'bg-red-50 text-red-600 border-red-200' : 'bg-green-50 text-green-600 border-green-200'">
+                                {{ positions[selectedEl]?.hidden ? '🚫 مخفي — انقر للإظهار' : '✅ ظاهر — انقر للإخفاء' }}
+                            </button>
+                        </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div><label class="text-[10px] text-gray-500">X (mm)</label><input v-model.number="positions[selectedEl].x" type="number" step="0.5" class="w-full px-2 py-1 rounded border text-xs font-mono text-center" dir="ltr"/></div>
                             <div><label class="text-[10px] text-gray-500">Y (mm)</label><input v-model.number="positions[selectedEl].y" type="number" step="0.5" class="w-full px-2 py-1 rounded border text-xs font-mono text-center" dir="ltr"/></div>
@@ -275,11 +286,17 @@ const mmToPx = (mm) => mm * SCALE;
 const getElStyle = (el) => {
     const p = positions[el.id];
     if (!p) return { display: 'none' };
+    if (p.hidden) return { display: 'none' };
     return {
         right: mmToPx(p.x) + 'px',
         top: mmToPx(p.y) + 'px',
         width: p.w ? mmToPx(p.w) + 'px' : 'auto',
     };
+};
+
+const toggleHidden = (id) => {
+    if (!positions[id]) return;
+    positions[id].hidden = !positions[id].hidden;
 };
 
 // سحب العناصر

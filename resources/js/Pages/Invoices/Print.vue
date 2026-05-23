@@ -15,37 +15,37 @@
                 <!-- العناصر الثابتة (تظهر في كل الصفحات أو الأولى فقط) -->
                 <template v-if="pi === 0">
                     <!-- عنوان -->
-                    <div class="field" :style="elPos('title')">
+                    <div v-if="!isHidden('title')" class="field" :style="elPos('title')">
                         <span :style="elFont('title')">فاتورة مبيعات</span>
                     </div>
 
                     <!-- رقم الفاتورة -->
-                    <div class="field" :style="elPos('invoice_number')">
+                    <div v-if="!isHidden('invoice_number')" class="field" :style="elPos('invoice_number')">
                         <span class="label">رقم الفاتورة:</span>
                         <span class="value gold" :style="elFont('invoice_number')">{{ invoice.invoice_number }}</span>
                     </div>
 
                     <!-- التاريخ -->
-                    <div class="field" :style="elPos('invoice_date')">
+                    <div v-if="!isHidden('invoice_date')" class="field" :style="elPos('invoice_date')">
                         <span class="label">التاريخ:</span>
                         <span class="value" :style="elFont('invoice_date')">{{ formatDate(invoice.invoice_date) }}</span>
                     </div>
 
                     <!-- الحالة -->
-                    <div class="field" :style="elPos('status')">
+                    <div v-if="!isHidden('status')" class="field" :style="elPos('status')">
                         <span class="label">الحالة:</span>
                         <span class="value" :class="'status-'+invoice.status" :style="elFont('status')">{{ statusLabels[invoice.status] }}</span>
                     </div>
 
                     <!-- اسم العميل -->
-                    <div class="field" :style="elPos('client_name')">
+                    <div v-if="!isHidden('client_name')" class="field" :style="elPos('client_name')">
                         <span class="label">العميل:</span>
                         <span class="value client-name" :style="elFont('client_name')">{{ invoice.client?.name }}</span>
                     </div>
                 </template>
 
                 <!-- جدول البنود (يتكرر حسب الصفحة) -->
-                <div class="table-area" :style="elPos('items_table')">
+                <div v-if="!isHidden('items_table')" class="table-area" :style="elPos('items_table')">
                     <table class="inv-table" :style="{ ...tableWidth, ...tableColors }">
                         <thead>
                             <tr>
@@ -72,7 +72,7 @@
 
                 <!-- الإجمالي (آخر صفحة فقط) -->
                 <template v-if="page.isLast">
-                    <div class="total-box" :style="totalPos(page)">
+                    <div v-if="!isHidden('total')" class="total-box" :style="totalPos(page)">
                         <div class="total-row" :style="elStyle('total')">
                             <span>الإجمالي:</span>
                             <span class="total-amount" :style="elFont('total')">{{ fmt(invoice.total_jod) }} JOD</span>
@@ -80,7 +80,7 @@
                     </div>
 
                     <!-- التوقيعات -->
-                    <div class="signatures" :style="sigPos(page)">
+                    <div v-if="!isHidden('signatures')" class="signatures" :style="sigPos(page)">
                         <div class="sig-box"><div class="sig-label">المحاسب</div><div class="sig-line"></div></div>
                         <div class="sig-box"><div class="sig-label">المدير المالي</div><div class="sig-line"></div></div>
                         <div class="sig-box"><div class="sig-label">العميل</div><div class="sig-line"></div></div>
@@ -113,6 +113,7 @@ const defaults = {
 };
 
 const el = (id) => props.layout?.elements?.[id] || defaults[id] || { x: 10, y: 10, fontSize: 10 };
+const isHidden = (id) => !!(props.layout?.elements?.[id]?.hidden);
 const rowsPerPage = computed(() => props.layout?.rowsPerPage || 10);
 
 const elPos = (id) => {
