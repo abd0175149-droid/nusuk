@@ -2,7 +2,7 @@
     <div class="print-wrapper" dir="rtl">
         <div class="no-print toolbar">
             <button @click="doPrint" class="print-btn">🖨️ طباعة</button>
-            <a href="/receipts" class="back-btn">← العودة</a>
+            <a href="/transfers" class="back-btn">← العودة</a>
         </div>
 
         <div class="a4-page">
@@ -11,42 +11,47 @@
 
             <div class="overlay">
                 <div v-if="!isHidden('title')" class="field" :style="elPos('title')">
-                    <span :style="elFont('title')">سند قبض</span>
+                    <span :style="elFont('title')">حوالة مالية</span>
                 </div>
 
-                <div v-if="!isHidden('receipt_number')" class="field" :style="elPos('receipt_number')">
-                    <span class="label">رقم السند:</span>
-                    <span class="value gold" :style="elFont('receipt_number')">{{ receipt.receipt_number }}</span>
+                <div v-if="!isHidden('transfer_number')" class="field" :style="elPos('transfer_number')">
+                    <span class="label">رقم الحوالة:</span>
+                    <span class="value gold" :style="elFont('transfer_number')">{{ transfer.transfer_number }}</span>
                 </div>
 
-                <div v-if="!isHidden('receipt_date')" class="field" :style="elPos('receipt_date')">
+                <div v-if="!isHidden('transfer_date')" class="field" :style="elPos('transfer_date')">
                     <span class="label">التاريخ:</span>
-                    <span class="value" :style="elFont('receipt_date')">{{ formatDate(receipt.receipt_date) }}</span>
+                    <span class="value" :style="elFont('transfer_date')">{{ formatDate(transfer.transfer_date) }}</span>
                 </div>
 
                 <div v-if="!isHidden('status')" class="field" :style="elPos('status')">
                     <span class="label">الحالة:</span>
-                    <span class="value" :class="'status-'+receipt.status" :style="elFont('status')">{{ statusLabels[receipt.status] }}</span>
+                    <span class="value" :class="'status-'+transfer.status" :style="elFont('status')">{{ statusLabels[transfer.status] }}</span>
                 </div>
 
                 <div v-if="!isHidden('client_name')" class="field" :style="elPos('client_name')">
                     <span class="label">العميل:</span>
-                    <span class="value client-name" :style="elFont('client_name')">{{ receipt.client?.name }}</span>
+                    <span class="value client-name" :style="elFont('client_name')">{{ transfer.client_name || '—' }}</span>
+                </div>
+
+                <div v-if="!isHidden('agent_name')" class="field" :style="elPos('agent_name')">
+                    <span class="label">الوكيل:</span>
+                    <span class="value" :style="elFont('agent_name')">{{ transfer.agent?.name }}</span>
                 </div>
 
                 <div v-if="!isHidden('amount')" class="field" :style="elPos('amount')">
-                    <span class="label">المبلغ:</span>
-                    <span class="value gold mono" :style="elFont('amount')">{{ fmt(receipt.amount_jod) }} JOD</span>
+                    <span class="label">المبلغ (SAR):</span>
+                    <span class="value gold mono" :style="elFont('amount')">{{ fmtSar(transfer.amount_sar) }} SAR</span>
                 </div>
 
-                <div v-if="!isHidden('payment_method')" class="field" :style="elPos('payment_method')">
-                    <span class="label">طريقة الدفع:</span>
-                    <span class="value" :style="elFont('payment_method')">{{ paymentLabel(receipt.payment_method) }}</span>
+                <div v-if="!isHidden('cost')" class="field" :style="elPos('cost')">
+                    <span class="label">التكلفة (JOD):</span>
+                    <span class="value mono" :style="elFont('cost')">{{ fmt(transfer.cost_jod) }} JOD</span>
                 </div>
 
-                <div v-if="!isHidden('commission') && receipt.bank_commission > 0" class="field" :style="elPos('commission')">
-                    <span class="label">عمولة البنك:</span>
-                    <span class="value mono" :style="elFont('commission')">{{ fmt(receipt.bank_commission) }} JOD</span>
+                <div v-if="!isHidden('difference')" class="field" :style="elPos('difference')">
+                    <span class="label">الفرق:</span>
+                    <span class="value mono" :style="elFont('difference')">{{ fmt(transfer.difference_jod) }} JOD</span>
                 </div>
 
                 <div v-if="!isHidden('signatures')" class="signatures" :style="sigStyle">
@@ -60,24 +65,25 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 
-const props = defineProps({ receipt: Object, templateUrl: String, layout: Object });
+const props = defineProps({ transfer: Object, templateUrl: String, layout: Object });
 
-const statusLabels = { pending: 'معلق', approved: 'معتمد', rejected: 'مرفوض', editing: 'تحت التعديل' };
+const statusLabels = { pending: 'معلقة', approved: 'معتمدة', rejected: 'مرفوضة', editing: 'تحت التعديل' };
 const fmt = (v) => Number(v || 0).toLocaleString('en', { minimumFractionDigits: 3 });
+const fmtSar = (v) => Number(v || 0).toLocaleString('en', { minimumFractionDigits: 2 });
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
-const paymentLabel = (m) => ({ cash: 'نقداً', bank: 'تحويل بنكي', check: 'شيك' }[m] || m);
 
 const defaults = {
     title: { x: 10, y: 30, fontSize: 16 },
-    receipt_number: { x: 10, y: 45, fontSize: 11 },
-    receipt_date: { x: 80, y: 45, fontSize: 10 },
+    transfer_number: { x: 10, y: 45, fontSize: 11 },
+    transfer_date: { x: 80, y: 45, fontSize: 10 },
     status: { x: 150, y: 45, fontSize: 10 },
     client_name: { x: 10, y: 58, fontSize: 12 },
-    amount: { x: 10, y: 75, fontSize: 13 },
-    payment_method: { x: 10, y: 88, fontSize: 10 },
-    commission: { x: 80, y: 88, fontSize: 10 },
+    agent_name: { x: 10, y: 68, fontSize: 12 },
+    amount: { x: 10, y: 85, fontSize: 12 },
+    cost: { x: 10, y: 95, fontSize: 12 },
+    difference: { x: 10, y: 108, fontSize: 11 },
     signatures: { x: 10, y: 250, fontSize: 9, w: 190 },
 };
 

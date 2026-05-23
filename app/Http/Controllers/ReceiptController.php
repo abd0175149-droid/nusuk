@@ -169,8 +169,16 @@ class ReceiptController extends Controller
     {
         $receipt->load(['client:id,name,code', 'creator:id,name', 'approver:id,name']);
 
+        $template = \App\Models\Setting::where('key', 'print_template_financial')->first();
+        $templateUrl = $template?->value ? \Storage::url($template->value) : null;
+
+        $layoutSetting = \App\Models\Setting::where('key', 'print_layout_receipt')->first();
+        $layout = $layoutSetting?->value ? json_decode($layoutSetting->value, true) : null;
+
         return Inertia::render('Receipts/Print', [
             'receipt' => $receipt,
+            'templateUrl' => $templateUrl,
+            'layout' => $layout,
         ]);
     }
 }

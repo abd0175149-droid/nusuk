@@ -203,7 +203,18 @@ class TransferController extends Controller
     public function print(Transfer $transfer)
     {
         $transfer->load(['agent:id,name,code', 'creator:id,name', 'approver:id,name']);
-        return Inertia::render('Transfers/Print', ['transfer' => $transfer]);
+
+        $template = \App\Models\Setting::where('key', 'print_template_financial')->first();
+        $templateUrl = $template?->value ? \Storage::url($template->value) : null;
+
+        $layoutSetting = \App\Models\Setting::where('key', 'print_layout_transfer')->first();
+        $layout = $layoutSetting?->value ? json_decode($layoutSetting->value, true) : null;
+
+        return Inertia::render('Transfers/Print', [
+            'transfer' => $transfer,
+            'templateUrl' => $templateUrl,
+            'layout' => $layout,
+        ]);
     }
 
     /**
