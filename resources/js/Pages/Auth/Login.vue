@@ -10,11 +10,10 @@
             <div class="bg-gray-800 rounded-2xl shadow-2xl border border-gold-900/30 p-8">
                 <!-- Logo -->
                 <div class="text-center mb-8">
-                    <div class="w-40 mx-auto mb-4 overflow-hidden">
-                        <img src="/images/logo-dark.png"
-                             alt="NUSUK Gold"
-                             class="w-full"
-                             style="clip-path: inset(0 0 23% 0);" />
+                    <div class="w-56 mx-auto mb-4">
+                        <img src="/images/logo-company.png"
+                             alt="شركة صهيب الشاقدلي"
+                             class="w-full object-contain" />
                     </div>
                     <p class="text-gray-400 text-sm">نظام إدارة العمليات المالية</p>
                 </div>
@@ -86,7 +85,7 @@
 
             <!-- Footer -->
             <p class="text-center text-gray-500 text-xs mt-6">
-                NUSUK Gold © {{ new Date().getFullYear() }} — جميع الحقوق محفوظة
+                شركة صهيب الشاقدلي © {{ new Date().getFullYear() }} — جميع الحقوق محفوظة
             </p>
         </div>
     </div>

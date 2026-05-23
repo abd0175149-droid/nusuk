@@ -21,8 +21,7 @@
             <div class="flex items-center justify-between border-b py-4 px-4"
                  :class="isDark ? 'border-gold-900/30' : 'border-gray-200'">
                 <div class="w-40 overflow-hidden mx-auto">
-                    <img v-if="isDark" src="/images/logo-dark.png" alt="NUSUK" class="w-full" style="clip-path: inset(0 0 23% 0);"/>
-                    <img v-else src="/images/logo-light.png" alt="NUSUK" class="w-full object-contain"/>
+                    <img src="/images/logo-company.png" alt="شركة صهيب الشاقدلي" class="w-full object-contain"/>
                 </div>
                 <button v-if="isMobile" @click="sidebarOpen = false"
                         class="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-gray-100 transition-colors">
@@ -99,7 +98,7 @@
                     </button>
                     <h2 class="text-base sm:text-lg font-bold truncate"
                         :class="isDark ? 'text-gold-400' : 'text-gray-800'">
-                        <slot name="header">{{ $page.props.title || 'NUSUK' }}</slot>
+                        <slot name="header">{{ $page.props.title || 'شركة صهيب الشاقدلي' }}</slot>
                     </h2>
                 </div>
 
