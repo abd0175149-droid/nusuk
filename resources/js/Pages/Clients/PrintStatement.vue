@@ -4,14 +4,6 @@
             <button @click="doPrint" class="print-btn">🖨️ طباعة</button>
             <a href="/clients" class="back-btn">← العودة</a>
         </div>
-        <div class="no-print" style="padding:10px;background:#fef3c7;font-size:13px;font-family:monospace;direction:ltr;text-align:left;border-bottom:2px solid #f59e0b;">
-            <strong>🔍 DEBUG:</strong>
-            Client: {{ client?.name || 'NULL' }} |
-            Invoices: {{ invoices?.length ?? 'NULL' }} |
-            Receipts: {{ receipts?.length ?? 'NULL' }} |
-            Pages: {{ pages?.length ?? 'NULL' }} |
-            Summary: {{ JSON.stringify(summary) }}
-        </div>
 
         <div v-for="(page, pi) in pages" :key="pi" class="a4-landscape">
             <canvas v-if="templateUrl" :ref="el => setCanvas(el, pi)" class="pdf-bg"></canvas>
