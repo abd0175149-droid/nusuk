@@ -69,15 +69,21 @@ class ClientController extends Controller
         if ($from && $to) {
             $invoicesQuery->whereBetween('invoice_date', [$from, $to . ' 23:59:59']);
         }
-        $invoices = $invoicesQuery->with('items')
+        $invoices = $invoicesQuery->with(['items.violation.violationType'])
             ->orderBy('invoice_date')
             ->orderBy('id')
             ->get()
             ->map(function ($inv) {
-                // تجميع تفاصيل البنود
-                $details = $inv->items->map(fn ($item) =>
-                    $item->description . ' (×' . $item->quantity . ')'
-                )->join(' | ');
+                // تجميع تفاصيل البنود مع معلومات المخالفات الأصلية
+                $details = $inv->items->map(function ($item) {
+                    if ($item->item_type === 'violation' && $item->violation) {
+                        $v = $item->violation;
+                        $typeName = $v->violationType?->name ?? 'مخالفة';
+                        $passport = $v->passport_name ? " ({$v->passport_name})" : '';
+                        return "{$typeName}{$passport} - {$v->cost_sar} SAR";
+                    }
+                    return $item->description . ' (×' . $item->quantity . ')';
+                })->join(' | ');
 
                 // الفواتير بحالة editing تعتبر معكوسة (سالبة)
                 $isReversed = $inv->status === 'editing';
