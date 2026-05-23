@@ -63,32 +63,80 @@ class ClientController extends Controller
         $from = $request->from ?? now()->startOfMonth()->toDateString();
         $to = $request->to ?? now()->toDateString();
 
-        $entries = LedgerEntry::where('entity_type', 'client')
-            ->where('entity_id', $client->id)
-            ->whereBetween('entry_date', [$from, $to . ' 23:59:59'])
-            ->orderBy('entry_date')->orderBy('id')->get();
+        // 1. الفواتير المعتمدة والمعكوسة (editing) للعميل في الفترة
+        $invoices = \App\Models\Invoice::where('client_id', $client->id)
+            ->whereIn('status', ['approved', 'editing'])
+            ->whereBetween('invoice_date', [$from, $to])
+            ->with('items')
+            ->orderBy('invoice_date')
+            ->orderBy('id')
+            ->get()
+            ->map(function ($inv) {
+                // تجميع تفاصيل البنود
+                $details = $inv->items->map(fn ($item) =>
+                    $item->description . ' (×' . $item->quantity . ')'
+                )->join(' | ');
+
+                // الفواتير بحالة editing تعتبر معكوسة (سالبة)
+                $isReversed = $inv->status === 'editing';
+                $amount = $isReversed ? -1 * abs($inv->total_jod) : abs($inv->total_jod);
+
+                return [
+                    'id' => $inv->id,
+                    'date' => $inv->invoice_date->format('Y-m-d'),
+                    'invoice_number' => $inv->invoice_number,
+                    'details' => $details ?: 'بدون تفاصيل',
+                    'amount' => round($amount, 3),
+                    'is_reversed' => $isReversed,
+                ];
+            });
+
+        // 2. سندات القبض المعتمدة للعميل في الفترة
+        $receipts = \App\Models\Receipt::where('client_id', $client->id)
+            ->where('status', 'approved')
+            ->whereBetween('receipt_date', [$from, $to])
+            ->orderBy('receipt_date')
+            ->orderBy('id')
+            ->get()
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'date' => $r->receipt_date->format('Y-m-d'),
+                'receipt_number' => $r->receipt_number,
+                'details' => $r->notes ?: '—',
+                'payment_method' => match ($r->payment_method) {
+                    'cash' => 'نقداً',
+                    'bank' => 'بنك',
+                    'check' => 'شيك',
+                    default => $r->payment_method,
+                },
+                'amount' => round($r->amount_jod, 3),
+            ]);
+
+        // 3. الملخص
+        $totalInvoices = $invoices->sum('amount');
+        $totalReceipts = $receipts->sum('amount');
+        $balance = $totalInvoices - $totalReceipts;
 
         $summary = [
-            'total_debit' => $entries->sum('debit'),
-            'total_credit' => $entries->sum('credit'),
-            'opening_balance' => LedgerEntry::where('entity_type', 'client')
-                ->where('entity_id', $client->id)
-                ->where('entry_date', '<', $from)
-                ->orderByDesc('entry_date')->orderByDesc('id')
-                ->value('balance_after') ?? 0,
+            'invoices_count' => $invoices->count(),
+            'invoices_total' => round($totalInvoices, 3),
+            'receipts_count' => $receipts->count(),
+            'receipts_total' => round($totalReceipts, 3),
+            'balance' => round($balance, 3),
         ];
 
+        // Template & Layout
         $template = \App\Models\Setting::where('key', 'print_template_accounting')->first();
         $templateUrl = $template?->value ? \Illuminate\Support\Facades\Storage::url($template->value) : null;
         $layoutSetting = \App\Models\Setting::where('key', 'print_layout_statement')->first();
         $layout = $layoutSetting?->value ? json_decode($layoutSetting->value, true) : null;
 
-        return Inertia::render('Statements/Print', [
-            'entity' => $client,
-            'entries' => $entries,
+        return Inertia::render('Clients/PrintStatement', [
+            'client' => $client,
+            'invoices' => $invoices->values(),
+            'receipts' => $receipts->values(),
             'summary' => $summary,
             'filters' => ['from' => $from, 'to' => $to],
-            'type' => 'client',
             'templateUrl' => $templateUrl,
             'layout' => $layout,
         ]);
