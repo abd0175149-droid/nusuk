@@ -62,7 +62,7 @@
 
         <!-- POS Modal -->
         <div v-if="showPOS" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showPOS=false">
-            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl mx-4 p-6 max-h-[95vh] overflow-y-auto">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl mx-4 p-6 max-h-[95vh] overflow-y-auto" style="overflow: visible auto;">
                 <div class="flex items-center justify-between mb-5">
                     <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ editingInvoiceId ? '✏️ تعديل فاتورة' : '🧾 فاتورة مبيعات جديدة' }}</h3>
                     <button @click="showPOS=false" class="text-gray-400 dark:text-gray-500 hover:text-red-500 text-xl">&times;</button>
@@ -95,7 +95,7 @@
                         </div>
 
                         <!-- Items Table -->
-                        <div v-if="pos.items.length" class="overflow-x-auto">
+                        <div v-if="pos.items.length" style="overflow: visible;">
                             <table class="w-full text-xs">
                                 <thead><tr class="bg-gray-50 text-gray-500">
                                     <th class="px-3 py-2 text-right">النوع</th>

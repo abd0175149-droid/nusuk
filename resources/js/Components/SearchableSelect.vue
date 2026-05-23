@@ -19,19 +19,12 @@
     </button>
 
     <!-- القائمة المنسدلة -->
-    <Transition
-      enter-active-class="transition duration-150 ease-out"
-      enter-from-class="opacity-0 -translate-y-1"
-      enter-to-class="opacity-100 translate-y-0"
-      leave-active-class="transition duration-100 ease-in"
-      leave-from-class="opacity-100 translate-y-0"
-      leave-to-class="opacity-0 -translate-y-1"
-    >
+    <Teleport to="body">
       <div
         v-if="isOpen"
-        class="absolute w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden"
-        :class="dropUp ? 'bottom-full mb-1' : 'top-full mt-1'"
-        :style="{ zIndex: 9999 }"
+        ref="dropdownRef"
+        class="bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden"
+        :style="dropdownStyle"
       >
         <!-- حقل البحث -->
         <div class="p-2 border-b border-gray-100">
@@ -79,7 +72,7 @@
           </li>
         </ul>
       </div>
-    </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -102,6 +95,32 @@ const highlightedIndex = ref(0);
 const wrapper = ref(null);
 const searchInput = ref(null);
 const listRef = ref(null);
+const dropdownRef = ref(null);
+const dropdownPos = ref({ top: 0, left: 0, width: 0, openUp: false });
+
+// حساب موقع القائمة
+const dropdownStyle = computed(() => ({
+  position: 'fixed',
+  zIndex: 99999,
+  width: dropdownPos.value.width + 'px',
+  left: dropdownPos.value.left + 'px',
+  ...(dropdownPos.value.openUp
+    ? { bottom: (window.innerHeight - dropdownPos.value.top) + 'px' }
+    : { top: dropdownPos.value.top + 'px' }),
+}));
+
+function calcPosition() {
+  if (!wrapper.value) return;
+  const rect = wrapper.value.getBoundingClientRect();
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const openUp = props.dropUp || spaceBelow < 250;
+  dropdownPos.value = {
+    top: openUp ? rect.top : rect.bottom + 4,
+    left: rect.left,
+    width: rect.width,
+    openUp,
+  };
+}
 
 // الخيارات المفلترة
 const filteredOptions = computed(() => {
@@ -121,6 +140,7 @@ function toggle() {
 }
 
 function open() {
+  calcPosition();
   isOpen.value = true;
   search.value = '';
   highlightedIndex.value = 0;
@@ -168,7 +188,7 @@ function scrollToHighlighted() {
 
 // إغلاق عند النقر خارج المكوّن
 function handleClickOutside(e) {
-  if (wrapper.value && !wrapper.value.contains(e.target)) {
+  if (wrapper.value && !wrapper.value.contains(e.target) && (!dropdownRef.value || !dropdownRef.value.contains(e.target))) {
     close();
   }
 }
