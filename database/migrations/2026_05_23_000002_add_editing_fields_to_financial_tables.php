@@ -16,13 +16,16 @@ return new class extends Migration
 
     public function up(): void
     {
+        // SQLite لا يدعم ALTER TABLE ADD COLUMN مع FOREIGN KEY
+        // لذلك نضيف الأعمدة بدون foreign key constraint
         foreach ($this->tables as $table) {
-            Schema::table($table, function (Blueprint $t) {
-                $t->unsignedBigInteger('modified_by')->nullable()->after('approved_at');
-                $t->timestamp('modified_at')->nullable()->after('modified_by');
-                $t->json('original_values')->nullable()->after('modified_at');
-                $t->foreign('modified_by')->references('id')->on('users')->nullOnDelete();
-            });
+            if (!Schema::hasColumn($table, 'modified_by')) {
+                Schema::table($table, function (Blueprint $t) {
+                    $t->unsignedBigInteger('modified_by')->nullable();
+                    $t->datetime('modified_at')->nullable();
+                    $t->text('original_values')->nullable();
+                });
+            }
         }
 
         // إضافة صلاحيات التعديل بعد الاعتماد
@@ -49,8 +52,7 @@ return new class extends Migration
     public function down(): void
     {
         foreach ($this->tables as $table) {
-            Schema::table($table, function (Blueprint $t) use ($table) {
-                $t->dropForeign(["{$table}_modified_by_foreign"]);
+            Schema::table($table, function (Blueprint $t) {
                 $t->dropColumn(['modified_by', 'modified_at', 'original_values']);
             });
         }
