@@ -46,7 +46,7 @@
 
                 <!-- جدول البنود (يتكرر حسب الصفحة) -->
                 <div class="table-area" :style="elPos('items_table')">
-                    <table class="inv-table" :style="tableWidth">
+                    <table class="inv-table" :style="{ ...tableWidth, ...tableColors }">
                         <thead>
                             <tr>
                                 <th class="col-num">#</th>
@@ -73,9 +73,9 @@
                 <!-- الإجمالي (آخر صفحة فقط) -->
                 <template v-if="page.isLast">
                     <div class="total-box" :style="totalPos(page)">
-                        <div class="total-row">
+                        <div class="total-row" :style="elStyle('total')">
                             <span>الإجمالي:</span>
-                            <span class="mono bold total-amount" :style="elFont('total')">{{ fmt(invoice.total_jod) }} JOD</span>
+                            <span class="total-amount" :style="elFont('total')">{{ fmt(invoice.total_jod) }} JOD</span>
                         </div>
                     </div>
 
@@ -117,17 +117,36 @@ const rowsPerPage = computed(() => props.layout?.rowsPerPage || 10);
 
 const elPos = (id) => {
     const p = el(id);
-    return { position: 'absolute', right: p.x + 'mm', top: p.y + 'mm' };
+    return { position: 'absolute', right: p.x + 'mm', top: p.y + 'mm', width: p.w ? p.w + 'mm' : 'auto' };
 };
 
 const elFont = (id) => {
     const p = el(id);
-    return { fontSize: (p.fontSize || 10) + 'pt' };
+    return { fontSize: (p.fontSize || 10) + 'pt', color: p.color || undefined };
+};
+
+const elStyle = (id) => {
+    const p = el(id);
+    const s = {};
+    if (p.bgColor) s.background = p.bgColor;
+    if (p.color) s.color = p.color;
+    if (p.w) s.width = p.w + 'mm';
+    return s;
 };
 
 const tableWidth = computed(() => {
     const p = el('items_table');
     return p.w ? { width: p.w + 'mm' } : {};
+});
+
+const tableColors = computed(() => {
+    const p = el('items_table');
+    return {
+        '--th-bg': p.thBg || '#2c2417',
+        '--th-color': p.thColor || '#e8dcc8',
+        '--th-border': p.thBorder || '#b8960b',
+        '--td-even': p.tdEven || '#faf8f5',
+    };
 });
 
 // تقسيم البنود على صفحات
@@ -148,11 +167,11 @@ const pages = computed(() => {
 // موقع الإجمالي (أسفل الجدول في آخر صفحة)
 const totalPos = (page) => {
     const p = el('items_table');
-    const rowH = 7; // mm per row
+    const rowH = 7;
     const headerH = 8;
     const y = p.y + headerH + (page.items.length * rowH) + 4;
     const tp = el('total');
-    return { position: 'absolute', right: tp.x + 'mm', top: y + 'mm' };
+    return { position: 'absolute', right: tp.x + 'mm', top: y + 'mm', width: (tp.w || p.w || 190) + 'mm' };
 };
 
 const sigPos = (page) => {
@@ -235,41 +254,39 @@ const doPrint = () => window.print();
     border-spacing: 0;
     font-size: 8.5pt;
     font-family: 'Cairo', sans-serif;
-    border-radius: 6px;
+    border-radius: 4px;
     overflow: hidden;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
-/* Header */
+/* Header — ألوان ديناميكية عبر CSS variables */
 .inv-table th {
-    background: linear-gradient(135deg, #2c2417 0%, #3d3227 100%);
-    color: #e8dcc8;
-    padding: 6px 10px;
-    text-align: right;
+    background: var(--th-bg, #2c2417);
+    color: var(--th-color, #e8dcc8);
+    padding: 5px 8px;
+    text-align: center;
     font-weight: 700;
     font-size: 7.5pt;
     letter-spacing: 0.3px;
-    text-transform: uppercase;
     border: none;
-    border-bottom: 2px solid #b8960b;
+    border-bottom: 2px solid var(--th-border, #b8960b);
 }
-.inv-table th:first-child { border-radius: 0 6px 0 0; }
-.inv-table th:last-child { border-radius: 6px 0 0 0; }
+.inv-table th:first-child { border-radius: 0 4px 0 0; }
+.inv-table th:last-child { border-radius: 4px 0 0 0; }
 
 /* Rows */
 .inv-table td {
-    padding: 5px 10px;
+    padding: 4px 8px;
     font-size: 8pt;
     color: #3d3227;
+    text-align: center;
     border: none;
-    border-bottom: 1px solid #f0ece4;
-    transition: background 0.15s;
+    border-bottom: 1px solid #ede9e3;
 }
 .inv-table tbody tr:nth-child(odd) td { background: #ffffff; }
-.inv-table tbody tr:nth-child(even) td { background: #faf8f5; }
-.inv-table tbody tr:last-child td { border-bottom: 2px solid #e8dcc8; }
-.inv-table tbody tr:last-child td:first-child { border-radius: 0 0 6px 0; }
-.inv-table tbody tr:last-child td:last-child { border-radius: 0 0 0 6px; }
+.inv-table tbody tr:nth-child(even) td { background: var(--td-even, #faf8f5); }
+.inv-table tbody tr:last-child td { border-bottom: 1.5px solid #d4cec4; }
+.inv-table tbody tr:last-child td:first-child { border-radius: 0 0 4px 0; }
+.inv-table tbody tr:last-child td:last-child { border-radius: 0 0 0 4px; }
 
 /* Cell types */
 .inv-table .center { text-align: center; }
@@ -285,32 +302,25 @@ const doPrint = () => window.print();
 .col-price { width: 18%; }
 .col-total { width: 18%; }
 
-/* Row number badge */
-.inv-table td:first-child {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 7pt;
-    color: #a09585;
-    font-weight: 600;
-}
+.inv-table td:first-child { font-family: 'JetBrains Mono', monospace; font-size: 7pt; color: #a09585; font-weight: 600; }
 
 /* ═══════ الإجمالي ═══════ */
-.total-box { position: absolute; width: 100%; }
+.total-box { position: absolute; }
 .total-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 14px;
-    background: linear-gradient(135deg, #2c2417, #3d3227);
-    border: none;
-    border-radius: 6px;
+    padding: 6px 12px;
+    background: #f5f0e8;
+    border: 1.5px solid #d4c9a8;
+    border-radius: 4px;
     font-size: 11pt;
     font-weight: 900;
-    color: #e8dcc8;
+    color: #2c2417;
     font-family: 'Cairo', sans-serif;
-    box-shadow: 0 2px 8px rgba(44,36,23,0.15);
 }
 .total-amount {
-    color: #dbb84d;
+    color: #96722a;
     font-family: 'JetBrains Mono', monospace;
     font-size: 12pt;
     letter-spacing: 0.5px;

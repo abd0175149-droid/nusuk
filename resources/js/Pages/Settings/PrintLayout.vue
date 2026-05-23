@@ -41,20 +41,70 @@
                         <p class="text-[10px] text-gray-400">أو انقر + استخدم الأسهم</p>
                     </div>
                     <!-- تحكم دقيق -->
-                    <div v-if="selectedEl && positions[selectedEl]" class="border-t pt-2 space-y-2">
-                        <h5 class="text-xs font-bold text-gray-600">📐 تحكم دقيق</h5>
+                    <div v-if="selectedEl && positions[selectedEl]" class="border-t pt-3 space-y-2">
+                        <h5 class="text-xs font-bold text-gray-600">📐 الموقع</h5>
                         <div class="grid grid-cols-2 gap-2">
                             <div><label class="text-[10px] text-gray-500">X (mm)</label><input v-model.number="positions[selectedEl].x" type="number" step="0.5" class="w-full px-2 py-1 rounded border text-xs font-mono text-center" dir="ltr"/></div>
                             <div><label class="text-[10px] text-gray-500">Y (mm)</label><input v-model.number="positions[selectedEl].y" type="number" step="0.5" class="w-full px-2 py-1 rounded border text-xs font-mono text-center" dir="ltr"/></div>
                         </div>
-                        <div v-if="currentElements.find(e=>e.id===selectedEl)?.hasWidth">
-                            <label class="text-[10px] text-gray-500">العرض (mm)</label>
-                            <input v-model.number="positions[selectedEl].w" type="number" step="1" class="w-full px-2 py-1 rounded border text-xs font-mono text-center" dir="ltr"/>
+
+                        <h5 class="text-xs font-bold text-gray-600 mt-2">📏 الحجم</h5>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[10px] text-gray-500">العرض (mm)</label>
+                                <input v-model.number="positions[selectedEl].w" type="number" step="1" placeholder="تلقائي" class="w-full px-2 py-1 rounded border text-xs font-mono text-center" dir="ltr"/>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-500">حجم الخط (pt)</label>
+                                <input v-model.number="positions[selectedEl].fontSize" type="number" step="0.5" min="6" max="36" class="w-full px-2 py-1 rounded border text-xs font-mono text-center" dir="ltr"/>
+                            </div>
                         </div>
-                        <div>
-                            <label class="text-[10px] text-gray-500">حجم الخط (pt)</label>
-                            <input v-model.number="positions[selectedEl].fontSize" type="number" step="0.5" min="6" max="36" class="w-full px-2 py-1 rounded border text-xs font-mono text-center" dir="ltr"/>
+
+                        <h5 class="text-xs font-bold text-gray-600 mt-2">🎨 الألوان</h5>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[10px] text-gray-500">لون النص</label>
+                                <div class="flex items-center gap-1">
+                                    <input type="color" :value="positions[selectedEl].color || '#1a1715'" @input="positions[selectedEl].color = $event.target.value" class="w-7 h-7 rounded border cursor-pointer"/>
+                                    <input v-model="positions[selectedEl].color" placeholder="#1a1715" class="flex-1 px-1 py-1 rounded border text-[10px] font-mono" dir="ltr"/>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-500">لون الخلفية</label>
+                                <div class="flex items-center gap-1">
+                                    <input type="color" :value="positions[selectedEl].bgColor || '#ffffff'" @input="positions[selectedEl].bgColor = $event.target.value" class="w-7 h-7 rounded border cursor-pointer"/>
+                                    <input v-model="positions[selectedEl].bgColor" placeholder="شفاف" class="flex-1 px-1 py-1 rounded border text-[10px] font-mono" dir="ltr"/>
+                                </div>
+                            </div>
                         </div>
+                        <button @click="positions[selectedEl].color = ''; positions[selectedEl].bgColor = ''" class="text-[10px] text-gray-400 hover:text-red-500">🗑️ مسح الألوان</button>
+
+                        <!-- ألوان الجدول (تظهر فقط للجدول) -->
+                        <template v-if="selectedEl === 'items_table'">
+                            <h5 class="text-xs font-bold text-purple-600 mt-2">🎨 ألوان الجدول</h5>
+                            <div class="space-y-1.5">
+                                <div class="flex items-center gap-2">
+                                    <input type="color" :value="positions[selectedEl].thBg || '#2c2417'" @input="positions[selectedEl].thBg = $event.target.value" class="w-6 h-6 rounded cursor-pointer"/>
+                                    <span class="text-[10px] text-gray-500 flex-1">خلفية الرأس</span>
+                                    <input v-model="positions[selectedEl].thBg" placeholder="#2c2417" class="w-20 px-1 py-0.5 rounded border text-[10px] font-mono" dir="ltr"/>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" :value="positions[selectedEl].thColor || '#e8dcc8'" @input="positions[selectedEl].thColor = $event.target.value" class="w-6 h-6 rounded cursor-pointer"/>
+                                    <span class="text-[10px] text-gray-500 flex-1">نص الرأس</span>
+                                    <input v-model="positions[selectedEl].thColor" placeholder="#e8dcc8" class="w-20 px-1 py-0.5 rounded border text-[10px] font-mono" dir="ltr"/>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" :value="positions[selectedEl].thBorder || '#b8960b'" @input="positions[selectedEl].thBorder = $event.target.value" class="w-6 h-6 rounded cursor-pointer"/>
+                                    <span class="text-[10px] text-gray-500 flex-1">خط الرأس</span>
+                                    <input v-model="positions[selectedEl].thBorder" placeholder="#b8960b" class="w-20 px-1 py-0.5 rounded border text-[10px] font-mono" dir="ltr"/>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" :value="positions[selectedEl].tdEven || '#faf8f5'" @input="positions[selectedEl].tdEven = $event.target.value" class="w-6 h-6 rounded cursor-pointer"/>
+                                    <span class="text-[10px] text-gray-500 flex-1">صف زوجي</span>
+                                    <input v-model="positions[selectedEl].tdEven" placeholder="#faf8f5" class="w-20 px-1 py-0.5 rounded border text-[10px] font-mono" dir="ltr"/>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                 </div>
 
@@ -118,7 +168,7 @@ const elementsByType = {
         { id: 'status', label: 'الحالة', icon: '🏷️', preview: 'معتمدة', defaultFontSize: 10 },
         { id: 'client_name', label: 'اسم العميل', icon: '👤', preview: 'اسم العميل', defaultFontSize: 12 },
         { id: 'items_table', label: 'جدول البنود', icon: '📊', preview: '# | الخدمة | الوصف | الكمية | السعر | الإجمالي', defaultFontSize: 9, hasWidth: true },
-        { id: 'total', label: 'الإجمالي', icon: '💰', preview: 'الإجمالي: 000.000 JOD', defaultFontSize: 13 },
+        { id: 'total', label: 'الإجمالي', icon: '💰', preview: 'الإجمالي: 000.000 JOD', defaultFontSize: 13, hasWidth: true },
         { id: 'signatures', label: 'التوقيعات', icon: '✍️', preview: 'المحاسب | المدير | العميل', defaultFontSize: 9, hasWidth: true },
     ],
     transfer: [
@@ -155,7 +205,7 @@ const defaultPositions = {
         status: { x: 150, y: 45, fontSize: 10 },
         client_name: { x: 10, y: 58, fontSize: 12 },
         items_table: { x: 10, y: 72, fontSize: 9, w: 190 },
-        total: { x: 10, y: 200, fontSize: 13 },
+        total: { x: 10, y: 200, fontSize: 13, w: 190 },
         signatures: { x: 10, y: 250, fontSize: 9, w: 190 },
     },
     transfer: {
