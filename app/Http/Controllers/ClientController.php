@@ -67,7 +67,7 @@ class ClientController extends Controller
         $invoicesQuery = \App\Models\Invoice::where('client_id', $client->id)
             ->whereIn('status', ['approved', 'editing']);
         if ($from && $to) {
-            $invoicesQuery->whereBetween('invoice_date', [$from, $to]);
+            $invoicesQuery->whereBetween('invoice_date', [$from, $to . ' 23:59:59']);
         }
         $invoices = $invoicesQuery->with('items')
             ->orderBy('invoice_date')
@@ -97,7 +97,7 @@ class ClientController extends Controller
         $receiptsQuery = \App\Models\Receipt::where('client_id', $client->id)
             ->where('status', 'approved');
         if ($from && $to) {
-            $receiptsQuery->whereBetween('receipt_date', [$from, $to]);
+            $receiptsQuery->whereBetween('receipt_date', [$from, $to . ' 23:59:59']);
         }
         $receipts = $receiptsQuery->orderBy('receipt_date')
             ->orderBy('id')
