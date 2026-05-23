@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Expense extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasApproval;
 
     protected $fillable = [
         'expense_number', 'category_id', 'description', 'amount',

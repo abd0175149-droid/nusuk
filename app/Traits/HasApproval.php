@@ -66,12 +66,18 @@ trait HasApproval
      */
     public function startEditing(User $modifier): void
     {
-        $this->update([
+        $updateData = [
             'status' => 'editing',
             'modified_by' => $modifier->id,
             'modified_at' => now(),
-            'original_values' => $this->getOriginal(),
-        ]);
+        ];
+
+        // حفظ القيم الأصلية كـ JSON إذا كان العمود موجوداً
+        if (\Schema::hasColumn($this->getTable(), 'original_values')) {
+            $updateData['original_values'] = json_encode($this->getOriginal());
+        }
+
+        $this->update($updateData);
     }
 
     /**

@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Violation extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasApproval;
 
     protected $fillable = [
         'violation_number', 'agent_id', 'client_id', 'violation_type_id',

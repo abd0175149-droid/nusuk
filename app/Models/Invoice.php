@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Invoice extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasApproval;
 
     protected $fillable = [
         'invoice_number', 'agent_id', 'client_id', 'exchange_rate_snapshot',
