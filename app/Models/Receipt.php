@@ -4,14 +4,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Receipt extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'receipt_number', 'client_id', 'amount_jod', 'payment_method',
         'reference_number', 'receipt_date', 'bank_name', 'check_date',
         'notes', 'status', 'rejection_reason',
         'created_by', 'approved_by', 'approved_at',
+        'modified_by', 'modified_at', 'original_values',
     ];
 
     protected $casts = [
@@ -19,6 +23,8 @@ class Receipt extends Model
         'receipt_date' => 'date',
         'check_date' => 'date',
         'approved_at' => 'datetime',
+        'modified_at' => 'datetime',
+        'original_values' => 'array',
     ];
 
     public function client(): BelongsTo

@@ -4,22 +4,31 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Transfer extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'transfer_number', 'agent_id', 'amount_sar', 'cost_jod',
         'exchange_rate', 'payment_method', 'reference_number',
         'transfer_date', 'notes', 'status', 'rejection_reason',
         'created_by', 'approved_by', 'approved_at',
+        'modified_by', 'modified_at', 'original_values',
+        'difference_amount', 'difference_type',
+        'expense_id', 'expense_category_id', 'revenue_account_id',
     ];
 
     protected $casts = [
         'amount_sar' => 'decimal:2',
         'cost_jod' => 'decimal:3',
         'exchange_rate' => 'decimal:6',
+        'difference_amount' => 'decimal:3',
         'transfer_date' => 'date',
         'approved_at' => 'datetime',
+        'modified_at' => 'datetime',
+        'original_values' => 'array',
     ];
 
     public function agent(): BelongsTo

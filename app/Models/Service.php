@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Service extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'name', 'code', 'default_price_sar',
         'default_price_jod', 'description', 'is_active', 'account_id',

@@ -10,7 +10,7 @@
                 <div class="flex items-center gap-3 flex-wrap">
                     <input v-model="search" type="text" placeholder="بحث بالرقم أو الوكيل أو العميل..." class="w-64 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500" @input="debounceSearch"/>
                     <select v-model="statusFilter" class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm" @change="applyFilter">
-                        <option value="">كل الحالات</option><option value="pending">معلقة</option><option value="approved">معتمدة</option><option value="rejected">مرفوضة</option>
+                        <option value="">كل الحالات</option><option value="pending">معلقة</option><option value="approved">معتمدة</option><option value="rejected">مرفوضة</option><option value="editing">تحت التعديل</option>
                     </select>
                 </div>
                 <button v-if="can('invoices.create')" @click="openPOS()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-gold-500 to-gold-400 shadow-md hover:shadow-gold-500/25">🧾 فاتورة جديدة</button>
@@ -40,7 +40,7 @@
                             <td class="px-4 py-3 text-right text-xs">{{ inv.client?.name||'—' }}</td>
                             <td class="px-4 py-3 text-right font-bold font-mono text-xs" dir="ltr">{{ Number(inv.total_sar).toLocaleString('en',{minimumFractionDigits:2}) }}</td>
                             <td class="px-4 py-3 text-right font-bold font-mono text-xs text-blue-600" dir="ltr">{{ Number(inv.total_jod).toLocaleString('en',{minimumFractionDigits:3}) }}</td>
-                            <td class="px-4 py-3 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="{'bg-yellow-100 text-yellow-700':inv.status==='pending','bg-green-100 text-green-700':inv.status==='approved','bg-red-100 text-red-700':inv.status==='rejected'}">{{ {pending:'معلقة',approved:'معتمدة',rejected:'مرفوضة'}[inv.status] }}</span></td>
+                            <td class="px-4 py-3 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="{'bg-yellow-100 text-yellow-700':inv.status==='pending','bg-green-100 text-green-700':inv.status==='approved','bg-red-100 text-red-700':inv.status==='rejected','bg-blue-100 text-blue-700':inv.status==='editing'}">{{ {pending:'معلقة',approved:'معتمدة',rejected:'مرفوضة',editing:'تحت التعديل'}[inv.status] }}</span></td>
                             <td class="px-4 py-3 text-right text-xs text-gray-500"><div>📝 {{ inv.creator?.name || '—' }}</div><div v-if="inv.status !== 'pending'" class="mt-0.5">{{ inv.status === 'approved' ? '✅' : '❌' }} {{ inv.approver?.name || '—' }}</div></td>
                             <td class="px-4 py-3 text-right font-mono text-xs text-gray-500" dir="ltr">{{ inv.invoice_date?.split('T')[0] }}</td>
                             <td class="px-4 py-3 text-center whitespace-nowrap">
@@ -49,6 +49,7 @@
                                 <button v-if="inv.status==='pending' && can('invoices.approve')" @click="approveInv(inv)" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg">✅</button>
                                 <button v-if="inv.status==='pending' && can('invoices.reject')" @click="rejectInv(inv)" class="px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 rounded-lg">❌</button>
                                 <button v-if="inv.status!=='approved' && can('invoices.delete')" @click="delInv(inv)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button>
+                                <button v-if="inv.status==='approved' && can('invoices.edit_approved')" @click="startEditInv(inv)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg">✏️ تعديل</button>
                             </td>
                         </tr>
                         <tr v-if="!invoices.data?.length"><td colspan="9" class="px-5 py-12 text-center text-gray-400">لا يوجد فواتير</td></tr>
@@ -296,6 +297,7 @@ const submitPOS = () => {
 const viewInv = (inv) => { viewTarget.value = inv; };
 const approveInv = (inv) => { if(confirm('اعتماد الفاتورة وتحديث الأرصدة؟')) router.post('/invoices/'+inv.id+'/approve',{},{preserveScroll:true}); };
 const rejectInv = (inv) => { const r=prompt('سبب الرفض:'); if(r!==null) router.post('/invoices/'+inv.id+'/reject',{reason:r},{preserveScroll:true}); };
+const startEditInv = (inv) => { if(confirm('تعديل الفاتورة المعتمدة؟ سيتم عكس الأثر المالي.')) router.post('/invoices/'+inv.id+'/start-edit',{},{preserveScroll:true}); };
 const delInv = (inv) => { deleteTarget.value = inv; };
 const debounceSearch = () => { clearTimeout(t); t=setTimeout(()=>applyFilter(),400); };
 const applyFilter = () => { router.get('/invoices',{search:search.value,status:statusFilter.value},{preserveState:true,replace:true}); };

@@ -111,6 +111,57 @@ class ViolationController extends Controller
         return back()->with('success', 'تم رفض المخالفة');
     }
 
+    /**
+     * بدء تعديل مخالفة معتمدة
+     */
+    public function startEdit(Violation $violation)
+    {
+        if (!$violation->isApproved()) {
+            return back()->with('error', 'يمكن تعديل المخالفات المعتمدة فقط');
+        }
+
+        DB::transaction(function () use ($violation) {
+            // عكس خصم الوكيل
+            BalanceService::reverseAgentDebit($violation->agent, $violation->cost_sar, 'violation', $violation->id);
+            // عكس القيد المحاسبي
+            $entry = \App\Models\JournalEntry::where('reference_type', 'violation')
+                ->where('reference_id', $violation->id)->where('is_reversed', false)->first();
+            if ($entry) try { \App\Services\AccountingService::reverseEntry($entry, 'تعديل المخالفة'); } catch (\Exception $e) {}
+
+            $violation->startEditing(auth()->user());
+            AuditLog::log('start_edit', 'violation', $violation->id, $violation->violation_number);
+        });
+
+        return back()->with('success', "تم فتح المخالفة {$violation->violation_number} للتعديل");
+    }
+
+    /**
+     * تحديث مخالفة بعد الاعتماد
+     */
+    public function updateApproved(Request $request, Violation $violation)
+    {
+        if (!$violation->isEditing()) {
+            return back()->with('error', 'هذه المخالفة ليست في وضع التعديل');
+        }
+
+        $validated = $request->validate([
+            'agent_id' => 'required|exists:agents,id',
+            'client_id' => 'required|exists:clients,id',
+            'violation_type_id' => 'required|exists:violation_types,id',
+            'passport_number' => 'nullable|string|max:50',
+            'passport_name' => 'nullable|string|max:255',
+            'cost_sar' => 'required|numeric|min:0.01',
+            'violation_date' => 'required|date',
+            'description' => 'nullable|string|max:1000',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $violation->update($validated);
+        $violation->resubmitForApproval();
+
+        return back()->with('success', "تم تعديل المخالفة وإرسالها للاعتماد");
+    }
+
     public function destroy(Violation $violation)
     {
         if ($violation->status !== 'pending') {

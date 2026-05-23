@@ -40,6 +40,7 @@
                         <th class="px-4 py-3 text-right font-bold">مدين</th>
                         <th class="px-4 py-3 text-right font-bold">دائن</th>
                         <th class="px-4 py-3 text-right font-bold">الرصيد</th>
+                        <th class="px-4 py-3 text-center font-bold">إجراءات</th>
                     </tr></thead>
                     <tbody>
                         <tr v-for="e in entries" :key="e.id" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
@@ -49,8 +50,12 @@
                             <td class="px-4 py-3 text-right font-mono text-xs" dir="ltr" :class="parseFloat(e.debit)>0?'text-red-500 font-bold':'text-gray-300 dark:text-gray-600'">{{ parseFloat(e.debit)>0?Number(e.debit).toFixed(2):'—' }}</td>
                             <td class="px-4 py-3 text-right font-mono text-xs" dir="ltr" :class="parseFloat(e.credit)>0?'text-green-500 font-bold':'text-gray-300 dark:text-gray-600'">{{ parseFloat(e.credit)>0?Number(e.credit).toFixed(2):'—' }}</td>
                             <td class="px-4 py-3 text-right font-mono text-xs font-bold" dir="ltr" :class="parseFloat(e.balance_after)>=0?'text-green-500':'text-red-500'">{{ Number(e.balance_after).toFixed(2) }}</td>
+                            <td class="px-4 py-3 text-center whitespace-nowrap">
+                                <a v-if="printUrl(e)" :href="printUrl(e)" target="_blank" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg">🖨️</a>
+                                <span v-else class="text-xs text-gray-300">—</span>
+                            </td>
                         </tr>
-                        <tr v-if="!entries?.length"><td colspan="6" class="px-5 py-12 text-center text-gray-400">لا يوجد حركات في هذه الفترة</td></tr>
+                        <tr v-if="!entries?.length"><td colspan="7" class="px-5 py-12 text-center text-gray-400">لا يوجد حركات في هذه الفترة</td></tr>
                     </tbody>
                 </table>
                 </div>
@@ -68,7 +73,16 @@ const to = ref(props.filters?.to||'');
 const fmt = (v) => Number(v||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
 const applyFilter = () => { router.get('/agents/'+props.agent.id,{from:from.value,to:to.value},{preserveState:true,replace:true}); };
 const typeLabel = (t) => ({transfer:'حوالة',violation:'مخالفة',invoice:'فاتورة',receipt:'سند قبض',expense:'مصروف'}[t]||t);
-const typeClass = (t) => ({transfer:'bg-green-500/20 text-green-400',violation:'bg-red-500/20 text-red-400',invoice:'bg-blue-500/20 text-blue-400',receipt:'bg-purple-500/20 text-purple-400',expense:'bg-amber-500/20 text-amber-400'}[t]||'bg-gray-500/20 text-gray-400');
+const typeClass = (t) => ({transfer:'bg-green-500/20 text-green-400',violation:'bg-red-500/20 text-red-400',invoice:'bg-blue-500/20 text-blue-400',receipt:'bg-purple-500/20 text-purple-400',expense:'bg-amber-500/20 text-amber-400',reversal:'bg-gray-500/20 text-gray-400'}[t]||'bg-gray-500/20 text-gray-400');
+const printUrl = (e) => {
+    const urls = {
+        transfer: `/transfers/${e.transaction_id}/print`,
+        invoice: `/invoices/${e.transaction_id}/print`,
+        receipt: `/receipts/${e.transaction_id}/print`,
+        expense: `/expenses/${e.transaction_id}/print`,
+    };
+    return e.transaction_id ? (urls[e.transaction_type] || null) : null;
+};
 </script>
 <style scoped>
 .dash-card { background:white; border:1px solid #e5e7eb; border-radius:1rem; box-shadow:0 1px 2px 0 rgb(0 0 0/0.05); }

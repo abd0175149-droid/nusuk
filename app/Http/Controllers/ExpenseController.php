@@ -92,6 +92,64 @@ class ExpenseController extends Controller
         return back()->with('success', 'تم رفض المصروف');
     }
 
+    /**
+     * بدء تعديل مصروف معتمد
+     */
+    public function startEdit(Expense $expense)
+    {
+        if ($expense->status !== 'approved') {
+            return back()->with('error', 'يمكن تعديل المصاريف المعتمدة فقط');
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($expense) {
+            // عكس القيد المحاسبي
+            $entry = \App\Models\JournalEntry::where('reference_type', 'expense')
+                ->where('reference_id', $expense->id)->where('is_reversed', false)->first();
+            if ($entry) try { \App\Services\AccountingService::reverseEntry($entry, 'تعديل المصروف'); } catch (\Exception $e) {}
+
+            $expense->update([
+                'status' => 'editing',
+                'modified_by' => auth()->id(),
+                'modified_at' => now(),
+                'original_values' => $expense->getOriginal(),
+            ]);
+
+            \App\Models\AuditLog::log('start_edit', 'expense', $expense->id, $expense->expense_number);
+        });
+
+        return back()->with('success', "تم فتح المصروف {$expense->expense_number} للتعديل");
+    }
+
+    /**
+     * تحديث مصروف بعد الاعتماد
+     */
+    public function updateApproved(Request $request, Expense $expense)
+    {
+        if ($expense->status !== 'editing') {
+            return back()->with('error', 'هذا المصروف ليس في وضع التعديل');
+        }
+
+        $validated = $request->validate([
+            'category_id' => 'required|exists:expense_categories,id',
+            'description' => 'required|string|max:500',
+            'amount' => 'required|numeric|min:0.01',
+            'currency' => 'required|in:SAR,JOD',
+            'payment_method' => 'required|in:cash,bank,check',
+            'expense_date' => 'nullable|date',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $expense->update($validated);
+        $expense->update([
+            'status' => 'pending',
+            'approved_by' => null,
+            'approved_at' => null,
+            'rejection_reason' => null,
+        ]);
+
+        return back()->with('success', "تم تعديل المصروف وإرساله للاعتماد");
+    }
+
     public function destroy(Expense $expense)
     {
         if ($expense->status !== 'pending') {

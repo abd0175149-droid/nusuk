@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Agent extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'name', 'code', 'phone', 'email', 'address',
         'city', 'country', 'currency', 'balance_sar', 'notes',

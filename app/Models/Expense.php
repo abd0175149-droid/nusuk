@@ -4,20 +4,26 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Expense extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'expense_number', 'category_id', 'description', 'amount',
         'currency', 'expense_date', 'payment_method', 'reference_number',
         'notes', 'status', 'rejection_reason',
         'created_by', 'approved_by', 'approved_at',
+        'modified_by', 'modified_at', 'original_values',
     ];
 
     protected $casts = [
         'amount' => 'decimal:3',
         'expense_date' => 'date',
         'approved_at' => 'datetime',
+        'modified_at' => 'datetime',
+        'original_values' => 'array',
     ];
 
     public function category(): BelongsTo

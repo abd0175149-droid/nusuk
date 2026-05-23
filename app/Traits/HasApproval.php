@@ -7,6 +7,7 @@ use App\Models\User;
 /**
  * HasApproval Trait
  * يُضاف للموديلات التي تحتاج نظام اعتماد (Maker-Checker)
+ * يدعم: pending → approved → editing → pending (دورة تعديل بعد الاعتماد)
  */
 trait HasApproval
 {
@@ -25,9 +26,19 @@ trait HasApproval
         return $query->where('status', 'rejected');
     }
 
+    public function scopeEditing($query)
+    {
+        return $query->where('status', 'editing');
+    }
+
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function modifier()
+    {
+        return $this->belongsTo(User::class, 'modified_by');
     }
 
     public function approve(User $approver): void
@@ -49,6 +60,33 @@ trait HasApproval
         ]);
     }
 
+    /**
+     * بدء التعديل بعد الاعتماد
+     * يحفظ القيم الأصلية ويغير الحالة إلى editing
+     */
+    public function startEditing(User $modifier): void
+    {
+        $this->update([
+            'status' => 'editing',
+            'modified_by' => $modifier->id,
+            'modified_at' => now(),
+            'original_values' => $this->getOriginal(),
+        ]);
+    }
+
+    /**
+     * إعادة تقديم للاعتماد بعد التعديل
+     */
+    public function resubmitForApproval(): void
+    {
+        $this->update([
+            'status' => 'pending',
+            'approved_by' => null,
+            'approved_at' => null,
+            'rejection_reason' => null,
+        ]);
+    }
+
     public function isPending(): bool
     {
         return $this->status === 'pending';
@@ -62,5 +100,18 @@ trait HasApproval
     public function isRejected(): bool
     {
         return $this->status === 'rejected';
+    }
+
+    public function isEditing(): bool
+    {
+        return $this->status === 'editing';
+    }
+
+    /**
+     * هل يمكن تعديل هذه العملية؟
+     */
+    public function canBeEdited(): bool
+    {
+        return $this->isApproved();
     }
 }

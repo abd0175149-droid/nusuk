@@ -92,6 +92,55 @@ class ReceiptController extends Controller
         return back()->with('success', 'تم رفض سند القبض');
     }
 
+    /**
+     * بدء تعديل سند قبض معتمد
+     */
+    public function startEdit(Receipt $receipt)
+    {
+        if (!$receipt->isApproved()) {
+            return back()->with('error', 'يمكن تعديل السندات المعتمدة فقط');
+        }
+
+        DB::transaction(function () use ($receipt) {
+            // عكس تسديد ذمة العميل
+            BalanceService::reverseClientCredit($receipt->client, $receipt->amount_jod, 'receipt', $receipt->id);
+            // عكس القيد المحاسبي
+            $entry = \App\Models\JournalEntry::where('reference_type', 'receipt')
+                ->where('reference_id', $receipt->id)->where('is_reversed', false)->first();
+            if ($entry) try { AccountingService::reverseEntry($entry, 'تعديل سند القبض'); } catch (\Exception $e) {}
+
+            $receipt->startEditing(auth()->user());
+            \App\Models\AuditLog::log('start_edit', 'receipt', $receipt->id, $receipt->receipt_number);
+        });
+
+        return back()->with('success', "تم فتح سند القبض {$receipt->receipt_number} للتعديل");
+    }
+
+    /**
+     * تحديث سند قبض بعد الاعتماد
+     */
+    public function updateApproved(Request $request, Receipt $receipt)
+    {
+        if (!$receipt->isEditing()) {
+            return back()->with('error', 'هذا السند ليس في وضع التعديل');
+        }
+
+        $validated = $request->validate([
+            'client_id' => 'required|exists:clients,id',
+            'amount_jod' => 'required|numeric|min:0.001',
+            'payment_method' => 'required|in:cash,bank,check',
+            'check_number' => 'nullable|string|max:50',
+            'check_date' => 'nullable|date',
+            'check_bank' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $receipt->update($validated);
+        $receipt->resubmitForApproval();
+
+        return back()->with('success', "تم تعديل سند القبض وإرساله للاعتماد");
+    }
+
     public function destroy(Receipt $receipt)
     {
         if (!$receipt->isPending()) {

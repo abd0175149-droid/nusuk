@@ -37,13 +37,14 @@
                         <td class="px-4 py-3 text-right text-xs">{{ v.violation_type?.name||'—' }}</td>
                         <td class="px-4 py-3 text-right font-mono text-xs" dir="ltr">{{ v.passport_number||'—' }}</td>
                         <td class="px-4 py-3 text-right font-bold font-mono text-xs text-red-600" dir="ltr">{{ Number(v.cost_sar).toLocaleString('en',{minimumFractionDigits:2}) }} SAR</td>
-                        <td class="px-4 py-3 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="{'bg-yellow-100 text-yellow-700':v.status==='pending','bg-green-100 text-green-700':v.status==='approved','bg-red-100 text-red-700':v.status==='rejected'}">{{ {pending:'معلقة',approved:'معتمدة',rejected:'مرفوضة'}[v.status] }}</span></td>
+                        <td class="px-4 py-3 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="{'bg-yellow-100 text-yellow-700':v.status==='pending','bg-green-100 text-green-700':v.status==='approved','bg-red-100 text-red-700':v.status==='rejected','bg-blue-100 text-blue-700':v.status==='editing'}">{{ {pending:'معلقة',approved:'معتمدة',rejected:'مرفوضة',editing:'تحت التعديل'}[v.status] }}</span></td>
                         <td class="px-4 py-3 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="v.billing_status==='billed'?'bg-blue-100 text-blue-700':'bg-gray-100 text-gray-600'">{{ v.billing_status==='billed'?'مفوترة':'غير مفوترة' }}</span></td>
                         <td class="px-4 py-3 text-right text-xs text-gray-500"><div>📝 {{ v.creator?.name || '—' }}</div><div v-if="v.status !== 'pending'" class="mt-0.5">{{ v.status === 'approved' ? '✅' : '❌' }} {{ v.approver?.name || '—' }}</div></td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             <button v-if="v.status==='pending' && can('violations.approve')" @click="approveVio(v)" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg">✅</button>
                             <button v-if="v.status==='pending' && can('violations.reject')" @click="rejectVio(v)" class="px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 rounded-lg">❌</button>
                             <button v-if="v.status==='pending' && can('violations.delete')" @click="del(v)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button>
+                            <button v-if="v.status==='approved' && can('violations.edit_approved')" @click="router.post('/violations/'+v.id+'/start-edit')" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg">✏️ تعديل</button>
                         </td>
                     </tr>
                     <tr v-if="!violations.data?.length"><td colspan="10" class="px-5 py-12 text-center text-gray-400">لا يوجد مخالفات</td></tr>

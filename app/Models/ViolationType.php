@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ViolationType extends Model
 {
+    use SoftDeletes;
     protected $fillable = ['name', 'code', 'default_cost_sar', 'description', 'is_active', 'account_id'];
 
     protected $casts = [

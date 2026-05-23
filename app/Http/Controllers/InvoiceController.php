@@ -12,6 +12,7 @@ use App\Models\ExchangeRate;
 use App\Models\AuditLog;
 use App\Services\BalanceService;
 use App\Services\NumberingService;
+use App\Services\AccountingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -174,17 +175,27 @@ class InvoiceController extends Controller
                 );
             }
 
-            // إغلاق المخالفات المضمنة
+            // إغلاق المخالفات المضمنة + عكس قيودها المحاسبية
             $violationIds = $invoice->violationItems()->pluck('violation_id')->filter();
             if ($violationIds->count()) {
                 Violation::whereIn('id', $violationIds)->update([
                     'billing_status' => 'billed',
                     'invoice_id' => $invoice->id,
                 ]);
+
+                // عكس قيود مصاريف المخالفات (لم تعد مصاريف مستقلة)
+                $violations = Violation::whereIn('id', $violationIds)->get();
+                foreach ($violations as $violation) {
+                    try {
+                        AccountingService::reverseViolationExpense($violation);
+                    } catch (\Exception $e) {
+                        \Log::error("Reverse Violation Expense #{$violation->id}: " . $e->getMessage());
+                    }
+                }
             }
 
             // قيد محاسبي
-            try { \App\Services\AccountingService::recordInvoice($invoice); } catch (\Exception $e) { \Log::error('Accounting Invoice: ' . $e->getMessage()); }
+            try { AccountingService::recordInvoice($invoice); } catch (\Exception $e) { \Log::error('Accounting Invoice: ' . $e->getMessage()); }
 
             // إشعار لصانع الفاتورة أنه تم الاعتماد
             if ($invoice->created_by && $invoice->created_by !== auth()->id()) {
@@ -211,6 +222,41 @@ class InvoiceController extends Controller
         try { \App\Services\NotificationService::operationRejected($invoice, 'فاتورة', $invoice->invoice_number); } catch (\Exception $e) {}
 
         return back()->with('success', 'تم رفض الفاتورة');
+    }
+
+    /**
+     * بدء تعديل فاتورة معتمدة
+     */
+    public function startEdit(Invoice $invoice)
+    {
+        if (!$invoice->isApproved()) {
+            return back()->with('error', 'يمكن تعديل الفواتير المعتمدة فقط');
+        }
+
+        DB::transaction(function () use ($invoice) {
+            // عكس خصم الوكيل (الخدمات)
+            if ($invoice->services_cost_sar > 0) {
+                BalanceService::reverseAgentDebit($invoice->agent, $invoice->services_cost_sar, 'invoice', $invoice->id);
+            }
+            // عكس ذمة العميل
+            if ($invoice->total_jod > 0) {
+                BalanceService::reverseClientDebit($invoice->client, $invoice->total_jod, 'invoice', $invoice->id);
+            }
+            // عكس القيد المحاسبي
+            $entry = \App\Models\JournalEntry::where('reference_type', 'invoice')
+                ->where('reference_id', $invoice->id)->where('is_reversed', false)->first();
+            if ($entry) try { AccountingService::reverseEntry($entry, 'تعديل الفاتورة'); } catch (\Exception $e) {}
+
+            // إعادة المخالفات لحالة unbilled
+            Violation::where('invoice_id', $invoice->id)->update([
+                'billing_status' => 'unbilled', 'invoice_id' => null
+            ]);
+
+            $invoice->startEditing(auth()->user());
+            AuditLog::log('start_edit', 'invoice', $invoice->id, $invoice->invoice_number);
+        });
+
+        return back()->with('success', "تم فتح الفاتورة {$invoice->invoice_number} للتعديل");
     }
 
     public function destroy(Invoice $invoice)

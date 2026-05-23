@@ -559,6 +559,94 @@ class AccountingService
         );
     }
 
+    /**
+     * عكس قيد مصاريف المخالفة عند فوترتها
+     * (المخالفة أصبحت جزء من الفاتورة وليست مصروف مستقل)
+     */
+    public static function reverseViolationExpense(Violation $violation): ?JournalEntry
+    {
+        // البحث عن القيد الأصلي للمخالفة
+        $originalEntry = JournalEntry::where('reference_type', 'violation')
+            ->where('reference_id', $violation->id)
+            ->where('is_reversed', false)
+            ->first();
+
+        if (!$originalEntry) {
+            return null; // لا يوجد قيد لعكسه
+        }
+
+        return self::reverseEntry($originalEntry, "إلغاء مصروف المخالفة بسبب فوترتها في فاتورة");
+    }
+
+    /**
+     * تسجيل فرق الحوالة كمصروف أو إيراد
+     * الفرق = cost_jod - (amount_sar / 0.19)
+     */
+    public static function recordTransferDifference(Transfer $transfer): ?JournalEntry
+    {
+        $difference = (float) $transfer->difference_amount;
+        if ($difference == 0) return null;
+
+        $paymentAccount = self::paymentAccount($transfer->payment_method);
+
+        if ($transfer->difference_type === 'expense') {
+            // فرق مصروف: مدين حساب المصاريف / دائن الصندوق
+            $expenseAccountId = null;
+            if ($transfer->expense_category_id) {
+                $cat = \App\Models\ExpenseCategory::find($transfer->expense_category_id);
+                $expenseAccountId = $cat && $cat->account_id
+                    ? $cat->account_id
+                    : self::account('5100')->id;
+            } else {
+                $expenseAccountId = self::account('5100')->id;
+            }
+
+            return self::createEntry(
+                "فرق حوالة {$transfer->transfer_number} (مصروف)",
+                'transfer_difference',
+                $transfer->id,
+                [
+                    [
+                        'account_id' => $expenseAccountId,
+                        'debit' => abs($difference),
+                        'credit' => 0,
+                        'description' => "فرق مصروف حوالة {$transfer->transfer_number}",
+                    ],
+                    [
+                        'account_id' => $paymentAccount->id,
+                        'debit' => 0,
+                        'credit' => abs($difference),
+                        'description' => "دفع فرق حوالة {$transfer->transfer_number}",
+                    ],
+                ]
+            );
+        } else {
+            // فرق إيراد: مدين الصندوق / دائن حساب الإيرادات
+            $revenueAccountId = $transfer->revenue_account_id
+                ?? self::account('4003')->id; // إيرادات أخرى
+
+            return self::createEntry(
+                "فرق حوالة {$transfer->transfer_number} (إيراد)",
+                'transfer_difference',
+                $transfer->id,
+                [
+                    [
+                        'account_id' => $paymentAccount->id,
+                        'debit' => abs($difference),
+                        'credit' => 0,
+                        'description' => "إيراد فرق حوالة {$transfer->transfer_number}",
+                    ],
+                    [
+                        'account_id' => $revenueAccountId,
+                        'debit' => 0,
+                        'credit' => abs($difference),
+                        'description' => "إيراد فرق حوالة {$transfer->transfer_number}",
+                    ],
+                ]
+            );
+        }
+    }
+
     // ============================================================
     // إقفال نهاية السنة المالية (Year-End Closing)
     // ============================================================

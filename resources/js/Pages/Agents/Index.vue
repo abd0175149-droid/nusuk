@@ -14,19 +14,15 @@
                 <table class="w-full text-sm">
                     <thead><tr class="bg-gray-50 text-gray-600">
                         <th class="px-5 py-3 text-right font-bold">الاسم</th>
-                        <th class="px-5 py-3 text-right font-bold">الكود</th>
-                        <th class="px-5 py-3 text-right font-bold">الهاتف</th>
-                        <th class="px-5 py-3 text-right font-bold">الرصيد</th>
-                        <th class="px-5 py-3 text-right font-bold">الحالة</th>
+                        <th class="px-5 py-3 text-right font-bold">الرصيد (SAR)</th>
+                        <th class="px-5 py-3 text-right font-bold">الرصيد (JOD)</th>
                         <th class="px-5 py-3 text-center font-bold">إجراءات</th>
                     </tr></thead>
                     <tbody>
                         <tr v-for="a in agents.data" :key="a.id" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
                             <td class="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">{{ a.name }}</td>
-                            <td class="px-5 py-3 font-mono text-xs text-gold-700">{{ a.code }}</td>
-                            <td class="px-5 py-3 text-gray-500"><span dir="ltr" class="inline-block">{{ a.phone || '—' }}</span></td>
-                            <td class="px-5 py-3 font-bold font-mono" :class="parseFloat(a.balance_sar)>=0?'text-green-600':'text-red-600'">{{ Number(a.balance_sar).toLocaleString('en',{minimumFractionDigits: a.currency==='JOD'?3:2}) }} {{ a.currency||'SAR' }}</td>
-                            <td class="px-5 py-3"><span class="px-2.5 py-1 rounded-full text-xs font-bold" :class="a.is_active?'bg-green-100 text-green-700':'bg-red-100 text-red-700'">{{ a.is_active?'نشط':'معطل' }}</span></td>
+                            <td class="px-5 py-3 font-bold font-mono" :class="parseFloat(a.balance_sar)>=0?'text-green-600':'text-red-600'">{{ Number(a.balance_sar).toLocaleString('en',{minimumFractionDigits:2}) }} SAR</td>
+                            <td class="px-5 py-3 font-bold font-mono" :class="parseFloat(a.balance_sar)>=0?'text-green-600':'text-red-600'">{{ (Number(a.balance_sar) * 0.19).toLocaleString('en',{minimumFractionDigits:3}) }} JOD</td>
                             <td class="px-5 py-3 text-center whitespace-nowrap">
                                 <a :href="'/agents/'+a.id" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg">📊 كشف</a>
                                 <button @click="openView(a)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg">👁️ عرض</button>
@@ -34,7 +30,7 @@
                                 <button v-if="can('agents.delete')" @click="del(a)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️ حذف</button>
                             </td>
                         </tr>
-                        <tr v-if="!agents.data?.length"><td colspan="6" class="px-5 py-12 text-center text-gray-400">لا يوجد وكلاء</td></tr>
+                        <tr v-if="!agents.data?.length"><td colspan="4" class="px-5 py-12 text-center text-gray-400">لا يوجد وكلاء</td></tr>
                     </tbody>
                 </table>
             </div>

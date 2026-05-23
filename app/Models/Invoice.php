@@ -5,15 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Invoice extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'invoice_number', 'agent_id', 'client_id', 'exchange_rate_snapshot',
         'subtotal_sar', 'discount_sar', 'total_sar', 'total_jod',
         'services_cost_sar', 'violations_cost_sar', 'profit_sar', 'profit_jod',
         'invoice_date', 'due_date', 'notes', 'status', 'rejection_reason',
         'created_by', 'approved_by', 'approved_at',
+        'modified_by', 'modified_at', 'original_values',
     ];
 
     protected $casts = [
@@ -29,6 +33,8 @@ class Invoice extends Model
         'invoice_date' => 'date',
         'due_date' => 'date',
         'approved_at' => 'datetime',
+        'modified_at' => 'datetime',
+        'original_values' => 'array',
     ];
 
     public function agent(): BelongsTo { return $this->belongsTo(Agent::class); }

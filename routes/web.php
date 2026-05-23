@@ -36,16 +36,23 @@ Route::middleware('auth')->group(function () {
     Route::resource('transfers', TransferController::class)->only(['index', 'store', 'destroy']);
     Route::post('transfers/{transfer}/approve', [TransferController::class, 'approve'])->name('transfers.approve');
     Route::post('transfers/{transfer}/reject', [TransferController::class, 'reject'])->name('transfers.reject');
+    Route::post('transfers/{transfer}/start-edit', [TransferController::class, 'startEdit'])->name('transfers.start-edit');
+    Route::put('transfers/{transfer}/update-approved', [TransferController::class, 'updateApproved'])->name('transfers.update-approved');
+    Route::get('transfers/{transfer}/print', [TransferController::class, 'print'])->name('transfers.print');
 
     // Receipts
     Route::resource('receipts', ReceiptController::class)->only(['index', 'store', 'destroy']);
     Route::post('receipts/{receipt}/approve', [ReceiptController::class, 'approve'])->name('receipts.approve');
     Route::post('receipts/{receipt}/reject', [ReceiptController::class, 'reject'])->name('receipts.reject');
+    Route::post('receipts/{receipt}/start-edit', [ReceiptController::class, 'startEdit'])->name('receipts.start-edit');
+    Route::put('receipts/{receipt}/update-approved', [ReceiptController::class, 'updateApproved'])->name('receipts.update-approved');
 
     // Expenses
     Route::resource('expenses', ExpenseController::class)->only(['index', 'store', 'destroy']);
     Route::post('expenses/{expense}/approve', [ExpenseController::class, 'approve'])->name('expenses.approve');
     Route::post('expenses/{expense}/reject', [ExpenseController::class, 'reject'])->name('expenses.reject');
+    Route::post('expenses/{expense}/start-edit', [ExpenseController::class, 'startEdit'])->name('expenses.start-edit');
+    Route::put('expenses/{expense}/update-approved', [ExpenseController::class, 'updateApproved'])->name('expenses.update-approved');
 
     // Services
     Route::resource('services', ServiceController::class)->only(['index', 'store', 'update', 'destroy']);
@@ -63,11 +70,14 @@ Route::middleware('auth')->group(function () {
     Route::resource('violations', \App\Http\Controllers\ViolationController::class)->only(['index', 'store', 'destroy']);
     Route::post('violations/{violation}/approve', [\App\Http\Controllers\ViolationController::class, 'approve'])->name('violations.approve');
     Route::post('violations/{violation}/reject', [\App\Http\Controllers\ViolationController::class, 'reject'])->name('violations.reject');
+    Route::post('violations/{violation}/start-edit', [\App\Http\Controllers\ViolationController::class, 'startEdit'])->name('violations.start-edit');
+    Route::put('violations/{violation}/update-approved', [\App\Http\Controllers\ViolationController::class, 'updateApproved'])->name('violations.update-approved');
 
     // Invoices
     Route::resource('invoices', \App\Http\Controllers\InvoiceController::class)->only(['index', 'store', 'destroy']);
     Route::post('invoices/{invoice}/approve', [\App\Http\Controllers\InvoiceController::class, 'approve'])->name('invoices.approve');
     Route::post('invoices/{invoice}/reject', [\App\Http\Controllers\InvoiceController::class, 'reject'])->name('invoices.reject');
+    Route::post('invoices/{invoice}/start-edit', [\App\Http\Controllers\InvoiceController::class, 'startEdit'])->name('invoices.start-edit');
 
     // API: Unbilled violations for client
     Route::get('api/clients/{client}/violations/unbilled', [\App\Http\Controllers\InvoiceController::class, 'unbilledViolations']);
@@ -109,6 +119,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('accounting/fiscal-years/{fiscalYear}', [\App\Http\Controllers\AccountingController::class, 'destroyFiscalYear'])->name('accounting.fiscal-years.destroy');
     Route::get('accounting/profit-loss', [\App\Http\Controllers\AccountingController::class, 'profitAndLoss'])->name('accounting.profit-loss');
     Route::get('accounting/balance-sheet', [\App\Http\Controllers\AccountingController::class, 'balanceSheet'])->name('accounting.balance-sheet');
+    Route::get('accounting/accounts/{account}/details', [\App\Http\Controllers\AccountingController::class, 'accountDetails'])->name('accounting.accounts.details');
 
     // Print Pages
     Route::get('invoices/{invoice}/print', [\App\Http\Controllers\InvoiceController::class, 'print'])->name('invoices.print');

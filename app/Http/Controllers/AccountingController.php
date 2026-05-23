@@ -560,4 +560,62 @@ class AccountingController extends Controller
             'filters' => ['as_of' => $asOfDate],
         ]);
     }
+
+    /**
+     * تفاصيل حساب — كل العمليات المرتبطة
+     */
+    public function accountDetails(Request $request, Account $account)
+    {
+        $from = $request->from ?? now()->startOfMonth()->toDateString();
+        $to = $request->to ?? now()->toDateString();
+
+        $lines = JournalEntryLine::where('account_id', $account->id)
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->whereBetween('journal_entries.entry_date', [$from, $to . ' 23:59:59'])
+            ->orderBy('journal_entries.entry_date')
+            ->orderBy('journal_entries.id')
+            ->select(
+                'journal_entry_lines.*',
+                'journal_entries.entry_number',
+                'journal_entries.entry_date',
+                'journal_entries.description as entry_description',
+                'journal_entries.reference_type',
+                'journal_entries.reference_id',
+                'journal_entries.is_reversed',
+            )
+            ->get();
+
+        // حساب الرصيد الافتتاحي
+        $openingDebit = JournalEntryLine::where('account_id', $account->id)
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->where('journal_entries.entry_date', '<', $from)
+            ->sum('journal_entry_lines.debit');
+        $openingCredit = JournalEntryLine::where('account_id', $account->id)
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->where('journal_entries.entry_date', '<', $from)
+            ->sum('journal_entry_lines.credit');
+
+        $openingBalance = in_array($account->type, ['asset', 'expense'])
+            ? $openingDebit - $openingCredit
+            : $openingCredit - $openingDebit;
+
+        return response()->json([
+            'account' => [
+                'id' => $account->id,
+                'code' => $account->code,
+                'name' => $account->name,
+                'type' => $account->type,
+                'currency' => $account->currency,
+                'balance' => $account->balance,
+                'is_active' => $account->is_active,
+            ],
+            'opening_balance' => round($openingBalance, 3),
+            'lines' => $lines,
+            'totals' => [
+                'debit' => round($lines->sum('debit'), 3),
+                'credit' => round($lines->sum('credit'), 3),
+            ],
+            'filters' => ['from' => $from, 'to' => $to],
+        ]);
+    }
 }

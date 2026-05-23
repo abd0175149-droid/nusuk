@@ -17,11 +17,12 @@
                     <td class="px-5 py-3 text-right font-medium">{{ r.client?.name }}</td>
                     <td class="px-5 py-3 text-right font-bold font-mono text-xs text-green-600" dir="ltr">{{ Number(r.amount_jod).toLocaleString('en',{minimumFractionDigits:3}) }}</td>
                     <td class="px-5 py-3 text-right text-xs">{{ {cash:'نقدي',bank:'بنكي',check:'شيك'}[r.payment_method] }}</td>
-                    <td class="px-5 py-3 text-right"><span class="px-2.5 py-1 rounded-full text-xs font-bold" :class="{pending:'bg-yellow-100 text-yellow-700',approved:'bg-green-100 text-green-700',rejected:'bg-red-100 text-red-700'}[r.status]">{{ {pending:'معلقة',approved:'معتمدة',rejected:'مرفوضة'}[r.status] }}</span></td>
+                    <td class="px-5 py-3 text-right"><span class="px-2.5 py-1 rounded-full text-xs font-bold" :class="{pending:'bg-yellow-100 text-yellow-700',approved:'bg-green-100 text-green-700',rejected:'bg-red-100 text-red-700',editing:'bg-blue-100 text-blue-700'}[r.status]">{{ {pending:'معلقة',approved:'معتمدة',rejected:'مرفوضة',editing:'تحت التعديل'}[r.status] }}</span></td>
                     <td class="px-5 py-3 text-right text-xs text-gray-500"><div>📝 {{ r.creator?.name || '—' }}</div><div v-if="r.status !== 'pending'" class="mt-0.5">{{ r.status === 'approved' ? '✅' : '❌' }} {{ r.approver?.name || '—' }}</div></td>
                     <td class="px-5 py-3 text-center whitespace-nowrap">
                         <a :href="'/receipts/'+r.id+'/print'" target="_blank" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg">🖨️</a>
                         <template v-if="r.status==='pending'"><button v-if="can('receipts.approve')" @click="router.post('/receipts/'+r.id+'/approve')" class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg">✅</button><button v-if="can('receipts.delete')" @click="router.delete('/receipts/'+r.id)" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">🗑️</button></template>
+                        <template v-else-if="r.status==='approved'"><button v-if="can('receipts.edit_approved')" @click="router.post('/receipts/'+r.id+'/start-edit')" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg">✏️ تعديل</button></template>
                     </td>
                 </tr><tr v-if="!receipts.data?.length"><td colspan="7" class="px-5 py-12 text-center text-gray-400">لا يوجد سندات</td></tr></tbody>
             </table></div>

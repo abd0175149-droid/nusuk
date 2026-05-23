@@ -4,20 +4,26 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Violation extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'violation_number', 'agent_id', 'client_id', 'violation_type_id',
         'passport_number', 'passport_name', 'cost_sar', 'violation_date',
         'description', 'notes', 'billing_status', 'invoice_id',
         'status', 'rejection_reason', 'created_by', 'approved_by', 'approved_at',
+        'modified_by', 'modified_at', 'original_values',
     ];
 
     protected $casts = [
         'cost_sar' => 'decimal:2',
         'violation_date' => 'date',
         'approved_at' => 'datetime',
+        'modified_at' => 'datetime',
+        'original_values' => 'array',
     ];
 
     public function agent(): BelongsTo { return $this->belongsTo(Agent::class); }
