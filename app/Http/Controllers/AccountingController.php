@@ -599,7 +599,8 @@ class AccountingController extends Controller
             ? $openingDebit - $openingCredit
             : $openingCredit - $openingDebit;
 
-        return response()->json([
+        return Inertia::render('Accounting/AccountDetails', [
+            'title' => "كشف حساب: {$account->code} - {$account->name}",
             'account' => [
                 'id' => $account->id,
                 'code' => $account->code,
@@ -607,7 +608,6 @@ class AccountingController extends Controller
                 'type' => $account->type,
                 'currency' => $account->currency,
                 'balance' => $account->balance,
-                'is_active' => $account->is_active,
             ],
             'opening_balance' => round($openingBalance, 3),
             'lines' => $lines,

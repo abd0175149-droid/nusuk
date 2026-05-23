@@ -263,6 +263,12 @@ const AccountRow = defineComponent({
                 }, Number(totalBalance.value).toLocaleString('en', { minimumFractionDigits: 3 })),
                 h('span', { class: 'text-[10px] text-gray-400 dark:text-gray-500 font-mono min-w-[28px]' }, a.currency),
                 h('div', { class: 'hidden group-hover:flex items-center gap-1 mr-1' }, [
+                    h('a', {
+                        class: 'px-1.5 py-0.5 text-xs text-purple-600 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded',
+                        href: '/accounting/accounts/' + a.id + '/details',
+                        title: 'كشف حساب',
+                        onClick: (e) => e.stopPropagation(),
+                    }, '📊'),
                     h('button', {
                         class: 'px-1.5 py-0.5 text-xs text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded',
                         onClick: (e) => { e.stopPropagation(); emit('edit', a); },
