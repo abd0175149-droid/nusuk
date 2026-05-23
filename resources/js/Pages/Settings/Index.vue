@@ -86,6 +86,12 @@
                         </form>
                     </div>
                 </div>
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <a href="/settings/print-layout" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-purple-600 hover:bg-purple-700 shadow-md">
+                        🎨 محرر تخطيط الطباعة — تحديد مواقع العناصر بالسحب
+                    </a>
+                    <p class="text-xs text-gray-500 mt-1">حدد مكان كل عنصر على القالب بسحبه إلى الموقع المطلوب</p>
+                </div>
             </div>
 
             <div class="flex justify-end">

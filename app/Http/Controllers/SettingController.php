@@ -97,5 +97,50 @@ class SettingController extends Controller
 
         return redirect()->back()->with('success', 'تم تحديث سعر الصرف بنجاح');
     }
-}
 
+    /**
+     * صفحة محرر تخطيط الطباعة
+     */
+    public function printLayout()
+    {
+        $template = Setting::where('key', 'print_template_financial')->first();
+        $templateUrl = $template?->value ? Storage::url($template->value) : null;
+
+        // تحميل التخطيطات المحفوظة
+        $layouts = [];
+        foreach (['invoice', 'transfer', 'receipt'] as $type) {
+            $setting = Setting::where('key', "print_layout_{$type}")->first();
+            $layouts[$type] = $setting?->value ? json_decode($setting->value, true) : null;
+        }
+
+        return Inertia::render('Settings/PrintLayout', [
+            'title' => 'محرر تخطيط الطباعة',
+            'templateUrl' => $templateUrl,
+            'layouts' => $layouts,
+        ]);
+    }
+
+    /**
+     * حفظ تخطيط الطباعة
+     */
+    public function savePrintLayout(Request $request)
+    {
+        $request->validate([
+            'type' => 'required|in:invoice,transfer,receipt',
+            'layout' => 'required|array',
+        ]);
+
+        $key = "print_layout_{$request->type}";
+
+        Setting::updateOrCreate(
+            ['key' => $key],
+            [
+                'value' => json_encode($request->layout, JSON_UNESCAPED_UNICODE),
+                'group_name' => 'printing',
+                'label' => "تخطيط طباعة {$request->type}",
+            ]
+        );
+
+        return redirect()->back()->with('success', 'تم حفظ التخطيط بنجاح');
+    }
+}

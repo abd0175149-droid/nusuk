@@ -52,9 +52,13 @@ class InvoiceController extends Controller
         $template = \App\Models\Setting::where('key', 'print_template_financial')->first();
         $templateUrl = $template?->value ? \Storage::url($template->value) : null;
 
+        $layoutSetting = \App\Models\Setting::where('key', 'print_layout_invoice')->first();
+        $layout = $layoutSetting?->value ? json_decode($layoutSetting->value, true) : null;
+
         return Inertia::render('Invoices/Print', [
             'invoice' => $invoice,
             'templateUrl' => $templateUrl,
+            'layout' => $layout,
         ]);
     }
 

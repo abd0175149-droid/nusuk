@@ -1,48 +1,52 @@
 <template>
     <div class="print-wrapper" dir="rtl">
-        <!-- زر الطباعة (يختفي عند الطباعة) -->
+        <!-- شريط الأدوات (يختفي عند الطباعة) -->
         <div class="no-print toolbar">
             <button @click="doPrint" class="print-btn">🖨️ طباعة</button>
             <a href="/invoices" class="back-btn">← العودة</a>
         </div>
 
-        <!-- صفحة A4 -->
-        <div class="a4-page" ref="pageRef">
-            <!-- خلفية القالب PDF (تُعرض كصورة عبر pdf.js) -->
-            <canvas v-if="templateUrl" ref="pdfCanvas" class="pdf-bg"></canvas>
+        <!-- صفحات A4 -->
+        <div v-for="(page, pi) in pages" :key="pi" class="a4-page">
+            <canvas v-if="templateUrl" :ref="el => setCanvas(el, pi)" class="pdf-bg"></canvas>
             <div v-else class="fallback-bg"></div>
 
-            <!-- البيانات المطبوعة فوق القالب بإحداثيات ثابتة -->
             <div class="overlay">
+                <!-- العناصر الثابتة (تظهر في كل الصفحات أو الأولى فقط) -->
+                <template v-if="pi === 0">
+                    <!-- عنوان -->
+                    <div class="field" :style="elPos('title')">
+                        <span :style="elFont('title')">فاتورة مبيعات</span>
+                    </div>
 
-                <!-- 1. عنوان الفاتورة — أعلى يسار -->
-                <div class="field" :style="pos(45, 32)">
-                    <span class="doc-title">فاتورة مبيعات</span>
-                </div>
+                    <!-- رقم الفاتورة -->
+                    <div class="field" :style="elPos('invoice_number')">
+                        <span class="label">رقم الفاتورة:</span>
+                        <span class="value gold" :style="elFont('invoice_number')">{{ invoice.invoice_number }}</span>
+                    </div>
 
-                <!-- 2. رقم الفاتورة + التاريخ + الحالة -->
-                <div class="field" :style="pos(45, 45)">
-                    <span class="label">رقم الفاتورة:</span>
-                    <span class="value gold">{{ invoice.invoice_number }}</span>
-                </div>
-                <div class="field" :style="pos(45, 52)">
-                    <span class="label">التاريخ:</span>
-                    <span class="value">{{ formatDate(invoice.invoice_date) }}</span>
-                </div>
-                <div class="field" :style="pos(75, 45)">
-                    <span class="label">الحالة:</span>
-                    <span class="value" :class="'status-'+invoice.status">{{ statusLabels[invoice.status] }}</span>
-                </div>
+                    <!-- التاريخ -->
+                    <div class="field" :style="elPos('invoice_date')">
+                        <span class="label">التاريخ:</span>
+                        <span class="value" :style="elFont('invoice_date')">{{ formatDate(invoice.invoice_date) }}</span>
+                    </div>
 
-                <!-- 3. اسم العميل -->
-                <div class="field" :style="pos(8, 65)">
-                    <span class="label">العميل:</span>
-                    <span class="value client-name">{{ invoice.client?.name }}</span>
-                </div>
+                    <!-- الحالة -->
+                    <div class="field" :style="elPos('status')">
+                        <span class="label">الحالة:</span>
+                        <span class="value" :class="'status-'+invoice.status" :style="elFont('status')">{{ statusLabels[invoice.status] }}</span>
+                    </div>
 
-                <!-- 4. جدول التفاصيل -->
-                <div class="table-area" :style="pos(5, 78)">
-                    <table class="inv-table">
+                    <!-- اسم العميل -->
+                    <div class="field" :style="elPos('client_name')">
+                        <span class="label">العميل:</span>
+                        <span class="value client-name" :style="elFont('client_name')">{{ invoice.client?.name }}</span>
+                    </div>
+                </template>
+
+                <!-- جدول البنود (يتكرر حسب الصفحة) -->
+                <div class="table-area" :style="elPos('items_table')">
+                    <table class="inv-table" :style="tableWidth">
                         <thead>
                             <tr>
                                 <th class="col-num">#</th>
@@ -54,8 +58,8 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="(item, i) in invoice.items" :key="i">
-                                <td class="center">{{ i + 1 }}</td>
+                            <tr v-for="(item, i) in page.items" :key="i">
+                                <td class="center">{{ page.startIdx + i + 1 }}</td>
                                 <td>{{ item.item_type === 'service' ? 'خدمة' : 'مخالفة' }}</td>
                                 <td>{{ item.description }}</td>
                                 <td class="center mono">{{ item.quantity }}</td>
@@ -66,243 +70,180 @@
                     </table>
                 </div>
 
-                <!-- 5. إجمالي الفاتورة -->
-                <div class="totals-area" :style="totalPos">
-                    <div class="total-row">
-                        <span>الإجمالي:</span>
-                        <span class="mono bold total-amount">{{ fmt(invoice.total_jod) }} JOD</span>
+                <!-- الإجمالي (آخر صفحة فقط) -->
+                <template v-if="page.isLast">
+                    <div class="total-box" :style="totalPos(page)">
+                        <div class="total-row">
+                            <span>الإجمالي:</span>
+                            <span class="mono bold total-amount" :style="elFont('total')">{{ fmt(invoice.total_jod) }} JOD</span>
+                        </div>
                     </div>
-                </div>
 
-                <!-- التوقيعات -->
-                <div class="signatures" :style="pos(5, sigY)">
-                    <div class="sig-box"><div class="sig-label">المحاسب</div><div class="sig-line"></div></div>
-                    <div class="sig-box"><div class="sig-label">المدير المالي</div><div class="sig-line"></div></div>
-                    <div class="sig-box"><div class="sig-label">العميل</div><div class="sig-line"></div></div>
-                </div>
+                    <!-- التوقيعات -->
+                    <div class="signatures" :style="sigPos(page)">
+                        <div class="sig-box"><div class="sig-label">المحاسب</div><div class="sig-line"></div></div>
+                        <div class="sig-box"><div class="sig-label">المدير المالي</div><div class="sig-line"></div></div>
+                        <div class="sig-box"><div class="sig-label">العميل</div><div class="sig-line"></div></div>
+                    </div>
+                </template>
             </div>
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 
-const props = defineProps({ invoice: Object, templateUrl: String });
-
-const pdfCanvas = ref(null);
-const pageRef = ref(null);
+const props = defineProps({ invoice: Object, templateUrl: String, layout: Object });
 
 const statusLabels = { pending: 'معلقة', approved: 'معتمدة', rejected: 'مرفوضة', editing: 'تحت التعديل' };
-
 const fmt = (v) => Number(v || 0).toLocaleString('en', { minimumFractionDigits: 3 });
+const formatDate = (d) => d ? new Date(d).toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
 
-const formatDate = (d) => {
-    if (!d) return '';
-    const date = new Date(d);
-    return date.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
+// المواقع الافتراضية (mm)
+const defaults = {
+    title: { x: 10, y: 30, fontSize: 16 },
+    invoice_number: { x: 10, y: 45, fontSize: 11 },
+    invoice_date: { x: 80, y: 45, fontSize: 10 },
+    status: { x: 150, y: 45, fontSize: 10 },
+    client_name: { x: 10, y: 58, fontSize: 12 },
+    items_table: { x: 10, y: 72, fontSize: 9, w: 190 },
+    total: { x: 10, y: 200, fontSize: 13 },
+    signatures: { x: 10, y: 250, fontSize: 9, w: 190 },
 };
 
-// إحداثيات: x% من اليمين، y% من الأعلى (mm من A4)
-const pos = (xPct, yMm) => ({
-    position: 'absolute',
-    right: xPct + '%',
-    top: yMm + 'mm',
+const el = (id) => props.layout?.elements?.[id] || defaults[id] || { x: 10, y: 10, fontSize: 10 };
+const rowsPerPage = computed(() => props.layout?.rowsPerPage || 10);
+
+const elPos = (id) => {
+    const p = el(id);
+    return { position: 'absolute', right: p.x + 'mm', top: p.y + 'mm' };
+};
+
+const elFont = (id) => {
+    const p = el(id);
+    return { fontSize: (p.fontSize || 10) + 'pt' };
+};
+
+const tableWidth = computed(() => {
+    const p = el('items_table');
+    return p.w ? { width: p.w + 'mm' } : {};
 });
 
-// موضع الإجمالي يعتمد على عدد البنود
-const itemCount = computed(() => props.invoice?.items?.length || 0);
-const totalPos = computed(() => pos(5, 78 + 8 + (itemCount.value * 7) + 4));
-const sigY = computed(() => 78 + 8 + (itemCount.value * 7) + 25);
-
-// تحميل PDF كخلفية عبر pdf.js (من CDN)
-onMounted(async () => {
-    if (!props.templateUrl || !pdfCanvas.value) return;
-
-    try {
-        // تحميل pdf.js من CDN
-        const pdfjsLib = await loadPdfJs();
-
-        const pdf = await pdfjsLib.getDocument(props.templateUrl).promise;
-        const page = await pdf.getPage(1);
-
-        // حجم A4 بالبكسل (210mm × 297mm عند 150 DPI ≈ 1240 × 1754)
-        const scale = 2;
-        const viewport = page.getViewport({ scale });
-
-        const canvas = pdfCanvas.value;
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-
-        const ctx = canvas.getContext('2d');
-        await page.render({ canvasContext: ctx, viewport }).promise;
-    } catch (e) {
-        console.error('PDF load error:', e);
+// تقسيم البنود على صفحات
+const pages = computed(() => {
+    const items = props.invoice?.items || [];
+    const rpp = rowsPerPage.value;
+    if (items.length <= rpp) {
+        return [{ items, startIdx: 0, isLast: true }];
     }
+    const result = [];
+    for (let i = 0; i < items.length; i += rpp) {
+        const chunk = items.slice(i, i + rpp);
+        result.push({ items: chunk, startIdx: i, isLast: i + rpp >= items.length });
+    }
+    return result;
 });
 
-const loadPdfJs = () => {
-    return new Promise((resolve, reject) => {
-        if (window.pdfjsLib) { resolve(window.pdfjsLib); return; }
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-        script.onload = () => {
-            window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-            resolve(window.pdfjsLib);
-        };
-        script.onerror = reject;
-        document.head.appendChild(script);
-    });
+// موقع الإجمالي (أسفل الجدول في آخر صفحة)
+const totalPos = (page) => {
+    const p = el('items_table');
+    const rowH = 7; // mm per row
+    const headerH = 8;
+    const y = p.y + headerH + (page.items.length * rowH) + 4;
+    const tp = el('total');
+    return { position: 'absolute', right: tp.x + 'mm', top: y + 'mm' };
 };
 
+const sigPos = (page) => {
+    const p = el('items_table');
+    const rowH = 7;
+    const headerH = 8;
+    const y = p.y + headerH + (page.items.length * rowH) + 25;
+    const sp = el('signatures');
+    return { position: 'absolute', right: sp.x + 'mm', top: y + 'mm', width: (sp.w || 190) + 'mm' };
+};
+
+// تحميل PDF
+const canvases = {};
+const setCanvas = (el, idx) => { if (el) canvases[idx] = el; };
+
+const renderPdf = async () => {
+    if (!props.templateUrl) return;
+    try {
+        const pdfjsLib = await loadPdfJs();
+        const pdf = await pdfjsLib.getDocument(props.templateUrl).promise;
+        const pdfPage = await pdf.getPage(1);
+        const scale = 2;
+        const viewport = pdfPage.getViewport({ scale });
+
+        await nextTick();
+        for (const [idx, canvas] of Object.entries(canvases)) {
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            await pdfPage.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+        }
+    } catch (e) { console.error('PDF error:', e); }
+};
+
+const loadPdfJs = () => new Promise((resolve, reject) => {
+    if (window.pdfjsLib) { resolve(window.pdfjsLib); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = () => {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        resolve(window.pdfjsLib);
+    };
+    s.onerror = reject;
+    document.head.appendChild(s);
+});
+
+onMounted(() => { setTimeout(renderPdf, 300); });
 const doPrint = () => window.print();
 </script>
 
 <style>
-/* A4 dimensions */
-.a4-page {
-    width: 210mm;
-    height: 297mm;
-    position: relative;
-    margin: 0 auto;
-    overflow: hidden;
-    background: white;
-}
+.a4-page { width: 210mm; height: 297mm; position: relative; margin: 0 auto; overflow: hidden; background: white; page-break-after: always; }
+.a4-page:last-child { page-break-after: auto; }
+.pdf-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.fallback-bg { position: absolute; inset: 0; background: white; z-index: 0; }
+.overlay { position: absolute; inset: 0; z-index: 1; direction: rtl; }
 
-.pdf-bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    pointer-events: none;
-}
-
-.fallback-bg {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: white;
-    z-index: 0;
-}
-
-.overlay {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    z-index: 1;
-    direction: rtl;
-}
-
-/* Typography */
 .field { font-size: 11pt; }
 .label { color: #555; font-size: 9pt; margin-left: 4px; }
 .value { font-weight: 700; color: #111; }
-.value.gold { color: #b8860b; font-family: monospace; font-size: 12pt; }
-.value.client-name { font-size: 14pt; color: #1a1a1a; }
+.value.gold { color: #b8860b; font-family: monospace; }
+.value.client-name { color: #1a1a1a; }
 .value.status-approved { color: #16a34a; }
 .value.status-pending { color: #ca8a04; }
 .value.status-rejected { color: #dc2626; }
 
-.doc-title {
-    font-size: 18pt;
-    font-weight: 900;
-    color: #1a1a1a;
-    border-bottom: 2px solid #b8860b;
-    padding-bottom: 4px;
-}
-
-/* Table */
-.table-area { width: 90%; }
-.inv-table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
-.inv-table th {
-    background: #f0ebe0;
-    padding: 5px 8px;
-    text-align: right;
-    font-weight: 700;
-    border: 1px solid #d4c9a8;
-    font-size: 9pt;
-    color: #333;
-}
-.inv-table td {
-    padding: 4px 8px;
-    border: 1px solid #e5e1d5;
-    font-size: 9pt;
-}
+.table-area { position: absolute; }
+.inv-table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+.inv-table th { background: #f0ebe0; padding: 4px 6px; text-align: right; font-weight: 700; border: 1px solid #d4c9a8; font-size: 8pt; }
+.inv-table td { padding: 3px 6px; border: 1px solid #e5e1d5; font-size: 8pt; }
 .inv-table tr:nth-child(even) td { background: #faf9f6; }
 .inv-table .center { text-align: center; }
 .inv-table .mono { font-family: monospace; }
 .inv-table .ltr { direction: ltr; text-align: left; }
 .inv-table .bold { font-weight: 700; }
+.col-num { width: 6%; } .col-type { width: 14%; } .col-desc { width: 36%; }
+.col-qty { width: 10%; } .col-price { width: 17%; } .col-total { width: 17%; }
 
-.col-num { width: 6%; }
-.col-type { width: 14%; }
-.col-desc { width: 36%; }
-.col-qty { width: 10%; }
-.col-price { width: 17%; }
-.col-total { width: 17%; }
-
-/* Totals */
-.totals-area { width: 90%; }
-.total-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 12px;
-    background: #f0ebe0;
-    border: 2px solid #b8860b;
-    border-radius: 6px;
-    font-size: 13pt;
-    font-weight: 900;
-}
+.total-box { position: absolute; }
+.total-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: #f0ebe0; border: 2px solid #b8860b; border-radius: 4px; font-size: 12pt; font-weight: 900; }
 .total-amount { color: #b8860b; font-family: monospace; }
 
-/* Signatures */
-.signatures { display: flex; justify-content: space-between; width: 90%; }
+.signatures { display: flex; justify-content: space-between; position: absolute; }
 .sig-box { text-align: center; width: 28%; }
-.sig-label { font-size: 9pt; color: #555; margin-bottom: 30px; }
-.sig-line { border-top: 1px solid #333; padding-top: 3px; font-size: 8pt; color: #999; }
+.sig-label { font-size: 8pt; color: #555; margin-bottom: 25px; }
+.sig-line { border-top: 1px solid #333; padding-top: 3px; font-size: 7pt; color: #999; }
 .sig-line::after { content: 'التوقيع والختم'; }
 
-/* Toolbar */
-.toolbar {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    padding: 16px;
-    background: #f3f4f6;
-}
-.print-btn {
-    padding: 10px 24px;
-    background: linear-gradient(135deg, #b8860b, #d4a520);
-    color: white;
-    font-weight: 700;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 14px;
-}
-.back-btn {
-    padding: 10px 24px;
-    color: #666;
-    text-decoration: none;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    font-size: 14px;
-}
+.toolbar { display: flex; gap: 12px; justify-content: center; padding: 16px; background: #f3f4f6; }
+.print-btn { padding: 10px 24px; background: linear-gradient(135deg, #b8860b, #d4a520); color: white; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; }
+.back-btn { padding: 10px 24px; color: #666; text-decoration: none; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; }
 
-/* Screen */
-@media screen {
-    body { background: #e5e7eb; margin: 0; }
-    .print-wrapper { min-height: 100vh; }
-    .a4-page { box-shadow: 0 4px 20px rgba(0,0,0,.15); margin: 20px auto; border-radius: 4px; }
-}
-
-/* Print */
-@media print {
-    .no-print { display: none !important; }
-    body { margin: 0; padding: 0; }
-    .print-wrapper { padding: 0; margin: 0; }
-    .a4-page { margin: 0; box-shadow: none; border-radius: 0; }
-    @page { size: A4; margin: 0; }
-}
+@media screen { body { background: #e5e7eb; margin: 0; } .a4-page { box-shadow: 0 4px 20px rgba(0,0,0,.15); margin: 20px auto; border-radius: 4px; } }
+@media print { .no-print { display: none !important; } body { margin: 0; padding: 0; } .a4-page { margin: 0; box-shadow: none; border-radius: 0; } @page { size: A4; margin: 0; } }
 </style>
