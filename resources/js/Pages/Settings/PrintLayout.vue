@@ -25,7 +25,11 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1">صفوف الجدول/صفحة</label>
-                    <input v-model.number="rowsPerPage" type="number" min="1" max="30" class="w-20 px-3 py-2 rounded-xl border text-sm text-center font-mono"/>
+                    <input v-model.number="rowsPerPage" type="number" min="1" max="50" class="w-20 px-3 py-2 rounded-xl border text-sm text-center font-mono"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">بداية الجدول ص.تالية (mm)</label>
+                    <input v-model.number="contTableY" type="number" min="5" max="100" class="w-20 px-3 py-2 rounded-xl border text-sm text-center font-mono"/>
                 </div>
                 <div class="flex-1"></div>
                 <button @click="resetLayout" class="px-4 py-2 rounded-xl text-xs text-red-600 hover:bg-red-50 border border-red-200">🔄 إعادة تعيين</button>
@@ -199,6 +203,7 @@ const activeTemplateUrl = computed(() => isAccounting.value ? props.accountingTe
 
 const docType = ref('invoice');
 const rowsPerPage = ref(10);
+const contTableY = ref(20);
 const selectedEl = ref(null);
 const saving = ref(false);
 const editorArea = ref(null);
@@ -474,6 +479,7 @@ const loadLayout = () => {
         }
     }
     rowsPerPage.value = saved?.rowsPerPage || 10;
+    contTableY.value = saved?.contTableY || 20;
     selectedEl.value = null;
 };
 
@@ -484,6 +490,7 @@ const resetLayout = () => {
         positions[id] = { ...pos };
     }
     rowsPerPage.value = 10;
+    contTableY.value = 20;
 };
 
 const saveLayout = () => {
@@ -494,7 +501,7 @@ const saveLayout = () => {
     });
     router.post('/settings/print-layout', {
         type: docType.value,
-        layout: { elements: { ...positions }, rowsPerPage: rowsPerPage.value },
+        layout: { elements: { ...positions }, rowsPerPage: rowsPerPage.value, contTableY: contTableY.value },
     }, {
         preserveScroll: true,
         onFinish: () => { saving.value = false; },

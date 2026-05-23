@@ -80,9 +80,10 @@ const pages = computed(() => {
     }
     return result;
 });
-const contTablePos = computed(() => { const p=el('data_table'); return {position:'absolute',right:p.x+'mm',top:'20mm',width:p.w?p.w+'mm':'100%'}; });
+const contY = computed(() => props.layout?.contTableY || 20);
+const contTablePos = computed(() => { const p=el('data_table'); return {position:'absolute',right:p.x+'mm',top:contY.value+'mm',width:p.w?p.w+'mm':'100%'}; });
 const sigPos = (page, pi) => {
-    const p=el('data_table'); const baseY = pi===0 ? p.y : 20;
+    const p=el('data_table'); const baseY = pi===0 ? p.y : contY.value;
     const y = baseY + 12 + (page.items.length * 5.5) + 10;
     const sp=el('signatures');
     return {position:'absolute',right:sp.x+'mm',top:y+'mm',width:(sp.w||277)+'mm'};

@@ -127,16 +127,17 @@ const pages = computed(() => {
     return result;
 });
 
-// موقع الجدول في الصفحات اللاحقة (أعلى الصفحة)
+// موقع الجدول في الصفحات اللاحقة
+const contY = computed(() => props.layout?.contTableY || 20);
 const contTablePos = computed(() => {
     const p = el('data_table');
-    return { position: 'absolute', right: p.x+'mm', top: '20mm', width: p.w ? p.w+'mm':'100%' };
+    return { position: 'absolute', right: p.x+'mm', top: contY.value+'mm', width: p.w ? p.w+'mm':'100%' };
 });
 
 // موقع التوقيعات (أسفل الجدول ديناميكياً)
 const sigPos = (page, pi) => {
     const p = el('data_table');
-    const baseY = pi === 0 ? p.y : 20;
+    const baseY = pi === 0 ? p.y : contY.value;
     const rowH = 5.5;
     const headerH = 7;
     const y = baseY + headerH + (page.items.length * rowH) + 10;

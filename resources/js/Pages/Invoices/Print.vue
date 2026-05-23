@@ -45,7 +45,7 @@
                 </template>
 
                 <!-- جدول البنود (يتكرر حسب الصفحة) -->
-                <div v-if="!isHidden('items_table')" class="table-area" :style="elPos('items_table')">
+                <div v-if="!isHidden('items_table')" class="table-area" :style="pi === 0 ? elPos('items_table') : contTablePosInv">
                     <table class="inv-table" :style="{ ...tableWidth, ...tableColors }">
                         <thead>
                             <tr>
@@ -72,7 +72,7 @@
 
                 <!-- الإجمالي (آخر صفحة فقط) -->
                 <template v-if="page.isLast">
-                    <div v-if="!isHidden('total')" class="total-box" :style="totalPos(page)">
+                    <div v-if="!isHidden('total')" class="total-box" :style="totalPos(page, pi)">
                         <div class="total-row" :style="elStyle('total')">
                             <span>الإجمالي:</span>
                             <span class="total-amount" :style="elFont('total')">{{ fmt(invoice.total_jod) }} JOD</span>
@@ -80,7 +80,7 @@
                     </div>
 
                     <!-- التوقيعات -->
-                    <div v-if="!isHidden('signatures')" class="signatures" :style="sigPos(page)">
+                    <div v-if="!isHidden('signatures')" class="signatures" :style="sigPos(page, pi)">
                         <div class="sig-box"><div class="sig-label">المحاسب</div><div class="sig-line"></div></div>
                         <div class="sig-box"><div class="sig-label">المدير المالي</div><div class="sig-line"></div></div>
                         <div class="sig-box"><div class="sig-label">العميل</div><div class="sig-line"></div></div>
@@ -199,22 +199,30 @@ const pages = computed(() => {
     }
     return result;
 });
+// موقع الجدول في الصفحات اللاحقة
+const contY = computed(() => props.layout?.contTableY || el('items_table').y);
+const contTablePosInv = computed(() => {
+    const p = el('items_table');
+    return { position: 'absolute', right: p.x + 'mm', top: contY.value + 'mm', width: p.w ? p.w + 'mm' : 'auto' };
+});
 
 // موقع الإجمالي (أسفل الجدول في آخر صفحة)
-const totalPos = (page) => {
+const totalPos = (page, pi) => {
     const p = el('items_table');
     const rowH = 7;
     const headerH = 8;
-    const y = p.y + headerH + (page.items.length * rowH) + 4;
+    const baseY = pi === 0 ? p.y : contY.value;
+    const y = baseY + headerH + (page.items.length * rowH) + 4;
     const tp = el('total');
     return { position: 'absolute', right: tp.x + 'mm', top: y + 'mm', width: (tp.w || p.w || 190) + 'mm' };
 };
 
-const sigPos = (page) => {
+const sigPos = (page, pi) => {
     const p = el('items_table');
     const rowH = 7;
     const headerH = 8;
-    const y = p.y + headerH + (page.items.length * rowH) + 25;
+    const baseY = pi === 0 ? p.y : contY.value;
+    const y = baseY + headerH + (page.items.length * rowH) + 25;
     const sp = el('signatures');
     return { position: 'absolute', right: sp.x + 'mm', top: y + 'mm', width: (sp.w || 190) + 'mm' };
 };

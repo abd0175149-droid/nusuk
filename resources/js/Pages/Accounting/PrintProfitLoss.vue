@@ -101,7 +101,8 @@ const pages = computed(() => {
     return result;
 });
 
-const contTablePos = (tableId, pi) => { const p=el(tableId); return {position:'absolute',right:p.x+'mm',top:'20mm',width:p.w?p.w+'mm':'100%'}; };
+const contY = computed(() => props.layout?.contTableY || 20);
+const contTablePos = (tableId, pi) => { const p=el(tableId); return {position:'absolute',right:p.x+'mm',top:contY.value+'mm',width:p.w?p.w+'mm':'100%'}; };
 const customFields = computed(() => { if(!props.layout?.elements) return {}; const r={}; for(const[id,p] of Object.entries(props.layout.elements)){if(id.startsWith('custom_'))r[id]=p;} return r; });
 
 const canvasRefs = {};
