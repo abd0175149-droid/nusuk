@@ -8,7 +8,7 @@
                     <div><span class="text-gray-400 text-xs">الكود</span><p class="font-mono text-gold-500">{{ client.code }}</p></div>
                     <div><span class="text-gray-400 text-xs">الدولة</span><p>{{ {JO:'🇯🇴 الأردن',SA:'🇸🇦 السعودية'}[client.country] }}</p></div>
                     <div><span class="text-gray-400 text-xs">الهاتف</span><p dir="ltr">{{ client.phone||'—' }}</p></div>
-                    <div><span class="text-gray-400 text-xs">الذمة الحالية</span><p class="font-bold font-mono text-lg" dir="ltr" :class="parseFloat(client.balance_jod)>0?'text-red-500':'text-green-500'">{{ Number(client.balance_jod).toLocaleString('en',{minimumFractionDigits:3}) }} JOD</p></div>
+                    <div><span class="text-gray-400 text-xs">الذمة الحالية</span><p class="font-bold font-mono text-lg" dir="ltr" :class="parseFloat(client.balance_jod)>0?'text-green-500':'text-red-500'">{{ Number(client.balance_jod).toLocaleString('en',{minimumFractionDigits:3}) }} JOD</p></div>
                 </div>
             </div>
 
@@ -26,7 +26,7 @@
                 <div class="dash-card p-4 text-center"><p class="text-xs text-gray-400">رصيد افتتاحي</p><p class="font-bold font-mono mt-1" dir="ltr">{{ fmt(summary.opening_balance) }}</p></div>
                 <div class="dash-card p-4 text-center"><p class="text-xs text-gray-400">إجمالي المدين (ذمة)</p><p class="font-bold font-mono text-red-500 mt-1" dir="ltr">{{ fmt(summary.total_debit) }}</p></div>
                 <div class="dash-card p-4 text-center"><p class="text-xs text-gray-400">إجمالي الدائن (تسديد)</p><p class="font-bold font-mono text-green-500 mt-1" dir="ltr">{{ fmt(summary.total_credit) }}</p></div>
-                <div class="dash-card p-4 text-center"><p class="text-xs text-gray-400">الرصيد الختامي</p><p class="font-bold font-mono text-lg mt-1" dir="ltr" :class="parseFloat(client.balance_jod)>0?'text-red-500':'text-green-500'">{{ fmt(client.balance_jod) }}</p></div>
+                <div class="dash-card p-4 text-center"><p class="text-xs text-gray-400">الرصيد الختامي</p><p class="font-bold font-mono text-lg mt-1" dir="ltr" :class="parseFloat(client.balance_jod)>0?'text-green-500':'text-red-500'">{{ fmt(client.balance_jod) }}</p></div>
             </div>
 
             <!-- Ledger Table -->
@@ -49,7 +49,7 @@
                             <td data-label="النوع" class="px-4 py-3 text-right hide-mobile"><span class="px-2 py-0.5 rounded text-xs font-bold" :class="typeClass(e.transaction_type)">{{ typeLabel(e.transaction_type) }}</span></td>
                             <td data-label="مدين" class="px-4 py-3 text-right font-mono text-xs" dir="ltr" :class="parseFloat(e.debit)>0?'text-red-500 font-bold':'text-gray-300 dark:text-gray-600'">{{ parseFloat(e.debit)>0?Number(e.debit).toFixed(3):'—' }}</td>
                             <td data-label="دائن" class="px-4 py-3 text-right font-mono text-xs" dir="ltr" :class="parseFloat(e.credit)>0?'text-green-500 font-bold':'text-gray-300 dark:text-gray-600'">{{ parseFloat(e.credit)>0?Number(e.credit).toFixed(3):'—' }}</td>
-                            <td data-label="الرصيد" class="px-4 py-3 text-right font-mono text-xs font-bold" dir="ltr" :class="parseFloat(e.balance_after)>0?'text-red-500':'text-green-500'">{{ Number(e.balance_after).toFixed(3) }}</td>
+                            <td data-label="الرصيد" class="px-4 py-3 text-right font-mono text-xs font-bold" dir="ltr" :class="parseFloat(e.balance_after)>0?'text-green-500':'text-red-500'">{{ Number(e.balance_after).toFixed(3) }}</td>
                             <td data-label="" class="px-4 py-3 text-center whitespace-nowrap hide-mobile actions-cell">
                                 <a v-if="printUrl(e)" :href="printUrl(e)" target="_blank" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg btn-mobile-sm">🖨️</a>
                                 <span v-else class="text-xs text-gray-300">—</span>

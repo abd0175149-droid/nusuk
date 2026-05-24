@@ -15,8 +15,6 @@
                         <th class="px-5 py-3 text-right font-bold">الاسم</th>
                         <th class="px-5 py-3 text-right font-bold hide-mobile">الكود</th>
                         <th class="px-5 py-3 text-right font-bold">الرصيد (الذمة)</th>
-                        <th class="px-5 py-3 text-right font-bold hide-mobile">الحد الائتماني</th>
-                        <th class="px-5 py-3 text-right font-bold hide-mobile">التجاوز</th>
                         <th class="px-5 py-3 text-right font-bold">الحالة</th>
                         <th class="px-5 py-3 text-center font-bold">إجراءات</th>
                     </tr></thead>
@@ -24,12 +22,7 @@
                         <tr v-for="c in clients.data" :key="c.id" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
                             <td data-label="الاسم" class="px-5 py-3 text-right font-medium text-gray-800 dark:text-gray-100">{{ c.name }}</td>
                             <td data-label="الكود" class="px-5 py-3 text-right font-mono text-xs text-gold-700 hide-mobile">{{ c.code }}</td>
-                            <td data-label="الرصيد" class="px-5 py-3 text-right font-bold font-mono text-xs" :class="parseFloat(c.balance_jod)>=0?'text-green-600':'text-red-600'" dir="ltr">{{ Number(c.balance_jod).toLocaleString('en',{minimumFractionDigits: c.currency==='SAR'?2:3}) }} {{ c.currency||'JOD' }}</td>
-                            <td data-label="الحد" class="px-5 py-3 text-right font-mono text-xs text-gray-600 dark:text-gray-400 hide-mobile" dir="ltr">{{ Number(c.credit_limit_jod||0).toLocaleString('en',{minimumFractionDigits:3}) }}</td>
-                            <td data-label="التجاوز" class="px-5 py-3 text-right hide-mobile">
-                                <span v-if="parseFloat(c.balance_jod) < 0 && Math.abs(parseFloat(c.balance_jod)) > parseFloat(c.credit_limit_jod||0)" class="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">⚠ متجاوز</span>
-                                <span v-else class="text-xs text-gray-400">—</span>
-                            </td>
+                            <td data-label="الرصيد" class="px-5 py-3 text-right font-bold font-mono text-xs" :class="parseFloat(c.balance_jod)>0?'text-green-600':'text-red-600'" dir="ltr">{{ Number(c.balance_jod).toLocaleString('en',{minimumFractionDigits: c.currency==='SAR'?2:3}) }} {{ c.currency||'JOD' }}</td>
                             <td data-label="الحالة" class="px-5 py-3 text-right"><span class="px-2.5 py-1 rounded-full text-xs font-bold" :class="c.is_active?'bg-green-100 text-green-700':'bg-red-100 text-red-700'">{{ c.is_active?'نشط':'معطل' }}</span></td>
                             <td data-label="" class="px-5 py-3 text-center whitespace-nowrap actions-cell">
                                 <a :href="'/clients/'+c.id" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg btn-mobile-sm">📊 كشف</a>
@@ -91,7 +84,6 @@
                         </div>
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">رقم السجل التجاري</label><input v-model="form.id_number" dir="ltr" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
                         <div v-if="editItem" class="flex items-end"><label class="flex items-center gap-2"><input v-model="form.is_active" type="checkbox" class="w-4 h-4 rounded text-gold-500"/><span class="text-sm">نشط</span></label></div>
-                        <div><label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">الحد الائتماني (JOD)</label><input v-model="form.credit_limit_jod" type="number" step="0.001" min="0" placeholder="0.000" dir="ltr" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-mono focus:ring-2 focus:ring-gold-500 focus:outline-none dark:text-white"/><p class="mt-1 text-xs text-gray-400">الحد الأقصى للذمة المسموح بها للعميل</p></div>
                     </div>
                     <div><label class="block text-sm font-medium text-gray-700 mb-1">العنوان</label><textarea v-model="form.address" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none resize-none"></textarea></div>
                     <div><label class="block text-sm font-medium text-gray-700 mb-1">ملاحظات</label><textarea v-model="form.notes" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none resize-none"></textarea></div>
@@ -132,7 +124,7 @@ const search = ref(props.filters?.search||'');
 const showForm = ref(false); const editItem = ref(null); const viewClient = ref(null);
 let t=null;
 
-const form = useForm({ name:'',phone:'',email:'',country:'',city:'',contact_person:'',id_number:'',address:'',notes:'',is_active:true,credit_limit_jod:0 });
+const form = useForm({ name:'',phone:'',email:'',country:'',city:'',contact_person:'',id_number:'',address:'',notes:'',is_active:true });
 
 const citiesList = computed(() => form.country === 'JO' ? joCities : form.country === 'SA' ? saCities : []);
 watch(() => form.country, (nv, ov) => { if (ov && nv !== ov) form.city = ''; });
@@ -164,7 +156,6 @@ const openModal = (c) => {
     form.address = c?.address||'';
     form.notes = c?.notes||'';
     form.is_active = c?.is_active??true;
-    form.credit_limit_jod = c?.credit_limit_jod||0;
     form.clearErrors();
     showForm.value = true;
 };

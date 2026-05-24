@@ -21,8 +21,8 @@
                     <tbody>
                         <tr v-for="a in agents.data" :key="a.id" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
                             <td data-label="الاسم" class="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">{{ a.name }}</td>
-                            <td data-label="الرصيد SAR" class="px-5 py-3 font-bold font-mono" :class="parseFloat(a.balance_sar)>=0?'text-green-600':'text-red-600'">{{ Number(a.balance_sar).toLocaleString('en',{minimumFractionDigits:2}) }} SAR</td>
-                            <td data-label="الرصيد JOD" class="px-5 py-3 font-bold font-mono hide-mobile" :class="parseFloat(a.balance_sar)>=0?'text-green-600':'text-red-600'">{{ (Number(a.balance_sar) * 0.19).toLocaleString('en',{minimumFractionDigits:3}) }} JOD</td>
+                            <td data-label="الرصيد SAR" class="px-5 py-3 font-bold font-mono" :class="parseFloat(a.balance_sar)>0?'text-red-600':'text-green-600'">{{ Number(a.balance_sar).toLocaleString('en',{minimumFractionDigits:2}) }} SAR</td>
+                            <td data-label="الرصيد JOD" class="px-5 py-3 font-bold font-mono hide-mobile" :class="parseFloat(a.balance_sar)>0?'text-red-600':'text-green-600'">{{ (Number(a.balance_sar) * 0.19).toLocaleString('en',{minimumFractionDigits:3}) }} JOD</td>
                             <td data-label="" class="px-5 py-3 text-center whitespace-nowrap actions-cell">
                                 <a :href="'/agents/'+a.id" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg btn-mobile-sm">📊 كشف</a>
                                 <button @click="openView(a)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg btn-mobile-sm">👁️ عرض</button>

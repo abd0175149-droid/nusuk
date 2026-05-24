@@ -349,13 +349,16 @@ const toggleTheme = () => {
 
 const menuGroups = [
     { label: '💼 العمليات', items: [
+        { icon: '🧾', label: 'المطالبات', route: '/invoices', permission: 'invoices.view' },
+        { icon: '📄', label: 'سندات القبض', route: '/receipts', permission: 'receipts.view' },
+        { icon: '💱', label: 'الحوالات', route: '/transfers', permission: 'transfers.view' },
+        { icon: '💰', label: 'المصاريف', route: '/expenses', permission: 'expenses.view' },
+        { icon: '⚠️', label: 'المخالفات', route: '/violations', permission: 'violations.view' },
+    ]},
+    { label: '📂 عمليات أخرى', items: [
         { icon: '🏢', label: 'الوكلاء', route: '/agents', permission: 'agents.view' },
         { icon: '👥', label: 'العملاء', route: '/clients', permission: 'clients.view' },
-        { icon: '💱', label: 'الحوالات', route: '/transfers', permission: 'transfers.view' },
-        { icon: '📄', label: 'سندات القبض', route: '/receipts', permission: 'receipts.view' },
-        { icon: '⚠️', label: 'المخالفات', route: '/violations', permission: 'violations.view' },
-        { icon: '🧾', label: 'الفواتير', route: '/invoices', permission: 'invoices.view' },
-        { icon: '💰', label: 'المصاريف', route: '/expenses', permission: 'expenses.view' },
+        { icon: '📊', label: 'قائمة الدخل', route: '/accounting/profit-loss', permission: 'reports.view' },
     ]},
     { label: '🏛️ المحاسبة', items: [
         { icon: '🌳', label: 'شجرة الحسابات', route: '/accounting/chart-of-accounts', permission: 'reports.view' },
@@ -375,7 +378,7 @@ const menuGroups = [
     ]},
 ];
 
-const openGroups = ref({ '💼 العمليات': true, '🏛️ المحاسبة': true, '⚙️ الإعدادات': true });
+const openGroups = ref({ '💼 العمليات': true, '📂 عمليات أخرى': true, '🏛️ المحاسبة': true, '⚙️ الإعدادات': true });
 const toggleGroup = (label) => { 
     openGroups.value[label] = !openGroups.value[label]; 
     localStorage.setItem('nusuk-sidebar-groups', JSON.stringify(openGroups.value));
