@@ -260,7 +260,7 @@ const AccountRow = defineComponent({
                         'text-gray-400 dark:text-gray-500'
                     }`,
                     dir: 'ltr',
-                }, Number(totalBalance.value).toLocaleString('en', { minimumFractionDigits: 3 })),
+                }, Number(Math.abs(totalBalance.value)).toLocaleString('en', { minimumFractionDigits: 3 })),
                 h('span', { class: 'text-[10px] text-gray-400 dark:text-gray-500 font-mono min-w-[28px]' }, a.currency),
                 h('div', { class: 'hidden group-hover:flex items-center gap-1 mr-1' }, [
                     h('a', {

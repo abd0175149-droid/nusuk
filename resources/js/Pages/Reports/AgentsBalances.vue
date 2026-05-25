@@ -24,7 +24,7 @@
                             <td class="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">{{ a.name }}</td>
                             <td class="px-5 py-3 font-mono text-xs text-gold-700">{{ a.code }}</td>
                             <td class="px-5 py-3 text-xs">{{ {JO:'🇯🇴',SA:'🇸🇦'}[a.country]||'' }}</td>
-                            <td class="px-5 py-3 font-bold font-mono" dir="ltr" :class="parseFloat(a.balance_sar)>0?'text-red-600':'text-green-600'">{{ Number(a.balance_sar).toLocaleString('en',{minimumFractionDigits:2}) }} {{ a.currency||'SAR' }}</td>
+                            <td class="px-5 py-3 font-bold font-mono" dir="ltr" :class="parseFloat(a.balance_sar)>0?'text-red-600':'text-green-600'">{{ Math.abs(Number(a.balance_sar)).toLocaleString('en',{minimumFractionDigits:2}) }} {{ a.currency||'SAR' }}</td>
                             <td class="px-5 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="a.is_active?'bg-green-100 text-green-700':'bg-red-100 text-red-700'">{{ a.is_active?'نشط':'معطل' }}</span></td>
                         </tr>
                     </tbody>

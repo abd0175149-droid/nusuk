@@ -8,7 +8,7 @@
                     <div><span class="text-gray-400 text-xs">الكود</span><p class="font-mono text-gold-500">{{ agent.code }}</p></div>
                     <div><span class="text-gray-400 text-xs">الدولة</span><p>{{ {JO:'🇯🇴 الأردن',SA:'🇸🇦 السعودية'}[agent.country] }}</p></div>
                     <div><span class="text-gray-400 text-xs">الهاتف</span><p dir="ltr">{{ agent.phone||'—' }}</p></div>
-                    <div><span class="text-gray-400 text-xs">الرصيد الحالي</span><p class="font-bold font-mono text-lg" dir="ltr" :class="parseFloat(agent.balance_sar)>0?'text-red-500':'text-green-500'">{{ Number(agent.balance_sar).toLocaleString('en',{minimumFractionDigits:2}) }} SAR</p></div>
+                    <div><span class="text-gray-400 text-xs">الرصيد الحالي</span><p class="font-bold font-mono text-lg" dir="ltr" :class="parseFloat(agent.balance_sar)>0?'text-red-500':'text-green-500'">{{ Math.abs(Number(agent.balance_sar)).toLocaleString('en',{minimumFractionDigits:2}) }} SAR</p></div>
                 </div>
             </div>
 
@@ -26,7 +26,7 @@
                 <div class="dash-card p-4 text-center"><p class="text-xs text-gray-400">رصيد افتتاحي</p><p class="font-bold font-mono mt-1" dir="ltr">{{ fmt(summary.opening_balance) }}</p></div>
                 <div class="dash-card p-4 text-center"><p class="text-xs text-gray-400">إجمالي المدين</p><p class="font-bold font-mono text-red-500 mt-1" dir="ltr">{{ fmt(summary.total_debit) }}</p></div>
                 <div class="dash-card p-4 text-center"><p class="text-xs text-gray-400">إجمالي الدائن</p><p class="font-bold font-mono text-green-500 mt-1" dir="ltr">{{ fmt(summary.total_credit) }}</p></div>
-                <div class="dash-card p-4 text-center"><p class="text-xs text-gray-400">الرصيد الختامي</p><p class="font-bold font-mono text-lg mt-1" dir="ltr" :class="parseFloat(agent.balance_sar)>0?'text-red-500':'text-green-500'">{{ fmt(agent.balance_sar) }}</p></div>
+                <div class="dash-card p-4 text-center"><p class="text-xs text-gray-400">الرصيد الختامي</p><p class="font-bold font-mono text-lg mt-1" dir="ltr" :class="parseFloat(agent.balance_sar)>0?'text-red-500':'text-green-500'">{{ fmtAbs(agent.balance_sar) }}</p></div>
             </div>
 
             <!-- Ledger Table -->
@@ -49,7 +49,7 @@
                             <td data-label="النوع" class="px-4 py-3 text-right hide-mobile"><span class="px-2 py-0.5 rounded text-xs font-bold" :class="typeClass(e.transaction_type)">{{ typeLabel(e.transaction_type) }}</span></td>
                             <td data-label="مدين" class="px-4 py-3 text-right font-mono text-xs" dir="ltr" :class="parseFloat(e.debit)>0?'text-red-500 font-bold':'text-gray-300 dark:text-gray-600'">{{ parseFloat(e.debit)>0?Number(e.debit).toFixed(2):'—' }}</td>
                             <td data-label="دائن" class="px-4 py-3 text-right font-mono text-xs" dir="ltr" :class="parseFloat(e.credit)>0?'text-green-500 font-bold':'text-gray-300 dark:text-gray-600'">{{ parseFloat(e.credit)>0?Number(e.credit).toFixed(2):'—' }}</td>
-                            <td data-label="الرصيد" class="px-4 py-3 text-right font-mono text-xs font-bold" dir="ltr" :class="parseFloat(e.balance_after)>0?'text-red-500':'text-green-500'">{{ Number(e.balance_after).toFixed(2) }}</td>
+                            <td data-label="الرصيد" class="px-4 py-3 text-right font-mono text-xs font-bold" dir="ltr" :class="parseFloat(e.balance_after)>0?'text-red-500':'text-green-500'">{{ Math.abs(Number(e.balance_after)).toFixed(2) }}</td>
                             <td data-label="" class="px-4 py-3 text-center whitespace-nowrap hide-mobile actions-cell">
                                 <a v-if="printUrl(e)" :href="printUrl(e)" target="_blank" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg btn-mobile-sm">🖨️</a>
                                 <span v-else class="text-xs text-gray-300">—</span>
@@ -71,6 +71,7 @@ const props = defineProps({ agent: Object, entries: Array, summary: Object, filt
 const from = ref(props.filters?.from||'');
 const to = ref(props.filters?.to||'');
 const fmt = (v) => Number(v||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtAbs = (v) => Math.abs(Number(v||0)).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
 const applyFilter = () => { router.get('/agents/'+props.agent.id,{from:from.value,to:to.value},{preserveState:true,replace:true}); };
 const typeLabel = (t) => ({transfer:'حوالة',violation:'مخالفة',invoice:'فاتورة',receipt:'سند قبض',expense:'مصروف'}[t]||t);
 const typeClass = (t) => ({transfer:'bg-green-500/20 text-green-400',violation:'bg-red-500/20 text-red-400',invoice:'bg-blue-500/20 text-blue-400',receipt:'bg-purple-500/20 text-purple-400',expense:'bg-amber-500/20 text-amber-400',reversal:'bg-gray-500/20 text-gray-400'}[t]||'bg-gray-500/20 text-gray-400');

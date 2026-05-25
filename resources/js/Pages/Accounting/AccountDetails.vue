@@ -10,7 +10,7 @@
                         <div class="flex items-center gap-4 mt-1 text-xs text-gray-500">
                             <span>النوع: <strong>{{ typeLabels[account.type] }}</strong></span>
                             <span>العملة: <strong>{{ account.currency }}</strong></span>
-                            <span>الرصيد الحالي: <strong class="text-lg" :class="Number(account.balance) >= 0 ? 'text-green-600' : 'text-red-600'">{{ Number(account.balance).toLocaleString('en',{minimumFractionDigits:3}) }}</strong></span>
+                            <span>الرصيد الحالي: <strong class="text-lg" :class="Number(account.balance) >= 0 ? 'text-green-600' : 'text-red-600'">{{ Math.abs(Number(account.balance)).toLocaleString('en',{minimumFractionDigits:3}) }}</strong></span>
                         </div>
                     </div>
                     <a href="/accounting/chart-of-accounts" class="px-4 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-100 border">← العودة للشجرة</a>
@@ -43,7 +43,7 @@
                         <tr class="bg-blue-50 dark:bg-blue-900/20 font-bold">
                             <td class="px-4 py-3 text-right text-xs" colspan="4">الرصيد الافتتاحي</td>
                             <td class="px-4 py-3 text-right font-mono text-xs" colspan="2"></td>
-                            <td class="px-4 py-3 text-right font-mono text-xs font-bold" :class="opening_balance >= 0 ? 'text-green-600' : 'text-red-600'">{{ fmt(opening_balance) }}</td>
+                            <td class="px-4 py-3 text-right font-mono text-xs font-bold" :class="opening_balance >= 0 ? 'text-green-600' : 'text-red-600'">{{ fmtAbs(opening_balance) }}</td>
                         </tr>
                         <!-- الحركات -->
                         <tr v-for="(line, i) in lines" :key="i" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30" :class="{'opacity-50 line-through': line.is_reversed}">
@@ -53,7 +53,7 @@
                             <td class="px-4 py-3 text-right text-xs"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="refClass(line.reference_type)">{{ refLabels[line.reference_type] || line.reference_type }}</span></td>
                             <td class="px-4 py-3 text-right font-mono text-xs" :class="Number(line.debit) > 0 ? 'text-red-600 font-bold' : 'text-gray-300'">{{ fmt(line.debit) }}</td>
                             <td class="px-4 py-3 text-right font-mono text-xs" :class="Number(line.credit) > 0 ? 'text-green-600 font-bold' : 'text-gray-300'">{{ fmt(line.credit) }}</td>
-                            <td class="px-4 py-3 text-right font-mono text-xs font-bold" :class="runningBalance(i) >= 0 ? 'text-green-700' : 'text-red-700'">{{ fmt(runningBalance(i)) }}</td>
+                            <td class="px-4 py-3 text-right font-mono text-xs font-bold" :class="runningBalance(i) >= 0 ? 'text-green-700' : 'text-red-700'">{{ fmtAbs(runningBalance(i)) }}</td>
                         </tr>
                         <tr v-if="!lines.length"><td colspan="7" class="px-5 py-12 text-center text-gray-400">لا يوجد حركات في هذه الفترة</td></tr>
                     </tbody>
@@ -63,7 +63,7 @@
                             <td class="px-4 py-3 text-right" colspan="4">المجموع</td>
                             <td class="px-4 py-3 text-right font-mono text-red-700">{{ fmt(totals.debit) }}</td>
                             <td class="px-4 py-3 text-right font-mono text-green-700">{{ fmt(totals.credit) }}</td>
-                            <td class="px-4 py-3 text-right font-mono font-bold" :class="closingBalance >= 0 ? 'text-green-700' : 'text-red-700'">{{ fmt(closingBalance) }}</td>
+                            <td class="px-4 py-3 text-right font-mono font-bold" :class="closingBalance >= 0 ? 'text-green-700' : 'text-red-700'">{{ fmtAbs(closingBalance) }}</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -96,6 +96,7 @@ const refClass = (type) => ({
 }[type] || 'bg-gray-100 text-gray-500');
 
 const fmt = (v) => Number(v || 0).toLocaleString('en', { minimumFractionDigits: 3 });
+const fmtAbs = (v) => Math.abs(Number(v || 0)).toLocaleString('en', { minimumFractionDigits: 3 });
 
 const isDebitNature = computed(() => ['asset', 'expense'].includes(props.account.type));
 

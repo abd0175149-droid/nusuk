@@ -28,7 +28,7 @@
                         <div class="sum-card"><p class="sum-label">رصيد افتتاحي</p><p class="sum-val mono">{{ fmt(summary.opening_balance) }}</p></div>
                         <div class="sum-card debit"><p class="sum-label">مدين</p><p class="sum-val mono red">{{ fmt(summary.total_debit) }}</p></div>
                         <div class="sum-card credit"><p class="sum-label">دائن</p><p class="sum-val mono green">{{ fmt(summary.total_credit) }}</p></div>
-                        <div class="sum-card closing"><p class="sum-label">الرصيد الختامي</p><p class="sum-val mono gold">{{ fmt(type==='agent'?entity.balance_sar:entity.balance_jod) }}</p></div>
+                        <div class="sum-card closing"><p class="sum-label">الرصيد الختامي</p><p class="sum-val mono gold">{{ fmtAbs(type==='agent'?entity.balance_sar:entity.balance_jod) }}</p></div>
                     </div>
                 </template>
                 <div v-if="pi > 0" class="page-num">
@@ -49,7 +49,7 @@
                                 <td class="center"><span class="ref-tag">{{ typeLabel(e.transaction_type) }}</span></td>
                                 <td class="mono right" :class="parseFloat(e.debit)>0?'red bold':''">{{ parseFloat(e.debit)>0?fmt(e.debit):'—' }}</td>
                                 <td class="mono right" :class="parseFloat(e.credit)>0?'green bold':''">{{ parseFloat(e.credit)>0?fmt(e.credit):'—' }}</td>
-                                <td class="mono right bold">{{ fmt(e.balance_after) }}</td>
+                                <td class="mono right bold">{{ fmtAbs(e.balance_after) }}</td>
                             </tr>
                             <tr v-if="!page.items?.length"><td colspan="7" class="empty">لا يوجد حركات</td></tr>
                         </tbody>
@@ -72,6 +72,7 @@ import { ref, computed, onMounted, nextTick } from 'vue';
 const props = defineProps({ entity: Object, entries: Array, summary: Object, filters: Object, type: String, templateUrl: String, layout: Object });
 const decimals = props.type === 'agent' ? 2 : 3;
 const fmt = (v) => Number(v||0).toLocaleString('en', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+const fmtAbs = (v) => Math.abs(Number(v||0)).toLocaleString('en', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 const typeLabel = (t) => ({transfer:'حوالة',violation:'مخالفة',invoice:'فاتورة',receipt:'سند قبض',expense:'مصروف'}[t]||t);
 
 const defaults = {

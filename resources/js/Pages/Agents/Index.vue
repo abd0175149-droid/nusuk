@@ -21,8 +21,8 @@
                     <tbody>
                         <tr v-for="a in agents.data" :key="a.id" class="border-t border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
                             <td data-label="الاسم" class="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">{{ a.name }}</td>
-                            <td data-label="الرصيد SAR" class="px-5 py-3 font-bold font-mono" :class="parseFloat(a.balance_sar)>0?'text-red-600':'text-green-600'">{{ Number(a.balance_sar).toLocaleString('en',{minimumFractionDigits:2}) }} SAR</td>
-                            <td data-label="الرصيد JOD" class="px-5 py-3 font-bold font-mono hide-mobile" :class="parseFloat(a.balance_sar)>0?'text-red-600':'text-green-600'">{{ (Number(a.balance_sar) * 0.19).toLocaleString('en',{minimumFractionDigits:3}) }} JOD</td>
+                            <td data-label="الرصيد SAR" class="px-5 py-3 font-bold font-mono" :class="parseFloat(a.balance_sar)>0?'text-red-600':'text-green-600'">{{ Math.abs(Number(a.balance_sar)).toLocaleString('en',{minimumFractionDigits:2}) }} SAR</td>
+                            <td data-label="الرصيد JOD" class="px-5 py-3 font-bold font-mono hide-mobile" :class="parseFloat(a.balance_sar)>0?'text-red-600':'text-green-600'">{{ Math.abs(Number(a.balance_sar) * 0.19).toLocaleString('en',{minimumFractionDigits:3}) }} JOD</td>
                             <td data-label="" class="px-5 py-3 text-center whitespace-nowrap actions-cell">
                                 <a :href="'/agents/'+a.id" class="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg btn-mobile-sm">📊 كشف</a>
                                 <button @click="openView(a)" class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg btn-mobile-sm">👁️ عرض</button>
@@ -58,7 +58,7 @@
                     <div><span class="text-gray-400">الدولة:</span><p>{{ {JO:'🇯🇴 الأردن',SA:'🇸🇦 السعودية'}[viewAgent.country]||'—' }}</p></div>
                     <div><span class="text-gray-400">المدينة:</span><p>{{ viewAgent.city||'—' }}</p></div>
                     <div><span class="text-gray-400">جهة الاتصال:</span><p>{{ viewAgent.contact_person||'—' }}</p></div>
-                    <div><span class="text-gray-400">الرصيد:</span><p class="font-bold font-mono">{{ Number(viewAgent.balance_sar).toLocaleString('en',{minimumFractionDigits: viewAgent.currency==='JOD'?3:2}) }} {{ viewAgent.currency||'SAR' }}</p></div>
+                    <div><span class="text-gray-400">الرصيد:</span><p class="font-bold font-mono" :class="parseFloat(viewAgent.balance_sar)>0?'text-red-600':'text-green-600'">{{ Math.abs(Number(viewAgent.balance_sar)).toLocaleString('en',{minimumFractionDigits: viewAgent.currency==='JOD'?3:2}) }} {{ viewAgent.currency||'SAR' }}</p></div>
                     <div class="col-span-2"><span class="text-gray-400">العنوان:</span><p>{{ viewAgent.address||'—' }}</p></div>
                     <div class="col-span-2"><span class="text-gray-400">ملاحظات:</span><p>{{ viewAgent.notes||'—' }}</p></div>
                     <div><span class="text-gray-400">الحالة:</span><p><span class="px-2 py-0.5 rounded-full text-xs font-bold" :class="viewAgent.is_active?'bg-green-100 text-green-700':'bg-red-100 text-red-700'">{{ viewAgent.is_active?'نشط':'معطل' }}</span></p></div>
@@ -74,7 +74,7 @@
                                 <td class="px-4 py-2 font-medium">{{ cl.name }}</td>
                                 <td class="px-4 py-2 font-mono text-xs text-gold-700">{{ cl.code }}</td>
                                 <td class="px-4 py-2"><span dir="ltr" class="inline-block">{{ cl.phone||'—' }}</span></td>
-                                <td class="px-4 py-2 font-mono font-bold" :class="parseFloat(cl.balance_jod)>=0?'text-green-600':'text-red-600'">{{ Number(cl.balance_jod).toLocaleString('en',{minimumFractionDigits:3}) }}</td>
+                                <td class="px-4 py-2 font-mono font-bold" :class="parseFloat(cl.balance_jod)>0?'text-green-600':'text-red-600'">{{ Math.abs(Number(cl.balance_jod)).toLocaleString('en',{minimumFractionDigits:3}) }}</td>
                             </tr></tbody>
                         </table>
                     </div>
