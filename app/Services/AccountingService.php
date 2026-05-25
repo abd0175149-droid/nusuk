@@ -21,7 +21,7 @@ class AccountingService
     // ============================================================
     private static function getExchangeRate(): float
     {
-        return (float) (config('accounting.sar_to_jod', 0.1880));
+        return (float) (config('accounting.sar_to_jod', 0.19));
     }
 
     /**

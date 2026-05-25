@@ -207,7 +207,7 @@ let t = null;
 const pos = reactive({
     agent_id: '',
     client_id: '',
-    exchange_rate: props.exchangeRate || 0.078,
+    exchange_rate: props.exchangeRate || 0.19,
     discount: 0,
     notes: '',
     items: [],
@@ -239,7 +239,7 @@ const openPOS = async (inv = null) => {
             const data = await res.json();
             pos.agent_id = data.agent_id;
             pos.client_id = data.client_id;
-            pos.exchange_rate = parseFloat(data.exchange_rate_snapshot) || props.exchangeRate || 0.078;
+            pos.exchange_rate = parseFloat(data.exchange_rate_snapshot) || props.exchangeRate || 0.19;
             pos.discount = parseFloat(data.discount_sar) || 0;
             pos.notes = data.notes || '';
             pos.items = (data.items || []).map(item => ({
@@ -257,7 +257,7 @@ const openPOS = async (inv = null) => {
             console.error('Error loading invoice:', e);
             pos.agent_id = inv.agent_id || '';
             pos.client_id = inv.client_id || '';
-            pos.exchange_rate = props.exchangeRate || 0.078;
+            pos.exchange_rate = props.exchangeRate || 0.19;
             pos.discount = 0;
             pos.notes = '';
             pos.items = [];
@@ -267,7 +267,7 @@ const openPOS = async (inv = null) => {
         editingInvoiceId.value = null;
         pos.agent_id = '';
         pos.client_id = '';
-        pos.exchange_rate = props.exchangeRate || 0.078;
+        pos.exchange_rate = props.exchangeRate || 0.19;
         pos.discount = 0;
         pos.notes = '';
         pos.items = [];
