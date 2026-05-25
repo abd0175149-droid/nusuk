@@ -32,7 +32,7 @@
                                 </td>
                                 <td class="center"><span class="type-badge" :style="{color:typeColor(row.type)}">{{ typeLabel(row.type) }}</span></td>
                                 <td class="mono center" style="font-size:8pt">{{ row.currency }}</td>
-                                <td class="mono right bold" :class="row.isParent?'':(parseFloat(row.balance)>=0?'green':'red')">{{ row.isParent ? '—' : fmt(row.balance) }}</td>
+                                <td class="mono right bold" :class="row.isParent?'':(parseFloat(row.balance)>=0?'green':'red')">{{ row.isParent ? '—' : fmt(Math.abs(row.balance)) }}</td>
                                 <td class="center" style="font-size:7pt"><span v-if="row.is_active" class="green">● نشط</span><span v-else class="red">○ معطل</span></td>
                             </tr>
                         </tbody>
