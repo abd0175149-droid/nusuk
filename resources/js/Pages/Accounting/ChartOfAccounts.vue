@@ -255,9 +255,10 @@ const AccountRow = defineComponent({
                 h('span', { class: `px-2 py-0.5 rounded-md text-[10px] font-bold ${typeColors[a.type] || ''}` }, typeLabels[a.type]),
                 h('span', {
                     class: `font-mono text-xs font-bold min-w-[70px] text-left ${
-                        totalBalance.value > 0 ? 'text-green-600 dark:text-green-400' :
-                        totalBalance.value < 0 ? 'text-red-600 dark:text-red-400' :
-                        'text-gray-400 dark:text-gray-500'
+                        totalBalance.value === 0 ? 'text-gray-400 dark:text-gray-500' :
+                        ['liability', 'equity'].includes(a.type)
+                            ? (totalBalance.value > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400')
+                            : (totalBalance.value > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400')
                     }`,
                     dir: 'ltr',
                 }, Number(Math.abs(totalBalance.value)).toLocaleString('en', { minimumFractionDigits: 3 })),
