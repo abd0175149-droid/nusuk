@@ -41,7 +41,7 @@ class InvoiceController extends Controller
             'agents' => Agent::where('is_active', true)->select('id', 'name', 'code', 'currency')->get(),
             'clients' => Client::where('is_active', true)->select('id', 'name', 'code')->get(),
             'services' => Service::where('is_active', true)->get(),
-            'exchangeRate' => $todayRate->sar_to_jod ?? $lastRate->sar_to_jod ?? 0.078,
+            'exchangeRate' => $todayRate->sar_to_jod ?? $lastRate->sar_to_jod ?? 0.19,
         ]);
     }
 

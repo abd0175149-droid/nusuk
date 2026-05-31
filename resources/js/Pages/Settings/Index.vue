@@ -12,7 +12,7 @@
                         <form @submit.prevent="submitRate" class="space-y-4">
                             <div class="grid grid-cols-2 gap-4">
                                 <div><label class="block text-sm font-medium text-gray-700 mb-1">التاريخ *</label><input v-model="rateForm.rate_date" type="date" required dir="ltr" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
-                                <div><label class="block text-sm font-medium text-gray-700 mb-1">SAR → JOD *</label><input v-model="rateForm.sar_to_jod" type="number" step="0.000001" required dir="ltr" placeholder="0.078" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
+                                <div><label class="block text-sm font-medium text-gray-700 mb-1">SAR → JOD *</label><input v-model="rateForm.sar_to_jod" type="number" step="0.000001" required dir="ltr" placeholder="0.19" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
                             </div>
                             <div><label class="block text-sm font-medium text-gray-700 mb-1">ملاحظات</label><input v-model="rateForm.notes" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-gold-500 focus:outline-none"/></div>
                             <div class="flex items-center gap-4">

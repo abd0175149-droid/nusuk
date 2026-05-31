@@ -35,7 +35,7 @@ class DashboardController extends Controller
         // Admin → لوحة القيادة الكاملة
         $todayRate = ExchangeRate::where('rate_date', today()->toDateString())->first();
         $lastRate = ExchangeRate::orderByDesc('rate_date')->first();
-        $rate = $todayRate->sar_to_jod ?? $lastRate->sar_to_jod ?? 0.078;
+        $rate = $todayRate->sar_to_jod ?? $lastRate->sar_to_jod ?? 0.19;
 
         // بطاقات الإحصائيات
         $stats = [
