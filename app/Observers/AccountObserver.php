@@ -41,7 +41,7 @@ class AccountObserver
                 // Agent
                 $agent = Agent::where('account_id', $account->id)->first();
                 if (!$agent) {
-                    $lastCode = Agent::where('code', 'like', 'AGT-%')->orderByDesc('code')->value('code');
+                    $lastCode = Agent::withTrashed()->where('code', 'like', 'AGT-%')->orderByDesc('code')->value('code');
                     $nextNum = $lastCode ? (int)substr($lastCode, 4) + 1 : 1;
                     $entityData['code'] = 'AGT-' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
                     $entityData['country'] = 'JO';
@@ -56,7 +56,7 @@ class AccountObserver
                 // Client
                 $client = Client::where('account_id', $account->id)->first();
                 if (!$client) {
-                    $lastCode = Client::where('code', 'like', 'CLT-%')->orderByDesc('code')->value('code');
+                    $lastCode = Client::withTrashed()->where('code', 'like', 'CLT-%')->orderByDesc('code')->value('code');
                     $nextNum = $lastCode ? (int)substr($lastCode, 4) + 1 : 1;
                     $entityData['code'] = 'CLT-' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
                     $entityData['country'] = 'JO';
@@ -71,7 +71,7 @@ class AccountObserver
                 // Service
                 $service = Service::where('account_id', $account->id)->first();
                 if (!$service) {
-                    $lastCode = Service::where('code', 'like', 'SRV-%')->orderByDesc('code')->value('code');
+                    $lastCode = Service::withTrashed()->where('code', 'like', 'SRV-%')->orderByDesc('code')->value('code');
                     $nextNum = $lastCode ? (int)substr($lastCode, 4) + 1 : 1;
                     $entityData['code'] = 'SRV-' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
                     $entityData['default_price_sar'] = 0;

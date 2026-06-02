@@ -31,7 +31,7 @@ class ViolationTypeController extends Controller
             'description' => 'nullable|string|max:1000',
         ]);
 
-        $lastCode = ViolationType::where('code', 'like', 'VLT-%')->orderByDesc('code')->value('code');
+        $lastCode = ViolationType::withTrashed()->where('code', 'like', 'VLT-%')->orderByDesc('code')->value('code');
         $nextNum = $lastCode ? (int)substr($lastCode, 4) + 1 : 1;
         $validated['code'] = 'VLT-' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
         $validated['is_active'] = true;

@@ -35,7 +35,7 @@ class ExpenseCategoryController extends Controller
             'description' => 'nullable|string|max:500',
             'account_id' => 'nullable|exists:accounts,id',
         ]);
-        $lastCode = ExpenseCategory::where('code', 'like', 'CAT-%')->orderByDesc('code')->value('code');
+        $lastCode = ExpenseCategory::withTrashed()->where('code', 'like', 'CAT-%')->orderByDesc('code')->value('code');
         $nextNum = $lastCode ? (int)substr($lastCode, 4) + 1 : 1;
         $validated['code'] = 'CAT-' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
         $validated['is_active'] = true;

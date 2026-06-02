@@ -31,7 +31,7 @@ class ServiceController extends Controller
             'description' => 'nullable|string|max:1000',
         ]);
 
-        $lastCode = Service::where('code', 'like', 'SRV-%')->orderByDesc('code')->value('code');
+        $lastCode = Service::withTrashed()->where('code', 'like', 'SRV-%')->orderByDesc('code')->value('code');
         $nextNum = $lastCode ? (int)substr($lastCode, 4) + 1 : 1;
         $validated['code'] = 'SRV-' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
         $validated['is_active'] = true;
