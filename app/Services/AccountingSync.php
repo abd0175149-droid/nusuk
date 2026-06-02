@@ -19,12 +19,12 @@ class AccountingSync
     {
         $parentLen = strlen($parentCode);
 
-        $lastChild = \App\Models\Account::where('parent_id', $parentId)
+        $codes = \App\Models\Account::where('parent_id', $parentId)
             ->where('code', 'like', $parentCode . '%')
-            ->orderByDesc('code')
-            ->value('code');
+            ->pluck('code');
 
-        if ($lastChild) {
+        if ($codes->isNotEmpty()) {
+            $lastChild = $codes->sortByDesc(fn ($c) => (int)substr($c, $parentLen))->first();
             $suffix = substr($lastChild, $parentLen);
             $nextSuffix = intval($suffix) + 1;
             return $parentCode . str_pad($nextSuffix, strlen($suffix), '0', STR_PAD_LEFT);
