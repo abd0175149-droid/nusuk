@@ -58,6 +58,27 @@
                 </table>
                 </div>
             </div>
+
+            <!-- Pagination -->
+            <div v-if="invoices.last_page > 1 || invoices.total > 10" class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                    <span>عرض {{ invoices.from }}–{{ invoices.to }} من {{ invoices.total }}</span>
+                    <select v-model="perPage" @change="changePerPage" class="px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-800 text-xs">
+                        <option :value="10">10</option>
+                        <option :value="15">15</option>
+                        <option :value="25">25</option>
+                        <option :value="50">50</option>
+                        <option :value="100">100</option>
+                    </select>
+                    <span class="text-xs text-gray-400">سجل/صفحة</span>
+                </div>
+                <div class="flex gap-1">
+                    <template v-for="link in invoices.links" :key="link.label">
+                        <button v-if="link.url" @click="goToPage(link.url)" class="px-3 py-2 rounded-lg text-sm" :class="link.active ? 'bg-gold-500 text-black font-bold' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'" v-html="link.label" />
+                        <span v-else class="px-3 py-2 text-sm text-gray-400" v-html="link.label" />
+                    </template>
+                </div>
+            </div>
         </div>
 
         <!-- POS Modal -->
@@ -100,7 +121,7 @@
                                 <thead><tr class="bg-gray-50 text-gray-500">
                                     <th class="px-3 py-2 text-right">النوع</th>
                                     <th class="px-3 py-2 text-right">الوصف</th>
-                                    <th class="px-3 py-2 text-right w-16">الكمية</th>
+                                    <th class="px-3 py-2 text-right w-20">الكمية</th>
                                     <th class="px-3 py-2 text-right w-24">السعر SAR</th>
                                     <th class="px-3 py-2 text-right w-24">البيع JOD</th>
                                     <th class="px-3 py-2 text-right w-24">الإجمالي SAR</th>
@@ -114,7 +135,7 @@
                                             <SearchableSelect v-if="item.item_type==='service'" v-model="item.service_id" :options="serviceOptions" placeholder="اختر خدمة" search-placeholder="ابحث..." :drop-up="true" @change="onServiceSelect(idx)" />
                                             <SearchableSelect v-else v-model="item.violation_id" :options="violationOptions" placeholder="اختر مخالفة" search-placeholder="ابحث..." :drop-up="true" @change="onViolationSelect(idx)" />
                                         </td>
-                                        <td class="px-3 py-2"><input v-model.number="item.quantity" type="number" min="1" class="w-full px-2 py-1 rounded border border-gray-200 text-xs text-center" dir="ltr"/></td>
+                                        <td class="px-3 py-2"><input v-model.number="item.quantity" type="number" min="1" class="w-full min-w-[4rem] px-2 py-1 rounded border border-gray-200 text-xs text-center" dir="ltr"/></td>
                                         <td class="px-3 py-2"><input v-model.number="item.unit_price_sar" type="number" step="0.01" class="w-full px-2 py-1 rounded border border-gray-200 text-xs font-mono" dir="ltr"/></td>
                                         <td class="px-3 py-2"><input v-model.number="item.sell_price_jod" type="number" step="0.001" class="w-full px-2 py-1 rounded border border-gray-200 text-xs font-mono" dir="ltr"/></td>
                                         <td class="px-3 py-2 font-mono font-bold text-gray-700" dir="ltr">{{ (item.quantity * item.unit_price_sar).toFixed(2) }}</td>
@@ -197,6 +218,7 @@ import SearchableSelect from '@/Components/SearchableSelect.vue';
 const props = defineProps({ invoices: Object, filters: Object, agents: Array, clients: Array, services: Array, exchangeRate: Number });
 const search = ref(props.filters?.search||'');
 const statusFilter = ref(props.filters?.status||'');
+const perPage = ref(Number(props.filters?.per_page) || props.invoices?.per_page || 15);
 const showPOS = ref(false);
 const viewTarget = ref(null);
 const deleteTarget = ref(null);
@@ -353,5 +375,7 @@ const rejectInv = (inv) => { const r=prompt('سبب الرفض:'); if(r!==null) 
 const startEditInv = (inv) => { if(confirm('تعديل الفاتورة المعتمدة؟ سيتم عكس الأثر المالي.')) router.post('/invoices/'+inv.id+'/start-edit',{},{preserveScroll:true}); };
 const delInv = (inv) => { deleteTarget.value = inv; };
 const debounceSearch = () => { clearTimeout(t); t=setTimeout(()=>applyFilter(),400); };
-const applyFilter = () => { router.get('/invoices',{search:search.value,status:statusFilter.value},{preserveState:true,replace:true}); };
+const applyFilter = () => { router.get('/invoices',{search:search.value,status:statusFilter.value,per_page:perPage.value},{preserveState:true,replace:true}); };
+const changePerPage = () => { applyFilter(); };
+const goToPage = (url) => { const u = new URL(url); u.searchParams.set('per_page', perPage.value); router.get(u.pathname + u.search, {}, { preserveState:true, replace:true }); };
 </script>

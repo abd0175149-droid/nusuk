@@ -24,13 +24,13 @@ class ViolationController extends Controller
             ->when($request->status, fn ($q, $s) => $q->where('status', $s))
             ->when($request->billing, fn ($q, $s) => $q->where('billing_status', $s))
             ->orderByDesc('created_at')
-            ->paginate(15)
+            ->paginate($request->input('per_page', 15))
             ->withQueryString();
 
         return Inertia::render('Violations/Index', [
             'title' => 'المخالفات',
             'violations' => $violations,
-            'filters' => $request->only(['search', 'status', 'billing']),
+            'filters' => $request->only(['search', 'status', 'billing', 'per_page']),
             'agents' => Agent::where('is_active', true)->select('id', 'name', 'code')->get(),
             'clients' => Client::where('is_active', true)->select('id', 'name', 'code')->get(),
             'violationTypes' => ViolationType::where('is_active', true)->select('id', 'name', 'default_cost_sar')->get(),

@@ -36,6 +36,27 @@
                 </table>
                 </div>
             </div>
+
+            <!-- Pagination -->
+            <div v-if="clients.last_page > 1 || clients.total > 10" class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                    <span>عرض {{ clients.from }}–{{ clients.to }} من {{ clients.total }}</span>
+                    <select v-model="perPage" @change="changePerPage" class="px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-800 text-xs">
+                        <option :value="10">10</option>
+                        <option :value="15">15</option>
+                        <option :value="25">25</option>
+                        <option :value="50">50</option>
+                        <option :value="100">100</option>
+                    </select>
+                    <span class="text-xs text-gray-400">سجل/صفحة</span>
+                </div>
+                <div class="flex gap-1">
+                    <template v-for="link in clients.links" :key="link.label">
+                        <button v-if="link.url" @click="goToPage(link.url)" class="px-3 py-2 rounded-lg text-sm" :class="link.active ? 'bg-gold-500 text-black font-bold' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'" v-html="link.label" />
+                        <span v-else class="px-3 py-2 text-sm text-gray-400" v-html="link.label" />
+                    </template>
+                </div>
+            </div>
         </div>
 
         <!-- View Modal -->
@@ -121,6 +142,7 @@ const joCities = ['عمان','إربد','الزرقاء','العقبة','الس�
 
 const props = defineProps({ clients: Object, filters: Object });
 const search = ref(props.filters?.search||'');
+const perPage = ref(Number(props.filters?.per_page) || props.clients?.per_page || 15);
 const showForm = ref(false); const editItem = ref(null); const viewClient = ref(null);
 let t=null;
 
@@ -170,7 +192,9 @@ const submit = () => {
     const o = { onSuccess:()=>{showForm.value=false; form.reset(); form.clearErrors(); editItem.value=null;}, preserveScroll:true, preserveState:false };
     editItem.value ? form.put('/clients/'+editItem.value.id, o) : form.post('/clients', o);
 };
-const debounceSearch = () => { clearTimeout(t); t=setTimeout(()=>router.get('/clients',{search:search.value},{preserveState:true,replace:true}),400); };
+const debounceSearch = () => { clearTimeout(t); t=setTimeout(()=>router.get('/clients',{search:search.value,per_page:perPage.value},{preserveState:true,replace:true}),400); };
+const changePerPage = () => { router.get('/clients', { search:search.value, per_page:perPage.value }, { preserveState:true, replace:true }); };
+const goToPage = (url) => { const u = new URL(url); u.searchParams.set('per_page', perPage.value); router.get(u.pathname + u.search, {}, { preserveState:true, replace:true }); };
 const deleteTarget = ref(null);
 const del = (c) => { deleteTarget.value = c; };
 const confirmDelete = () => {

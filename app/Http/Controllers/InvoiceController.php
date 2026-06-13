@@ -28,7 +28,7 @@ class InvoiceController extends Controller
                 ->orWhereHas('client', fn ($q2) => $q2->where('name', 'like', "%{$s}%")))
             ->when($request->status, fn ($q, $s) => $q->where('status', $s))
             ->orderByDesc('created_at')
-            ->paginate(15)
+            ->paginate($request->input('per_page', 15))
             ->withQueryString();
 
         $todayRate = ExchangeRate::where('rate_date', today()->toDateString())->first();
@@ -37,7 +37,7 @@ class InvoiceController extends Controller
         return Inertia::render('Invoices/Index', [
             'title' => 'الفواتير',
             'invoices' => $invoices,
-            'filters' => $request->only(['search', 'status']),
+            'filters' => $request->only(['search', 'status', 'per_page']),
             'agents' => Agent::where('is_active', true)->select('id', 'name', 'code', 'currency')->get(),
             'clients' => Client::where('is_active', true)->select('id', 'name', 'code')->get(),
             'services' => Service::where('is_active', true)->get(),

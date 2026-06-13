@@ -20,13 +20,13 @@ class AgentController extends Controller
                 ->orWhere('phone', 'like', "%{$s}%"))
             ->when($request->status !== null, fn ($q) => $q->where('is_active', $request->boolean('status')))
             ->orderByDesc('created_at')
-            ->paginate(15)
+            ->paginate($request->input('per_page', 15))
             ->withQueryString();
 
         return Inertia::render('Agents/Index', [
             'title' => 'الوكلاء',
             'agents' => $agents,
-            'filters' => $request->only(['search', 'status']),
+            'filters' => $request->only(['search', 'status', 'per_page']),
         ]);
     }
 

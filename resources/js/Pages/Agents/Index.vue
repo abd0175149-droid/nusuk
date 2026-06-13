@@ -35,11 +35,25 @@
                 </table>
             </div>
 
-            <div v-if="agents.last_page>1" class="flex justify-center gap-1">
-                <template v-for="link in agents.links" :key="link.label">
-                    <a v-if="link.url" :href="link.url" class="px-3 py-2 rounded-lg text-sm" :class="link.active?'bg-gold-500 text-black font-bold':'text-gray-600 hover:bg-gray-100'" v-html="link.label"/>
-                    <span v-else class="px-3 py-2 text-sm text-gray-400" v-html="link.label"/>
-                </template>
+            <!-- Pagination -->
+            <div v-if="agents.last_page > 1 || agents.total > 10" class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                    <span>عرض {{ agents.from }}–{{ agents.to }} من {{ agents.total }}</span>
+                    <select v-model="perPage" @change="changePerPage" class="px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-800 text-xs">
+                        <option :value="10">10</option>
+                        <option :value="15">15</option>
+                        <option :value="25">25</option>
+                        <option :value="50">50</option>
+                        <option :value="100">100</option>
+                    </select>
+                    <span class="text-xs text-gray-400">سجل/صفحة</span>
+                </div>
+                <div class="flex gap-1">
+                    <template v-for="link in agents.links" :key="link.label">
+                        <button v-if="link.url" @click="goToPage(link.url)" class="px-3 py-2 rounded-lg text-sm" :class="link.active ? 'bg-gold-500 text-black font-bold' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'" v-html="link.label" />
+                        <span v-else class="px-3 py-2 text-sm text-gray-400" v-html="link.label" />
+                    </template>
+                </div>
             </div>
         </div>
 
@@ -148,6 +162,7 @@ const saCities = ['الرياض','جدة','مكة المكرمة','المدين�
 const joCities = ['عمان','إربد','الزرقاء','العقبة','السلط','الكرك','مادبا','جرش','عجلون','معان','الطفيلة','البلقاء'];
 const props = defineProps({ agents: Object, filters: Object });
 const search = ref(props.filters?.search||'');
+const perPage = ref(Number(props.filters?.per_page) || props.agents?.per_page || 15);
 const showForm = ref(false);
 const editing = ref(null);
 const viewAgent = ref(null);
@@ -195,7 +210,9 @@ const submit = () => {
     const opts = { onSuccess:()=>{showForm.value=false; form.reset(); form.clearErrors(); editing.value=null;}, preserveScroll:true, preserveState:false };
     editing.value ? form.put('/agents/'+editing.value.id, opts) : form.post('/agents', opts);
 };
-const debounceSearch = () => { clearTimeout(timeout); timeout=setTimeout(()=>router.get('/agents',{search:search.value},{preserveState:true,replace:true}),400) };
+const debounceSearch = () => { clearTimeout(timeout); timeout=setTimeout(()=>router.get('/agents',{search:search.value,per_page:perPage.value},{preserveState:true,replace:true}),400) };
+const changePerPage = () => { router.get('/agents', { search:search.value, per_page:perPage.value }, { preserveState:true, replace:true }); };
+const goToPage = (url) => { const u = new URL(url); u.searchParams.set('per_page', perPage.value); router.get(u.pathname + u.search, {}, { preserveState:true, replace:true }); };
 
 const deleteTarget = ref(null);
 const del = (a) => { deleteTarget.value = a; };

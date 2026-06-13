@@ -53,6 +53,27 @@
                 </table>
                 </div>
             </div>
+
+            <!-- Pagination -->
+            <div v-if="violations.last_page > 1 || violations.total > 10" class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                    <span>عرض {{ violations.from }}–{{ violations.to }} من {{ violations.total }}</span>
+                    <select v-model="perPage" @change="changePerPage" class="px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-800 text-xs">
+                        <option :value="10">10</option>
+                        <option :value="15">15</option>
+                        <option :value="25">25</option>
+                        <option :value="50">50</option>
+                        <option :value="100">100</option>
+                    </select>
+                    <span class="text-xs text-gray-400">سجل/صفحة</span>
+                </div>
+                <div class="flex gap-1">
+                    <template v-for="link in violations.links" :key="link.label">
+                        <button v-if="link.url" @click="goToPage(link.url)" class="px-3 py-2 rounded-lg text-sm" :class="link.active ? 'bg-gold-500 text-black font-bold' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'" v-html="link.label" />
+                        <span v-else class="px-3 py-2 text-sm text-gray-400" v-html="link.label" />
+                    </template>
+                </div>
+            </div>
         </div>
 
         <!-- Form Modal -->
@@ -130,6 +151,7 @@ const vtOptions = computed(() => props.violationTypes.map(v => ({ value: v.id, l
 const search = ref(props.filters?.search||'');
 const statusFilter = ref(props.filters?.status||'');
 const billingFilter = ref(props.filters?.billing||'');
+const perPage = ref(Number(props.filters?.per_page) || props.violations?.per_page || 15);
 const showForm = ref(false);
 const showEditForm = ref(false);
 const deleteTarget = ref(null);
@@ -182,5 +204,7 @@ const submitEditVio = () => {
 };
 
 const debounceSearch = () => { clearTimeout(t); t = setTimeout(() => applyFilter(), 400); };
-const applyFilter = () => { router.get('/violations', { search: search.value, status: statusFilter.value, billing: billingFilter.value }, { preserveState: true, replace: true }); };
+const applyFilter = () => { router.get('/violations', { search: search.value, status: statusFilter.value, billing: billingFilter.value, per_page: perPage.value }, { preserveState: true, replace: true }); };
+const changePerPage = () => { applyFilter(); };
+const goToPage = (url) => { const u = new URL(url); u.searchParams.set('per_page', perPage.value); router.get(u.pathname + u.search, {}, { preserveState:true, replace:true }); };
 </script>

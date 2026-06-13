@@ -21,12 +21,12 @@ class ReceiptController extends Controller
                 ->orWhereHas('client', fn ($q2) => $q2->where('name', 'like', "%{$s}%")))
             ->when($request->status, fn ($q, $s) => $q->where('status', $s))
             ->orderByDesc('created_at')
-            ->paginate(15)
+            ->paginate($request->input('per_page', 15))
             ->withQueryString();
 
         return Inertia::render('Receipts/Index', [
             'receipts' => $receipts,
-            'filters' => $request->only(['search', 'status']),
+            'filters' => $request->only(['search', 'status', 'per_page']),
             'clients' => Client::where('is_active', true)->select('id', 'name', 'code')->get(),
         ]);
     }

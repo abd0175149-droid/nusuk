@@ -27,7 +27,7 @@ class TransferController extends Controller
             ->when($request->status, fn ($q, $s) => $q->where('status', $s))
             ->when($request->agent_id, fn ($q, $id) => $q->where('agent_id', $id))
             ->orderByDesc('created_at')
-            ->paginate(15)
+            ->paginate($request->input('per_page', 15))
             ->withQueryString();
 
         // حسابات الإيرادات للفرق
@@ -39,7 +39,7 @@ class TransferController extends Controller
 
         return Inertia::render('Transfers/Index', [
             'transfers' => $transfers,
-            'filters' => $request->only(['search', 'status', 'agent_id']),
+            'filters' => $request->only(['search', 'status', 'agent_id', 'per_page']),
             'agents' => Agent::where('is_active', true)->select('id', 'name', 'code')->get(),
             'expenseCategories' => ExpenseCategory::where('is_active', true)->select('id', 'name')->get(),
             'revenueAccounts' => $revenueAccounts,

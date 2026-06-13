@@ -17,12 +17,12 @@ class ExpenseController extends Controller
                 ->orWhere('description', 'like', "%{$s}%"))
             ->when($request->status, fn ($q, $s) => $q->where('status', $s))
             ->orderByDesc('created_at')
-            ->paginate(15)
+            ->paginate($request->input('per_page', 15))
             ->withQueryString();
 
         return Inertia::render('Expenses/Index', [
             'expenses' => $expenses,
-            'filters' => $request->only(['search', 'status']),
+            'filters' => $request->only(['search', 'status', 'per_page']),
             'categories' => \App\Models\ExpenseCategory::select('id', 'name')->get(),
         ]);
     }
