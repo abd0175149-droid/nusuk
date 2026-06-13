@@ -41,98 +41,60 @@
 
                 <!-- المحتوى حسب نوع الصفحة -->
                 <div :style="pi === 0 ? elPos('data_table') : contTablePosStyle">
-
-                    <!-- === جدول الفواتير === -->
-                    <template v-if="page.section === 'invoices'">
-                        <h4 class="section-title invoice-bg">📄 الفواتير</h4>
-                        <table class="print-tbl" :style="tblStyle">
-                            <thead><tr>
-                                <th style="width:25px">#</th>
-                                <th style="width:65px">التاريخ</th>
-                                <th style="width:85px">رقم الفاتورة</th>
-                                <th>التفاصيل</th>
-                                <th style="width:70px">التكلفة</th>
-                            </tr></thead>
-                            <tbody>
-                                <tr v-for="(inv, i) in page.items" :key="inv.id" :class="inv.is_reversed ? 'reversed-row' : ''">
-                                    <td class="center">{{ page.startIdx + i + 1 }}</td>
-                                    <td class="mono center">{{ inv.date }}</td>
-                                    <td class="mono center gold bold">{{ inv.invoice_number }}</td>
-                                    <td class="details-cell">{{ inv.details }}</td>
-                                    <td class="mono right bold" :class="inv.amount < 0 ? 'red' : ''">{{ fmt(inv.amount) }}</td>
-                                </tr>
-                                <tr v-if="!page.items.length"><td colspan="5" class="empty">لا يوجد فواتير</td></tr>
-                            </tbody>
-                            <tfoot v-if="page.showTotal">
-                                <tr class="total-row">
-                                    <td colspan="4" class="right bold">إجمالي الفواتير ({{ summary.invoices_count }} فاتورة)</td>
-                                    <td class="mono right bold gold">{{ fmt(summary.invoices_total) }}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </template>
-
-                    <!-- === جدول سندات القبض === -->
-                    <template v-if="page.section === 'receipts'">
-                        <h4 class="section-title receipt-bg">💰 سندات القبض</h4>
-                        <table class="print-tbl" :style="tblStyle">
-                            <thead><tr>
-                                <th style="width:25px">#</th>
-                                <th style="width:65px">التاريخ</th>
-                                <th style="width:85px">رقم السند</th>
-                                <th>التفاصيل</th>
-                                <th style="width:65px">طريقة الدفع</th>
-                                <th style="width:70px">المبلغ</th>
-                            </tr></thead>
-                            <tbody>
-                                <tr v-for="(r, i) in page.items" :key="r.id">
-                                    <td class="center">{{ page.startIdx + i + 1 }}</td>
-                                    <td class="mono center">{{ r.date }}</td>
-                                    <td class="mono center gold bold">{{ r.receipt_number }}</td>
-                                    <td class="details-cell">{{ r.details }}</td>
-                                    <td class="center">
-                                        <span class="method-tag">{{ r.payment_method }}</span>
-                                    </td>
-                                    <td class="mono right green bold">{{ fmt(r.amount) }}</td>
-                                </tr>
-                                <tr v-if="!page.items.length"><td colspan="6" class="empty">لا يوجد سندات قبض</td></tr>
-                            </tbody>
-                            <tfoot v-if="page.showTotal">
-                                <tr class="total-row">
-                                    <td colspan="5" class="right bold">إجمالي المدفوعات ({{ summary.receipts_count }} سند)</td>
-                                    <td class="mono right bold green">{{ fmt(summary.receipts_total) }}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </template>
+                    <!-- === جدول حركات كشف الحساب === -->
+                    <table class="print-tbl" :style="tblStyle">
+                        <thead><tr>
+                            <th style="width:25px">#</th>
+                            <th style="width:65px">التاريخ</th>
+                            <th style="width:55px">النوع</th>
+                            <th>البيان/الوصف</th>
+                            <th style="width:70px">مدين (ذمة)</th>
+                            <th style="width:70px">دائن (تسديد)</th>
+                            <th style="width:80px">الرصيد</th>
+                        </tr></thead>
+                        <tbody>
+                            <tr v-for="(e, i) in page.items" :key="e.id" :class="e.transaction_type === 'reversal' ? 'reversed-row' : ''">
+                                <td class="center">{{ page.startIdx + i + 1 }}</td>
+                                <td class="mono center">{{ e.entry_date?.split('T')[0] }}</td>
+                                <td class="center">
+                                    <span class="method-tag">{{ typeLabel(e.transaction_type) }}</span>
+                                </td>
+                                <td class="details-cell">{{ e.description }}</td>
+                                <td class="mono right bold" :class="parseFloat(e.debit) > 0 ? 'red' : ''">{{ parseFloat(e.debit) > 0 ? fmt(e.debit) : '—' }}</td>
+                                <td class="mono right green bold">{{ parseFloat(e.credit) > 0 ? fmt(e.credit) : '—' }}</td>
+                                <td class="mono right bold gold">{{ fmt(e.balance_after) }}</td>
+                            </tr>
+                            <tr v-if="!page.items.length"><td colspan="7" class="empty">لا يوجد حركات في هذه الفترة</td></tr>
+                        </tbody>
+                    </table>
 
                     <!-- === جدول الملخص (آخر صفحة) === -->
                     <template v-if="page.hasSummary">
-                        <div :style="{ marginTop: page.section !== 'summary' ? '12px' : '0' }">
+                        <div :style="{ marginTop: page.items.length > 0 ? '12px' : '0' }">
                         <h4 class="section-title summary-bg">📊 ملخص الحساب</h4>
                         <table class="print-tbl summary-tbl" :style="{ fontSize: '9pt', width: '277mm' }">
                             <thead><tr>
                                 <th>البيان</th>
-                                <th style="width:60px">العدد</th>
-                                <th style="width:90px">المبلغ (JOD)</th>
+                                <th style="width:120px">المبلغ (JOD)</th>
                             </tr></thead>
                             <tbody>
                                 <tr>
-                                    <td class="bold">📄 إجمالي الفواتير</td>
-                                    <td class="mono center bold">{{ summary.invoices_count }}</td>
-                                    <td class="mono right bold">{{ fmt(summary.invoices_total) }}</td>
+                                    <td class="bold">💵 الرصيد الافتتاحي قبل الفترة</td>
+                                    <td class="mono right bold">{{ fmt(summary.opening_balance) }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="bold">💰 إجمالي المدفوعات (سندات القبض)</td>
-                                    <td class="mono center bold">{{ summary.receipts_count }}</td>
-                                    <td class="mono right green bold">{{ fmt(summary.receipts_total) }}</td>
+                                    <td class="bold">🔺 إجمالي المدين (ذمة)</td>
+                                    <td class="mono right red bold">{{ fmt(summary.total_debit) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="bold">🟢 إجمالي الدائن (تسديد)</td>
+                                    <td class="mono right green bold">{{ fmt(summary.total_credit) }}</td>
                                 </tr>
                                 <tr class="balance-row">
                                     <td class="bold" style="font-size:10pt">
-                                        {{ summary.balance > 0 ? '🔴 المبلغ المستحق على العميل' : summary.balance < 0 ? '🟢 المبلغ المستحق للعميل' : '✅ الحساب مُسدد' }}
+                                        {{ summary.balance >= 0 ? '🔴 الرصيد الختامي (مستحق على العميل)' : '🟢 الرصيد الختامي (مستحق للعميل)' }}
                                     </td>
-                                    <td class="center">—</td>
-                                    <td class="mono right bold" :class="summary.balance > 0 ? 'red' : summary.balance < 0 ? 'green' : ''" style="font-size:11pt">
+                                    <td class="mono right bold" :class="summary.balance >= 0 ? 'red' : 'green'" style="font-size:11pt">
                                         {{ fmt(Math.abs(summary.balance)) }}
                                     </td>
                                 </tr>
@@ -164,11 +126,13 @@
 import { ref, computed, onMounted, nextTick } from 'vue';
 
 const props = defineProps({
-    client: Object, invoices: Array, receipts: Array,
+    client: Object, entries: Array,
     summary: Object, filters: Object, templateUrl: String, layout: Object,
 });
 
 const fmt = (v) => Number(v || 0).toLocaleString('en', { minimumFractionDigits: 3 });
+
+const typeLabel = (t) => ({transfer:'حوالة',violation:'مخالفة',invoice:'فاتورة',receipt:'سند قبض',expense:'مصروف',adjustment:'قيد تسوية',reversal:'قيد عكسي',journal:'قيد يدوي'}[t]||t);
 
 const defaults = {
     title: { x: 10, y: 15, fontSize: 14 }, entity_name: { x: 10, y: 28, fontSize: 12 },
@@ -191,44 +155,28 @@ const contTablePosStyle = computed(() => {
     return { position: 'absolute', right: p.x + 'mm', top: contY.value + 'mm', width: p.w ? p.w + 'mm' : '100%' };
 });
 
-// بناء الصفحات: فواتير → سندات قبض → ملخص
+// بناء الصفحات: حركات كشف الحساب → ملخص الحساب
 const pages = computed(() => {
     const rpp = rowsPerPage.value;
     const result = [];
+    const ent = props.entries || [];
 
-    // صفحات الفواتير
-    const invs = props.invoices || [];
-    if (invs.length === 0) {
-        result.push({ section: 'invoices', items: [], startIdx: 0, showTotal: true, isLast: false });
+    if (ent.length === 0) {
+        result.push({ items: [], startIdx: 0, isLast: true, hasSummary: true });
     } else {
-        for (let i = 0; i < invs.length; i += rpp) {
-            const chunk = invs.slice(i, i + rpp);
-            const isLastInvPage = i + rpp >= invs.length;
-            result.push({ section: 'invoices', items: chunk, startIdx: i, showTotal: isLastInvPage, isLast: false });
+        for (let i = 0; i < ent.length; i += rpp) {
+            const chunk = ent.slice(i, i + rpp);
+            const isLastPage = i + rpp >= ent.length;
+            result.push({ items: chunk, startIdx: i, isLast: isLastPage, hasSummary: isLastPage });
         }
     }
 
-    // صفحات سندات القبض
-    const recs = props.receipts || [];
-    if (recs.length === 0) {
-        result.push({ section: 'receipts', items: [], startIdx: 0, showTotal: true, isLast: false });
-    } else {
-        for (let i = 0; i < recs.length; i += rpp) {
-            const chunk = recs.slice(i, i + rpp);
-            const isLastRecPage = i + rpp >= recs.length;
-            result.push({ section: 'receipts', items: chunk, startIdx: i, showTotal: isLastRecPage, isLast: false });
-        }
-    }
-
-    // صفحة الملخص (تُضاف في آخر صفحة)
-    // إذا آخر صفحة فيها مساحة كافية (أقل من rpp - 5 صفوف) نضيف الملخص فيها، إلا نعمل صفحة جديدة
+    // إذا كانت الصفحة الأخيرة ممتلئة بالكامل بالصفوف بحيث لا يوجد مساحة للملخص، نقوم بترحيل الملخص لصفحة جديدة
     const lastPage = result[result.length - 1];
-    if (lastPage && lastPage.items.length <= rpp - 5) {
-        // نضيف الملخص في نفس الصفحة
-        lastPage.hasSummary = true;
-        lastPage.isLast = true;
-    } else {
-        result.push({ section: 'summary', items: [], startIdx: 0, showTotal: false, isLast: true, hasSummary: true });
+    if (lastPage && lastPage.items.length > rpp - 4) {
+        lastPage.hasSummary = false;
+        lastPage.isLast = false;
+        result.push({ items: [], startIdx: 0, isLast: true, hasSummary: true });
     }
 
     return result;
@@ -240,7 +188,7 @@ const sigPosCalc = (page, pi) => {
     const rowH = 5.5;
     const headerH = 7;
     const sectionH = 6;
-    let tableRows = page.items.length + (page.showTotal ? 1 : 0);
+    let tableRows = page.items.length;
     if (page.hasSummary) tableRows += 6; // summary table
     const y = baseY + sectionH + headerH + (tableRows * rowH) + 15;
     const sp = el('signatures');

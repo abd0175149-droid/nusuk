@@ -60,79 +60,34 @@ class ClientController extends Controller
 
     public function printStatement(Request $request, Client $client)
     {
-        $from = $request->from ?: null;
-        $to = $request->to ?: null;
+        $from = $request->from ?: now()->startOfMonth()->toDateString();
+        $to = $request->to ?: now()->toDateString();
 
-        // 1. الفواتير المعتمدة والمعكوسة (editing) للعميل
-        $invoicesQuery = \App\Models\Invoice::where('client_id', $client->id)
-            ->whereIn('status', ['approved', 'editing']);
-        if ($from && $to) {
-            $invoicesQuery->whereBetween('invoice_date', [$from, $to . ' 23:59:59']);
-        }
-        $invoices = $invoicesQuery->with(['items.violation.violationType'])
-            ->orderBy('invoice_date')
+        // 1. حركات كشف الحساب للعميل
+        $entries = \App\Models\LedgerEntry::where('entity_type', 'client')
+            ->where('entity_id', $client->id)
+            ->whereBetween('entry_date', [$from, $to . ' 23:59:59'])
+            ->orderBy('entry_date')
             ->orderBy('id')
-            ->get()
-            ->map(function ($inv) {
-                // تجميع تفاصيل البنود مع معلومات المخالفات الأصلية
-                $details = $inv->items->map(function ($item) {
-                    if ($item->item_type === 'violation' && $item->violation) {
-                        $v = $item->violation;
-                        $typeName = $v->violationType?->name ?? 'مخالفة';
-                        $passport = $v->passport_name ? " ({$v->passport_name})" : '';
-                        return "{$typeName}{$passport} - {$v->cost_sar} SAR";
-                    }
-                    return $item->description . ' (×' . $item->quantity . ')';
-                })->join(' | ');
+            ->get();
 
-                // الفواتير بحالة editing تعتبر معكوسة (سالبة)
-                $isReversed = $inv->status === 'editing';
-                $amount = $isReversed ? -1 * abs($inv->total_jod) : abs($inv->total_jod);
+        // 2. الرصيد الافتتاحي قبل الفترة
+        $openingBalance = \App\Models\LedgerEntry::where('entity_type', 'client')
+            ->where('entity_id', $client->id)
+            ->where('entry_date', '<', $from)
+            ->orderByDesc('entry_date')
+            ->orderByDesc('id')
+            ->value('balance_after') ?? 0;
 
-                return [
-                    'id' => $inv->id,
-                    'date' => $inv->invoice_date->format('Y-m-d'),
-                    'invoice_number' => $inv->invoice_number,
-                    'details' => $details ?: 'بدون تفاصيل',
-                    'amount' => round($amount, 3),
-                    'is_reversed' => $isReversed,
-                ];
-            });
-
-        // 2. سندات القبض المعتمدة للعميل
-        $receiptsQuery = \App\Models\Receipt::where('client_id', $client->id)
-            ->where('status', 'approved');
-        if ($from && $to) {
-            $receiptsQuery->whereBetween('receipt_date', [$from, $to . ' 23:59:59']);
-        }
-        $receipts = $receiptsQuery->orderBy('receipt_date')
-            ->orderBy('id')
-            ->get()
-            ->map(fn ($r) => [
-                'id' => $r->id,
-                'date' => $r->receipt_date->format('Y-m-d'),
-                'receipt_number' => $r->receipt_number,
-                'details' => $r->notes ?: '—',
-                'payment_method' => match ($r->payment_method) {
-                    'cash' => 'نقداً',
-                    'bank' => 'بنك',
-                    'check' => 'شيك',
-                    default => $r->payment_method,
-                },
-                'amount' => round($r->amount_jod, 3),
-            ]);
-
-        // 3. الملخص
-        $totalInvoices = $invoices->sum('amount');
-        $totalReceipts = $receipts->sum('amount');
-        $balance = $totalInvoices - $totalReceipts;
+        $totalDebit = $entries->sum('debit');
+        $totalCredit = $entries->sum('credit');
+        $endingBalance = $openingBalance + $totalDebit - $totalCredit;
 
         $summary = [
-            'invoices_count' => $invoices->count(),
-            'invoices_total' => round($totalInvoices, 3),
-            'receipts_count' => $receipts->count(),
-            'receipts_total' => round($totalReceipts, 3),
-            'balance' => round($balance, 3),
+            'opening_balance' => round($openingBalance, 3),
+            'total_debit' => round($totalDebit, 3),
+            'total_credit' => round($totalCredit, 3),
+            'balance' => round($endingBalance, 3),
         ];
 
         // Template & Layout
@@ -143,10 +98,9 @@ class ClientController extends Controller
 
         return Inertia::render('Clients/PrintStatement', [
             'client' => $client,
-            'invoices' => $invoices->values(),
-            'receipts' => $receipts->values(),
+            'entries' => $entries,
             'summary' => $summary,
-            'filters' => ['from' => $from ?? 'الكل', 'to' => $to ?? 'الكل'],
+            'filters' => ['from' => $from, 'to' => $to],
             'templateUrl' => $templateUrl,
             'layout' => $layout,
         ]);
