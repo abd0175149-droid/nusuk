@@ -41,36 +41,70 @@
 
                 <!-- المحتوى حسب نوع الصفحة -->
                 <div :style="pi === 0 ? elPos('data_table') : contTablePosStyle">
-                    <!-- === جدول حركات كشف الحساب === -->
-                    <table class="print-tbl" :style="tblStyle">
-                        <thead><tr>
-                            <th style="width:25px">#</th>
-                            <th style="width:65px">التاريخ</th>
-                            <th style="width:55px">النوع</th>
-                            <th>البيان/الوصف</th>
-                            <th style="width:70px">مدين (ذمة)</th>
-                            <th style="width:70px">دائن (تسديد)</th>
-                            <th style="width:80px">الرصيد</th>
-                        </tr></thead>
-                        <tbody>
-                            <tr v-for="(e, i) in page.items" :key="e.id" :class="e.transaction_type === 'reversal' ? 'reversed-row' : ''">
-                                <td class="center">{{ page.startIdx + i + 1 }}</td>
-                                <td class="mono center">{{ e.entry_date?.split('T')[0] }}</td>
-                                <td class="center">
-                                    <span class="method-tag">{{ typeLabel(e.transaction_type) }}</span>
-                                </td>
-                                <td class="details-cell">{{ e.description }}</td>
-                                <td class="mono right bold" :class="parseFloat(e.debit) > 0 ? 'red' : ''">{{ parseFloat(e.debit) > 0 ? fmt(e.debit) : '—' }}</td>
-                                <td class="mono right green bold">{{ parseFloat(e.credit) > 0 ? fmt(e.credit) : '—' }}</td>
-                                <td class="mono right bold gold">{{ fmt(e.balance_after) }}</td>
-                            </tr>
-                            <tr v-if="!page.items.length"><td colspan="7" class="empty">لا يوجد حركات في هذه الفترة</td></tr>
-                        </tbody>
-                    </table>
+                    
+                    <!-- === المطالبات والقيود المدينة === -->
+                    <template v-if="page.section === 'charges'">
+                        <h4 class="section-title invoice-bg" v-if="page.startIdx === 0">📄 المطالبات والقيود المدينة (فواتير، قيود مدينة)</h4>
+                        <table class="print-tbl" :style="tblStyle">
+                            <thead><tr>
+                                <th style="width:25px">#</th>
+                                <th style="width:65px">التاريخ</th>
+                                <th style="width:55px">النوع</th>
+                                <th style="width:75px">المرجع</th>
+                                <th>التفاصيل/البيان</th>
+                                <th style="width:85px">المبلغ (JOD)</th>
+                            </tr></thead>
+                            <tbody>
+                                <tr v-for="(e, i) in page.items" :key="e.id">
+                                    <td class="center">{{ page.startIdx + i + 1 }}</td>
+                                    <td class="mono center">{{ e.date }}</td>
+                                    <td class="center"><span class="method-tag">{{ e.type }}</span></td>
+                                    <td class="mono center">{{ e.reference }}</td>
+                                    <td class="details-cell">{{ e.details }}</td>
+                                    <td class="mono right bold red">{{ fmt(e.amount) }}</td>
+                                </tr>
+                                <tr v-if="!page.items.length"><td colspan="6" class="empty">لا يوجد مطالبات</td></tr>
+                                <tr v-if="page.showTotal && page.items.length > 0" class="total-row">
+                                    <td colspan="5" class="bold">إجمالي المطالبات والقيود المدينة</td>
+                                    <td class="mono right bold red">{{ fmt(summary.charges_total) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </template>
+
+                    <!-- === المدفوعات والقيود الدائنة === -->
+                    <template v-if="page.section === 'payments'">
+                        <h4 class="section-title receipt-bg" v-if="page.startIdx === 0">💰 المدفوعات (سندات قبض، قيود دائنة)</h4>
+                        <table class="print-tbl" :style="tblStyle">
+                            <thead><tr>
+                                <th style="width:25px">#</th>
+                                <th style="width:65px">التاريخ</th>
+                                <th style="width:55px">النوع</th>
+                                <th style="width:75px">المرجع</th>
+                                <th>التفاصيل/البيان</th>
+                                <th style="width:85px">المبلغ (JOD)</th>
+                            </tr></thead>
+                            <tbody>
+                                <tr v-for="(e, i) in page.items" :key="e.id">
+                                    <td class="center">{{ page.startIdx + i + 1 }}</td>
+                                    <td class="mono center">{{ e.date }}</td>
+                                    <td class="center"><span class="method-tag">{{ e.type }}</span></td>
+                                    <td class="mono center">{{ e.reference }}</td>
+                                    <td class="details-cell">{{ e.details }}</td>
+                                    <td class="mono right bold green">{{ fmt(e.amount) }}</td>
+                                </tr>
+                                <tr v-if="!page.items.length"><td colspan="6" class="empty">لا يوجد مدفوعات</td></tr>
+                                <tr v-if="page.showTotal && page.items.length > 0" class="total-row">
+                                    <td colspan="5" class="bold">إجمالي المدفوعات والقيود الدائنة</td>
+                                    <td class="mono right bold green">{{ fmt(summary.payments_total) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </template>
 
                     <!-- === جدول الملخص (آخر صفحة) === -->
                     <template v-if="page.hasSummary">
-                        <div :style="{ marginTop: page.items.length > 0 ? '12px' : '0' }">
+                        <div :style="{ marginTop: '12px' }">
                         <h4 class="section-title summary-bg">📊 ملخص الحساب</h4>
                         <table class="print-tbl summary-tbl" :style="{ fontSize: '9pt', width: '277mm' }">
                             <thead><tr>
@@ -83,16 +117,16 @@
                                     <td class="mono right bold">{{ fmt(summary.opening_balance) }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="bold">🔺 إجمالي المدين (ذمة)</td>
-                                    <td class="mono right red bold">{{ fmt(summary.total_debit) }}</td>
+                                    <td class="bold">🔺 إجمالي المطالبات (المدينة) خلال الفترة</td>
+                                    <td class="mono right red bold">{{ fmt(summary.charges_total) }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="bold">🟢 إجمالي الدائن (تسديد)</td>
-                                    <td class="mono right green bold">{{ fmt(summary.total_credit) }}</td>
+                                    <td class="bold">🟢 إجمالي المدفوعات (الدائنة) خلال الفترة</td>
+                                    <td class="mono right green bold">{{ fmt(summary.payments_total) }}</td>
                                 </tr>
                                 <tr class="balance-row">
                                     <td class="bold" style="font-size:10pt">
-                                        {{ summary.balance >= 0 ? '🔴 الرصيد الختامي (مستحق على العميل)' : '🟢 الرصيد الختامي (مستحق للعميل)' }}
+                                        {{ summary.balance >= 0 ? '🔴 الرصيد الختامي المستحق على العميل' : '🟢 الرصيد الختامي المستحق للعميل' }}
                                     </td>
                                     <td class="mono right bold" :class="summary.balance >= 0 ? 'red' : 'green'" style="font-size:11pt">
                                         {{ fmt(Math.abs(summary.balance)) }}
@@ -126,13 +160,11 @@
 import { ref, computed, onMounted, nextTick } from 'vue';
 
 const props = defineProps({
-    client: Object, entries: Array,
+    client: Object, charges: Array, payments: Array,
     summary: Object, filters: Object, templateUrl: String, layout: Object,
 });
 
 const fmt = (v) => Number(v || 0).toLocaleString('en', { minimumFractionDigits: 3 });
-
-const typeLabel = (t) => ({transfer:'حوالة',violation:'مخالفة',invoice:'فاتورة',receipt:'سند قبض',expense:'مصروف',adjustment:'قيد تسوية',reversal:'قيد عكسي',journal:'قيد يدوي'}[t]||t);
 
 const defaults = {
     title: { x: 10, y: 15, fontSize: 14 }, entity_name: { x: 10, y: 28, fontSize: 12 },
@@ -155,28 +187,41 @@ const contTablePosStyle = computed(() => {
     return { position: 'absolute', right: p.x + 'mm', top: contY.value + 'mm', width: p.w ? p.w + 'mm' : '100%' };
 });
 
-// بناء الصفحات: حركات كشف الحساب → ملخص الحساب
 const pages = computed(() => {
     const rpp = rowsPerPage.value;
     const result = [];
-    const ent = props.entries || [];
-
-    if (ent.length === 0) {
-        result.push({ items: [], startIdx: 0, isLast: true, hasSummary: true });
+    
+    // 1. صفحات المطالبات (Charges)
+    const chgs = props.charges || [];
+    if (chgs.length === 0) {
+        result.push({ section: 'charges', items: [], startIdx: 0, showTotal: true, isLast: false, hasSummary: false });
     } else {
-        for (let i = 0; i < ent.length; i += rpp) {
-            const chunk = ent.slice(i, i + rpp);
-            const isLastPage = i + rpp >= ent.length;
-            result.push({ items: chunk, startIdx: i, isLast: isLastPage, hasSummary: isLastPage });
+        for (let i = 0; i < chgs.length; i += rpp) {
+            const chunk = chgs.slice(i, i + rpp);
+            const isLastPage = i + rpp >= chgs.length;
+            result.push({ section: 'charges', items: chunk, startIdx: i, showTotal: isLastPage, isLast: false, hasSummary: false });
         }
     }
 
-    // إذا كانت الصفحة الأخيرة ممتلئة بالكامل بالصفوف بحيث لا يوجد مساحة للملخص، نقوم بترحيل الملخص لصفحة جديدة
+    // 2. صفحات المدفوعات (Payments)
+    const pays = props.payments || [];
+    if (pays.length === 0) {
+        result.push({ section: 'payments', items: [], startIdx: 0, showTotal: true, isLast: false, hasSummary: false });
+    } else {
+        for (let i = 0; i < pays.length; i += rpp) {
+            const chunk = pays.slice(i, i + rpp);
+            const isLastPage = i + rpp >= pays.length;
+            result.push({ section: 'payments', items: chunk, startIdx: i, showTotal: isLastPage, isLast: false, hasSummary: false });
+        }
+    }
+
+    // 3. صفحة الملخص (Summary)
     const lastPage = result[result.length - 1];
-    if (lastPage && lastPage.items.length > rpp - 4) {
-        lastPage.hasSummary = false;
-        lastPage.isLast = false;
-        result.push({ items: [], startIdx: 0, isLast: true, hasSummary: true });
+    if (lastPage && lastPage.items.length <= rpp - 5) {
+        lastPage.hasSummary = true;
+        lastPage.isLast = true;
+    } else {
+        result.push({ section: 'summary', items: [], startIdx: 0, showTotal: false, isLast: true, hasSummary: true });
     }
 
     return result;
@@ -188,7 +233,7 @@ const sigPosCalc = (page, pi) => {
     const rowH = 5.5;
     const headerH = 7;
     const sectionH = 6;
-    let tableRows = page.items.length;
+    let tableRows = page.items.length + (page.showTotal ? 1 : 0);
     if (page.hasSummary) tableRows += 6; // summary table
     const y = baseY + sectionH + headerH + (tableRows * rowH) + 15;
     const sp = el('signatures');

@@ -60,34 +60,122 @@ class ClientController extends Controller
 
     public function printStatement(Request $request, Client $client)
     {
-        $from = $request->from ?: now()->startOfMonth()->toDateString();
-        $to = $request->to ?: now()->toDateString();
+        $from = $request->from ?: null;
+        $to = $request->to ?: null;
 
-        // 1. حركات كشف الحساب للعميل
-        $entries = \App\Models\LedgerEntry::where('entity_type', 'client')
+        // 1. الفواتير المعتمدة + القيود المدينة
+        $invoicesQuery = \App\Models\Invoice::where('client_id', $client->id)
+            ->where('status', 'approved');
+        if ($from && $to) {
+            $invoicesQuery->whereBetween('invoice_date', [$from, $to . ' 23:59:59']);
+        }
+        $invoices = $invoicesQuery->with(['items.violation.violationType'])
+            ->get()
+            ->map(function ($inv) {
+                $details = $inv->items->map(function ($item) {
+                    if ($item->item_type === 'violation' && $item->violation) {
+                        $v = $item->violation;
+                        $typeName = $v->violationType?->name ?? 'مخالفة';
+                        $passport = $v->passport_name ? " ({$v->passport_name})" : '';
+                        return "{$typeName}{$passport} بسعر: {$v->cost_sar} SAR";
+                    }
+                    $desc = $item->description;
+                    return "{$desc} (العدد: {$item->quantity}) بسعر: {$item->sell_price_jod} JOD";
+                })->join(' | ');
+
+                return [
+                    'id' => 'INV-' . $inv->id,
+                    'date' => $inv->invoice_date->format('Y-m-d'),
+                    'type' => 'فاتورة',
+                    'reference' => $inv->invoice_number,
+                    'details' => $details ?: 'بدون تفاصيل',
+                    'amount' => round($inv->total_jod, 3),
+                ];
+            });
+
+        $manualDebitsQuery = \App\Models\LedgerEntry::where('entity_type', 'client')
             ->where('entity_id', $client->id)
-            ->whereBetween('entry_date', [$from, $to . ' 23:59:59'])
-            ->orderBy('entry_date')
-            ->orderBy('id')
-            ->get();
+            ->where('transaction_type', 'manual')
+            ->where('debit', '>', 0);
+        if ($from && $to) {
+            $manualDebitsQuery->whereBetween('entry_date', [$from, $to . ' 23:59:59']);
+        }
+        $manualDebits = $manualDebitsQuery->get()->map(function ($entry) {
+            return [
+                'id' => 'JRN-' . $entry->id,
+                'date' => $entry->entry_date->format('Y-m-d'),
+                'type' => 'قيد مدين',
+                'reference' => 'JRN-' . $entry->transaction_id,
+                'details' => $entry->description,
+                'amount' => round($entry->debit, 3),
+            ];
+        });
 
-        // 2. الرصيد الافتتاحي قبل الفترة
-        $openingBalance = \App\Models\LedgerEntry::where('entity_type', 'client')
+        $charges = $invoices->concat($manualDebits)->sortBy('date')->values();
+
+        // 2. سندات القبض المعتمدة + القيود الدائنة
+        $receiptsQuery = \App\Models\Receipt::where('client_id', $client->id)
+            ->where('status', 'approved');
+        if ($from && $to) {
+            $receiptsQuery->whereBetween('receipt_date', [$from, $to . ' 23:59:59']);
+        }
+        $receipts = $receiptsQuery->get()->map(function ($r) {
+            $paymentMethod = match ($r->payment_method) {
+                'cash' => 'نقداً',
+                'bank' => 'تحويل بنكي',
+                'check' => 'شيك',
+                default => $r->payment_method,
+            };
+            return [
+                'id' => 'REC-' . $r->id,
+                'date' => $r->receipt_date->format('Y-m-d'),
+                'type' => 'سند قبض',
+                'reference' => $r->receipt_number,
+                'details' => "دفع {$paymentMethod}" . ($r->notes ? ' - ' . $r->notes : ''),
+                'amount' => round($r->amount_jod, 3),
+            ];
+        });
+
+        $manualCreditsQuery = \App\Models\LedgerEntry::where('entity_type', 'client')
             ->where('entity_id', $client->id)
-            ->where('entry_date', '<', $from)
-            ->orderByDesc('entry_date')
-            ->orderByDesc('id')
-            ->value('balance_after') ?? 0;
+            ->where('transaction_type', 'manual')
+            ->where('credit', '>', 0);
+        if ($from && $to) {
+            $manualCreditsQuery->whereBetween('entry_date', [$from, $to . ' 23:59:59']);
+        }
+        $manualCredits = $manualCreditsQuery->get()->map(function ($entry) {
+            return [
+                'id' => 'JRN-' . $entry->id,
+                'date' => $entry->entry_date->format('Y-m-d'),
+                'type' => 'قيد دائن',
+                'reference' => 'JRN-' . $entry->transaction_id,
+                'details' => $entry->description,
+                'amount' => round($entry->credit, 3),
+            ];
+        });
 
-        $totalDebit = $entries->sum('debit');
-        $totalCredit = $entries->sum('credit');
-        $endingBalance = $openingBalance + $totalDebit - $totalCredit;
+        $payments = $receipts->concat($manualCredits)->sortBy('date')->values();
+
+        // 3. الملخص والرصيد الافتتاحي
+        $openingBalance = 0;
+        if ($from) {
+            $openingBalance = \App\Models\LedgerEntry::where('entity_type', 'client')
+                ->where('entity_id', $client->id)
+                ->where('entry_date', '<', $from)
+                ->orderByDesc('entry_date')
+                ->orderByDesc('id')
+                ->value('balance_after') ?? 0;
+        }
+
+        $totalCharges = $charges->sum('amount');
+        $totalPayments = $payments->sum('amount');
+        $balance = $openingBalance + $totalCharges - $totalPayments;
 
         $summary = [
             'opening_balance' => round($openingBalance, 3),
-            'total_debit' => round($totalDebit, 3),
-            'total_credit' => round($totalCredit, 3),
-            'balance' => round($endingBalance, 3),
+            'charges_total' => round($totalCharges, 3),
+            'payments_total' => round($totalPayments, 3),
+            'balance' => round($balance, 3),
         ];
 
         // Template & Layout
@@ -98,9 +186,10 @@ class ClientController extends Controller
 
         return Inertia::render('Clients/PrintStatement', [
             'client' => $client,
-            'entries' => $entries,
+            'charges' => $charges,
+            'payments' => $payments,
             'summary' => $summary,
-            'filters' => ['from' => $from, 'to' => $to],
+            'filters' => ['from' => $from ?? 'الكل', 'to' => $to ?? 'الكل'],
             'templateUrl' => $templateUrl,
             'layout' => $layout,
         ]);
