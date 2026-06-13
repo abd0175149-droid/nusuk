@@ -102,16 +102,22 @@ class ClientController extends Controller
 
         $manualDebitsQuery = \App\Models\LedgerEntry::where('entity_type', 'client')
             ->where('entity_id', $client->id)
-            ->where('transaction_type', 'journal')
+            ->whereIn('transaction_type', ['adjustment', 'reversal', 'journal', 'manual'])
             ->where('debit', '>', 0);
         if ($from && $to) {
             $manualDebitsQuery->whereBetween('entry_date', [$from, $to . ' 23:59:59']);
         }
         $manualDebits = $manualDebitsQuery->get()->map(function ($entry) {
+            $typeStr = match ($entry->transaction_type) {
+                'reversal' => 'قيد عكسي',
+                'adjustment' => 'قيد تسوية',
+                'journal' => 'قيد يدوي',
+                default => 'قيد مدين'
+            };
             return [
                 'id' => 'JRN-' . $entry->id,
                 'date' => $entry->entry_date->format('Y-m-d'),
-                'type' => 'قيد مدين',
+                'type' => $typeStr,
                 'reference' => 'JRN-' . $entry->transaction_id,
                 'services' => [['name' => $entry->description ?: 'قيد تسوية', 'qty' => '-', 'price' => '-']],
                 'amount' => round($entry->debit, 3),
@@ -145,16 +151,22 @@ class ClientController extends Controller
 
         $manualCreditsQuery = \App\Models\LedgerEntry::where('entity_type', 'client')
             ->where('entity_id', $client->id)
-            ->where('transaction_type', 'journal')
+            ->whereIn('transaction_type', ['adjustment', 'reversal', 'journal', 'manual'])
             ->where('credit', '>', 0);
         if ($from && $to) {
             $manualCreditsQuery->whereBetween('entry_date', [$from, $to . ' 23:59:59']);
         }
         $manualCredits = $manualCreditsQuery->get()->map(function ($entry) {
+            $typeStr = match ($entry->transaction_type) {
+                'reversal' => 'قيد عكسي',
+                'adjustment' => 'قيد تسوية',
+                'journal' => 'قيد يدوي',
+                default => 'قيد دائن'
+            };
             return [
                 'id' => 'JRN-' . $entry->id,
                 'date' => $entry->entry_date->format('Y-m-d'),
-                'type' => 'قيد دائن',
+                'type' => $typeStr,
                 'reference' => 'JRN-' . $entry->transaction_id,
                 'services' => [['name' => $entry->description ?: 'قيد تسوية', 'qty' => '-', 'price' => '-']],
                 'amount' => round($entry->credit, 3),
