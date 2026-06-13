@@ -72,30 +72,37 @@ class ClientController extends Controller
         $invoices = $invoicesQuery->with(['items.violation.violationType'])
             ->get()
             ->map(function ($inv) {
-                $details = $inv->items->map(function ($item) {
+                $services = $inv->items->map(function ($item) {
                     if ($item->item_type === 'violation' && $item->violation) {
                         $v = $item->violation;
                         $typeName = $v->violationType?->name ?? 'مخالفة';
                         $passport = $v->passport_name ? " ({$v->passport_name})" : '';
-                        return "{$typeName}{$passport} بسعر: {$v->cost_sar} SAR";
+                        return [
+                            'name' => "{$typeName}{$passport}",
+                            'qty' => 1,
+                            'price' => round($v->cost_sar, 3) . ' SAR',
+                        ];
                     }
-                    $desc = $item->description;
-                    return "{$desc} (العدد: {$item->quantity}) بسعر: {$item->sell_price_jod} JOD";
-                })->join(' | ');
+                    return [
+                        'name' => $item->description,
+                        'qty' => $item->quantity,
+                        'price' => round($item->sell_price_jod, 3) . ' JOD',
+                    ];
+                })->toArray();
 
                 return [
                     'id' => 'INV-' . $inv->id,
                     'date' => $inv->invoice_date->format('Y-m-d'),
                     'type' => 'فاتورة',
                     'reference' => $inv->invoice_number,
-                    'details' => $details ?: 'بدون تفاصيل',
+                    'services' => count($services) > 0 ? $services : [['name' => 'بدون تفاصيل', 'qty' => '-', 'price' => '-']],
                     'amount' => round($inv->total_jod, 3),
                 ];
             });
 
         $manualDebitsQuery = \App\Models\LedgerEntry::where('entity_type', 'client')
             ->where('entity_id', $client->id)
-            ->where('transaction_type', 'manual')
+            ->where('transaction_type', 'journal')
             ->where('debit', '>', 0);
         if ($from && $to) {
             $manualDebitsQuery->whereBetween('entry_date', [$from, $to . ' 23:59:59']);
@@ -106,7 +113,7 @@ class ClientController extends Controller
                 'date' => $entry->entry_date->format('Y-m-d'),
                 'type' => 'قيد مدين',
                 'reference' => 'JRN-' . $entry->transaction_id,
-                'details' => $entry->description,
+                'services' => [['name' => $entry->description ?: 'قيد تسوية', 'qty' => '-', 'price' => '-']],
                 'amount' => round($entry->debit, 3),
             ];
         });
@@ -131,14 +138,14 @@ class ClientController extends Controller
                 'date' => $r->receipt_date->format('Y-m-d'),
                 'type' => 'سند قبض',
                 'reference' => $r->receipt_number,
-                'details' => "دفع {$paymentMethod}" . ($r->notes ? ' - ' . $r->notes : ''),
+                'services' => [['name' => "دفع {$paymentMethod}" . ($r->notes ? ' - ' . $r->notes : ''), 'qty' => '-', 'price' => '-']],
                 'amount' => round($r->amount_jod, 3),
             ];
         });
 
         $manualCreditsQuery = \App\Models\LedgerEntry::where('entity_type', 'client')
             ->where('entity_id', $client->id)
-            ->where('transaction_type', 'manual')
+            ->where('transaction_type', 'journal')
             ->where('credit', '>', 0);
         if ($from && $to) {
             $manualCreditsQuery->whereBetween('entry_date', [$from, $to . ' 23:59:59']);
@@ -149,7 +156,7 @@ class ClientController extends Controller
                 'date' => $entry->entry_date->format('Y-m-d'),
                 'type' => 'قيد دائن',
                 'reference' => 'JRN-' . $entry->transaction_id,
-                'details' => $entry->description,
+                'services' => [['name' => $entry->description ?: 'قيد تسوية', 'qty' => '-', 'price' => '-']],
                 'amount' => round($entry->credit, 3),
             ];
         });

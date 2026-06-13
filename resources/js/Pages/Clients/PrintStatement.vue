@@ -51,21 +51,29 @@
                                 <th style="width:65px">التاريخ</th>
                                 <th style="width:55px">النوع</th>
                                 <th style="width:75px">المرجع</th>
-                                <th>التفاصيل/البيان</th>
-                                <th style="width:85px">المبلغ (JOD)</th>
+                                <th>الخدمة / البيان</th>
+                                <th style="width:30px">العدد</th>
+                                <th style="width:65px">سعر البيع</th>
+                                <th style="width:75px">الإجمالي (JOD)</th>
                             </tr></thead>
-                            <tbody>
-                                <tr v-for="(e, i) in page.items" :key="e.id">
-                                    <td class="center">{{ page.startIdx + i + 1 }}</td>
-                                    <td class="mono center">{{ e.date }}</td>
-                                    <td class="center"><span class="method-tag">{{ e.type }}</span></td>
-                                    <td class="mono center">{{ e.reference }}</td>
-                                    <td class="details-cell">{{ e.details }}</td>
-                                    <td class="mono right bold red">{{ fmt(e.amount) }}</td>
+                            <tbody v-for="(e, i) in page.items" :key="e.id">
+                                <tr v-for="(srv, idx) in e.services" :key="idx">
+                                    <td v-if="idx === 0" :rowspan="e.services.length" class="center">{{ page.startIdx + i + 1 }}</td>
+                                    <td v-if="idx === 0" :rowspan="e.services.length" class="mono center">{{ e.date }}</td>
+                                    <td v-if="idx === 0" :rowspan="e.services.length" class="center"><span class="method-tag">{{ e.type }}</span></td>
+                                    <td v-if="idx === 0" :rowspan="e.services.length" class="mono center">{{ e.reference }}</td>
+                                    <td class="details-cell">{{ srv.name }}</td>
+                                    <td class="mono center">{{ srv.qty }}</td>
+                                    <td class="mono right">{{ srv.price }}</td>
+                                    <td v-if="idx === 0" :rowspan="e.services.length" class="mono right bold red">{{ fmt(e.amount) }}</td>
                                 </tr>
-                                <tr v-if="!page.items.length"><td colspan="6" class="empty">لا يوجد مطالبات</td></tr>
-                                <tr v-if="page.showTotal && page.items.length > 0" class="total-row">
-                                    <td colspan="5" class="bold">إجمالي المطالبات والقيود المدينة</td>
+                            </tbody>
+                            <tbody v-if="!page.items.length">
+                                <tr><td colspan="8" class="empty">لا يوجد مطالبات</td></tr>
+                            </tbody>
+                            <tbody v-if="page.showTotal && page.items.length > 0">
+                                <tr class="total-row">
+                                    <td colspan="7" class="bold">إجمالي المطالبات والقيود المدينة</td>
                                     <td class="mono right bold red">{{ fmt(summary.charges_total) }}</td>
                                 </tr>
                             </tbody>
@@ -82,19 +90,23 @@
                                 <th style="width:55px">النوع</th>
                                 <th style="width:75px">المرجع</th>
                                 <th>التفاصيل/البيان</th>
-                                <th style="width:85px">المبلغ (JOD)</th>
+                                <th style="width:75px">المبلغ (JOD)</th>
                             </tr></thead>
-                            <tbody>
-                                <tr v-for="(e, i) in page.items" :key="e.id">
-                                    <td class="center">{{ page.startIdx + i + 1 }}</td>
-                                    <td class="mono center">{{ e.date }}</td>
-                                    <td class="center"><span class="method-tag">{{ e.type }}</span></td>
-                                    <td class="mono center">{{ e.reference }}</td>
-                                    <td class="details-cell">{{ e.details }}</td>
-                                    <td class="mono right bold green">{{ fmt(e.amount) }}</td>
+                            <tbody v-for="(e, i) in page.items" :key="e.id">
+                                <tr v-for="(srv, idx) in e.services" :key="idx">
+                                    <td v-if="idx === 0" :rowspan="e.services.length" class="center">{{ page.startIdx + i + 1 }}</td>
+                                    <td v-if="idx === 0" :rowspan="e.services.length" class="mono center">{{ e.date }}</td>
+                                    <td v-if="idx === 0" :rowspan="e.services.length" class="center"><span class="method-tag">{{ e.type }}</span></td>
+                                    <td v-if="idx === 0" :rowspan="e.services.length" class="mono center">{{ e.reference }}</td>
+                                    <td class="details-cell">{{ srv.name }}</td>
+                                    <td v-if="idx === 0" :rowspan="e.services.length" class="mono right bold green">{{ fmt(e.amount) }}</td>
                                 </tr>
-                                <tr v-if="!page.items.length"><td colspan="6" class="empty">لا يوجد مدفوعات</td></tr>
-                                <tr v-if="page.showTotal && page.items.length > 0" class="total-row">
+                            </tbody>
+                            <tbody v-if="!page.items.length">
+                                <tr><td colspan="6" class="empty">لا يوجد مدفوعات</td></tr>
+                            </tbody>
+                            <tbody v-if="page.showTotal && page.items.length > 0">
+                                <tr class="total-row">
                                     <td colspan="5" class="bold">إجمالي المدفوعات والقيود الدائنة</td>
                                     <td class="mono right bold green">{{ fmt(summary.payments_total) }}</td>
                                 </tr>
