@@ -46,68 +46,36 @@
 
                     <!-- === جدول الحوالات === -->
                     <template v-if="page.section === 'transfers'">
-                        <h4 class="section-title transfer-bg">💸 الحوالات (ما دفعناه للوكيل)</h4>
+                        <h4 class="section-title transfer-bg" v-if="page.startIdx === 0">💸 الحوالات وقيود التسوية الدائنة (ما دفعناه للوكيل)</h4>
                         <table class="print-tbl" :style="tblStyle">
                             <thead><tr>
                                 <th style="width:22px">#</th>
                                 <th style="width:60px">التاريخ</th>
-                                <th style="width:80px">رقم الحوالة</th>
+                                <th style="width:55px">النوع</th>
+                                <th style="width:80px">رقم الحوالة/المرجع</th>
                                 <th style="width:75px">المبلغ SAR</th>
-                                <th style="width:65px">التكلفة JOD</th>
                                 <th style="width:55px">سعر الصرف</th>
                                 <th style="width:55px">طريقة الدفع</th>
                                 <th>ملاحظات</th>
                             </tr></thead>
                             <tbody>
-                                <tr v-for="(t, i) in page.items" :key="t.id" :class="t.is_reversed ? 'reversed-row' : ''">
+                                <tr v-for="(t, i) in page.items" :key="t.id">
                                     <td class="center">{{ page.startIdx + i + 1 }}</td>
                                     <td class="mono center">{{ t.date }}</td>
+                                    <td class="center"><span class="method-tag">{{ t.type }}</span></td>
                                     <td class="mono center gold bold">{{ t.transfer_number }}</td>
-                                    <td class="mono right bold" :class="t.amount_sar < 0 ? 'red' : ''">{{ fmtSar(t.amount_sar) }}</td>
-                                    <td class="mono right">{{ fmtJod(t.cost_jod) }}</td>
+                                    <td class="mono right bold green">{{ fmtSar(t.amount_sar) }}</td>
                                     <td class="mono center">{{ t.exchange_rate }}</td>
                                     <td class="center"><span class="method-tag">{{ t.payment_method }}</span></td>
                                     <td class="details-cell">{{ t.notes }}</td>
                                 </tr>
                                 <tr v-if="!page.items.length"><td colspan="8" class="empty">لا يوجد حوالات</td></tr>
                             </tbody>
-                            <tfoot v-if="page.showTotal">
+                            <tfoot v-if="page.showTotal && page.items.length > 0">
                                 <tr class="total-row">
-                                    <td colspan="3" class="right bold">إجمالي الحوالات ({{ summary.transfers_count }})</td>
+                                    <td colspan="4" class="right bold">إجمالي الحوالات والقيود الدائنة ({{ summary.transfers_count }})</td>
                                     <td class="mono right bold gold">{{ fmtSar(summary.transfers_total) }}</td>
-                                    <td colspan="4"></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </template>
-
-                    <!-- === جدول الفواتير (الخدمات) === -->
-                    <template v-if="page.section === 'invoices'">
-                        <h4 class="section-title invoice-bg">📄 الفواتير (خدمات مطلوبة من الوكيل)</h4>
-                        <table class="print-tbl" :style="tblStyle">
-                            <thead><tr>
-                                <th style="width:22px">#</th>
-                                <th style="width:60px">التاريخ</th>
-                                <th style="width:80px">رقم الفاتورة</th>
-                                <th style="width:70px">العميل</th>
-                                <th>التفاصيل</th>
-                                <th style="width:75px">التكلفة SAR</th>
-                            </tr></thead>
-                            <tbody>
-                                <tr v-for="(inv, i) in page.items" :key="inv.id" :class="inv.is_reversed ? 'reversed-row' : ''">
-                                    <td class="center">{{ page.startIdx + i + 1 }}</td>
-                                    <td class="mono center">{{ inv.date }}</td>
-                                    <td class="mono center gold bold">{{ inv.invoice_number }}</td>
-                                    <td class="center">{{ inv.client_name }}</td>
-                                    <td class="details-cell">{{ inv.details }}</td>
-                                    <td class="mono right bold" :class="inv.amount < 0 ? 'red' : ''">{{ fmtSar(inv.amount) }}</td>
-                                </tr>
-                                <tr v-if="!page.items.length"><td colspan="6" class="empty">لا يوجد فواتير</td></tr>
-                            </tbody>
-                            <tfoot v-if="page.showTotal">
-                                <tr class="total-row">
-                                    <td colspan="5" class="right bold">إجمالي الفواتير ({{ summary.invoices_count }})</td>
-                                    <td class="mono right bold gold">{{ fmtSar(summary.invoices_total) }}</td>
+                                    <td colspan="3"></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -115,32 +83,34 @@
 
                     <!-- === جدول المخالفات === -->
                     <template v-if="page.section === 'violations'">
-                        <h4 class="section-title violation-bg">⚠️ المخالفات</h4>
+                        <h4 class="section-title violation-bg" v-if="page.startIdx === 0">⚠️ المخالفات وقيود التسوية المدينة (ما يُخصم من الوكيل)</h4>
                         <table class="print-tbl" :style="tblStyle">
                             <thead><tr>
                                 <th style="width:22px">#</th>
                                 <th style="width:60px">التاريخ</th>
-                                <th style="width:80px">رقم المخالفة</th>
-                                <th style="width:70px">النوع</th>
+                                <th style="width:55px">النوع</th>
+                                <th style="width:80px">رقم المخالفة/المرجع</th>
+                                <th style="width:70px">نوع المخالفة</th>
                                 <th style="width:80px">صاحب الجواز</th>
                                 <th>الوصف</th>
                                 <th style="width:75px">التكلفة SAR</th>
                             </tr></thead>
                             <tbody>
-                                <tr v-for="(v, i) in page.items" :key="v.id" :class="v.is_reversed ? 'reversed-row' : ''">
+                                <tr v-for="(v, i) in page.items" :key="v.id">
                                     <td class="center">{{ page.startIdx + i + 1 }}</td>
                                     <td class="mono center">{{ v.date }}</td>
+                                    <td class="center"><span class="method-tag">{{ v.entry_type }}</span></td>
                                     <td class="mono center gold bold">{{ v.violation_number }}</td>
-                                    <td class="center">{{ v.type }}</td>
+                                    <td class="center">{{ v.type_name }}</td>
                                     <td class="center">{{ v.passport_name }}</td>
                                     <td class="details-cell">{{ v.description }}</td>
                                     <td class="mono right bold red">{{ fmtSar(v.amount) }}</td>
                                 </tr>
-                                <tr v-if="!page.items.length"><td colspan="7" class="empty">لا يوجد مخالفات</td></tr>
+                                <tr v-if="!page.items.length"><td colspan="8" class="empty">لا يوجد مخالفات</td></tr>
                             </tbody>
-                            <tfoot v-if="page.showTotal">
+                            <tfoot v-if="page.showTotal && page.items.length > 0">
                                 <tr class="total-row">
-                                    <td colspan="6" class="right bold">إجمالي المخالفات ({{ summary.violations_count }})</td>
+                                    <td colspan="7" class="right bold">إجمالي المخالفات والقيود المدينة ({{ summary.violations_count }})</td>
                                     <td class="mono right bold red">{{ fmtSar(summary.violations_total) }}</td>
                                 </tr>
                             </tfoot>
@@ -159,17 +129,17 @@
                             </tr></thead>
                             <tbody>
                                 <tr>
-                                    <td class="bold">💸 إجمالي الحوالات (ما دفعناه للوكيل)</td>
+                                    <td class="bold">💵 الرصيد الافتتاحي قبل الفترة</td>
+                                    <td class="center">—</td>
+                                    <td class="mono right bold">{{ fmtSar(summary.opening_balance) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="bold">💸 إجمالي الحوالات والقيود الدائنة (ما دفعناه للوكيل)</td>
                                     <td class="mono center bold">{{ summary.transfers_count }}</td>
                                     <td class="mono right bold green">{{ fmtSar(summary.transfers_total) }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="bold">📄 إجمالي الفواتير (تكلفة الخدمات)</td>
-                                    <td class="mono center bold">{{ summary.invoices_count }}</td>
-                                    <td class="mono right bold">{{ fmtSar(summary.invoices_total) }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="bold">⚠️ إجمالي المخالفات</td>
+                                    <td class="bold">⚠️ إجمالي المخالفات والقيود المدينة (ما يُخصم)</td>
                                     <td class="mono center bold">{{ summary.violations_count }}</td>
                                     <td class="mono right bold red">{{ fmtSar(summary.violations_total) }}</td>
                                 </tr>
@@ -210,12 +180,11 @@
 import { ref, computed, onMounted, nextTick } from 'vue';
 
 const props = defineProps({
-    agent: Object, transfers: Array, invoices: Array, violations: Array,
+    agent: Object, transfers: Array, violations: Array,
     summary: Object, filters: Object, templateUrl: String, layout: Object,
 });
 
 const fmtSar = (v) => Number(v || 0).toLocaleString('en', { minimumFractionDigits: 2 });
-const fmtJod = (v) => Number(v || 0).toLocaleString('en', { minimumFractionDigits: 3 });
 
 const defaults = {
     title: { x: 10, y: 15, fontSize: 14 }, entity_name: { x: 10, y: 28, fontSize: 12 },
@@ -238,15 +207,15 @@ const contTablePosStyle = computed(() => {
     return { position: 'absolute', right: p.x + 'mm', top: contY.value + 'mm', width: p.w ? p.w + 'mm' : '100%' };
 });
 
-// بناء الصفحات: حوالات → فواتير → مخالفات → ملخص
+// بناء الصفحات: حوالات → مخالفات → ملخص
 function buildSection(data, sectionName, rpp) {
     const result = [];
     if (!data || data.length === 0) {
-        result.push({ section: sectionName, items: [], startIdx: 0, showTotal: true, isLast: false });
+        result.push({ section: sectionName, items: [], startIdx: 0, showTotal: true, isLast: false, hasSummary: false });
     } else {
         for (let i = 0; i < data.length; i += rpp) {
             const chunk = data.slice(i, i + rpp);
-            result.push({ section: sectionName, items: chunk, startIdx: i, showTotal: i + rpp >= data.length, isLast: false });
+            result.push({ section: sectionName, items: chunk, startIdx: i, showTotal: i + rpp >= data.length, isLast: false, hasSummary: false });
         }
     }
     return result;
@@ -256,7 +225,6 @@ const pages = computed(() => {
     const rpp = rowsPerPage.value;
     const result = [
         ...buildSection(props.transfers, 'transfers', rpp),
-        ...buildSection(props.invoices, 'invoices', rpp),
         ...buildSection(props.violations, 'violations', rpp),
     ];
 
